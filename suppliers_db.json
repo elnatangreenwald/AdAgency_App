@@ -1,0 +1,3052 @@
+[
+    {
+        "id": "088c4727-3481-4c8f-b6ab-fb7bf763cbdf",
+        "name": "איציק",
+        "phone": "506927395",
+        "email": "",
+        "supplier_type": "מסעדת טרסה- בגין",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a44bc0ae-0919-4294-8326-2c8b64c5d43e",
+        "name": "איתמר",
+        "phone": "523777250",
+        "email": "",
+        "supplier_type": "המתפרה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "869cbc60-33a5-4d8b-bd83-d26b2d5d9838",
+        "name": "אסף",
+        "phone": "02-6303609/0545392233",
+        "email": "",
+        "supplier_type": "החאן",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c6b23140-ea0c-4a4d-bc93-1be47fcdfc76",
+        "name": "בטי",
+        "phone": "506419732",
+        "email": "",
+        "supplier_type": "מלון ורט ירושלים",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3a629c55-77f9-4186-bc97-65dc77b8c256",
+        "name": "גבעת התחמושת",
+        "phone": "25697314",
+        "email": "",
+        "supplier_type": "",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "937d6401-fe77-46ad-9c72-9d4393915ae3",
+        "name": "הילה",
+        "phone": "503820191",
+        "email": "",
+        "supplier_type": "ישרוטל",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c34e6677-4e5b-40f4-a0d7-e0c5ce797100",
+        "name": "זאב",
+        "phone": "545414578",
+        "email": "",
+        "supplier_type": "מצודת דוד(מלון)",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8787f44d-da95-4a57-aee2-2da454ddb2dd",
+        "name": "חוות שחרית",
+        "phone": "555570501",
+        "email": "",
+        "supplier_type": "",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "84061031-1df7-4587-8b72-90731dbabfae",
+        "name": "חני",
+        "phone": "504204050",
+        "email": "",
+        "supplier_type": "מסעדת מונטיפיורי",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ae19bd85-5d8c-4361-8a84-a10cd9bf871e",
+        "name": "טל",
+        "phone": "546111191",
+        "email": "",
+        "supplier_type": "היכל התרבות ירושלים",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "60225da5-e9b7-4d26-bd6c-d97b3fd11b44",
+        "name": "טראסק תל אביב",
+        "phone": "36021319",
+        "email": "",
+        "supplier_type": "",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fdd4fbec-ea52-4b96-9af1-a454943e9b1a",
+        "name": "יעל",
+        "phone": "547909806",
+        "email": "",
+        "supplier_type": "היכל יד בנימין",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4f0db73b-37a5-4f90-a058-1209a5a06e2b",
+        "name": "ליאת",
+        "phone": "506313389",
+        "email": "",
+        "supplier_type": "נפש בנפש",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9555dd6f-d3a5-4c3c-926a-a9b5c719f833",
+        "name": "לירון",
+        "phone": "546997767",
+        "email": "",
+        "supplier_type": "2C-עזריאלי",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "15588b07-628a-43a3-a848-fa1be1005e09",
+        "name": "מורן",
+        "phone": "544608924",
+        "email": "",
+        "supplier_type": "מוזיאון ארצות המקרא",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9a78f3f4-c05f-41c6-95b0-0f80b3f6aacc",
+        "name": "מושיק",
+        "phone": "502408215",
+        "email": "",
+        "supplier_type": "מסעדת קדמא ממילא",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "edca6fd0-2e29-4c37-89dd-1c6772ec69a6",
+        "name": "מירב",
+        "phone": "542609691",
+        "email": "",
+        "supplier_type": "יקב ברקן",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e87af6ad-4843-4f74-89e1-ebfd683bb5cc",
+        "name": "מירי",
+        "phone": "528744033",
+        "email": "",
+        "supplier_type": "טכנודע חדרה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e2897b7f-47df-492c-bce3-7034a557fe2c",
+        "name": "מלכי",
+        "phone": "585222662",
+        "email": "",
+        "supplier_type": "אש התורה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "95e3d517-bd0f-4189-8ebe-76bc0717ca30",
+        "name": "בני",
+        "phone": "505222219",
+        "email": "",
+        "supplier_type": "קדמא",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "47c60e3f-a181-47df-a3d5-c899aa608eb6",
+        "name": "עמית",
+        "phone": "545622999",
+        "email": "",
+        "supplier_type": "מסעדת מונטיפיורי",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7add035a-e44f-4483-a5cb-f64bcac8e509",
+        "name": "פיראס",
+        "phone": "0506419740",
+        "email": "",
+        "supplier_type": "מנהל אירועים וורט ירושלים",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d03b0f83-1fbf-4fc5-90a6-38ebc3ad925a",
+        "name": "קסניה",
+        "phone": "0549509014",
+        "email": "",
+        "supplier_type": "וולדורף אוסטוריה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1faa5fca-d84b-4b5f-a1bd-277766ac9068",
+        "name": "רחל",
+        "phone": "0528883982",
+        "email": "",
+        "supplier_type": "היכל התרבות פתח תקווה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6b34027f-4162-4425-b146-882b3772ea54",
+        "name": "שלומי",
+        "phone": "0506371051",
+        "email": "",
+        "supplier_type": "חוות עמק איילון- מבוא חורון",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "22132b6a-1fd8-4329-805e-3a136b859669",
+        "name": "איתי זוארץ",
+        "phone": "545420465",
+        "email": "",
+        "supplier_type": "יוני שרון",
+        "category": "אומנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2eeb6950-5d4d-456a-aa59-da2720ad9173",
+        "name": "אלין",
+        "phone": "543060211",
+        "email": "",
+        "supplier_type": "סברס",
+        "category": "אומנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0d70ed8e-e8e9-4798-ae22-19ed10022a15",
+        "name": "אודי אולמן",
+        "phone": "504865800",
+        "email": "",
+        "supplier_type": "חזנות",
+        "category": "אומנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1f72ecb4-3f22-4033-b0c8-5453b2e5209c",
+        "name": "אורי מלמד",
+        "phone": "549930490",
+        "email": "",
+        "supplier_type": "מנפיס- פודטראק",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "bf9c6d5f-9831-4521-acbf-428dd4b2341c",
+        "name": "אלירן",
+        "phone": "542166512",
+        "email": "",
+        "supplier_type": "קייאק פירות",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b253d91c-9ff7-4df0-a4f3-e203d26afe5d",
+        "name": "אלמוג",
+        "phone": "545366720",
+        "email": "",
+        "supplier_type": "בריסטה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "35164bef-147d-4a1b-aa50-f6d3bd52c7da",
+        "name": "אריאל/מתן",
+        "phone": "506775098/0524895477",
+        "email": "",
+        "supplier_type": "זיסלק-גלידה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ee7a4801-54df-407a-b0ad-8bfdc3fa3a6b",
+        "name": "בן",
+        "phone": "542081813",
+        "email": "",
+        "supplier_type": "שולחן שוק השניצליה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "052beab4-cfa4-4729-b147-b76f238fc607",
+        "name": "דוד שיבולים",
+        "phone": "555565922",
+        "email": "",
+        "supplier_type": "קייטרינג בשרי",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "47972772-95b5-4b6b-a11c-7c8f540cc852",
+        "name": "חוויה מתוקה",
+        "phone": "545816035",
+        "email": "",
+        "supplier_type": "דוכני מתוקים(קרפ, גלידה וכו",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "04afa5c2-1aa7-4ceb-b844-8c0f9e2cda66",
+        "name": "כהן חמוצים-שוק",
+        "phone": "26253456",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fff8794a-676e-4078-ad64-fd33c8d70dc4",
+        "name": "אלברט",
+        "phone": "545417864",
+        "email": "",
+        "supplier_type": "אוכל ארוז",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3e87f932-d5bf-4014-b2e5-28470f720230",
+        "name": "כהן חמוציםג אולה",
+        "phone": "25383921",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7bd67ce3-12e7-4dcd-b4c1-a7986fbddd09",
+        "name": "נעמי",
+        "phone": "0559401122",
+        "email": "",
+        "supplier_type": "גריל בר מבשרת",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "363562b0-04c9-4714-80b0-980394094854",
+        "name": "עודד(של שושי)",
+        "phone": "0546520604",
+        "email": "",
+        "supplier_type": "יין",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "70863e99-e657-4df3-bf32-2d236403ffb6",
+        "name": "עוזי",
+        "phone": "0506509603",
+        "email": "",
+        "supplier_type": "אוטו גלידה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ebab6b81-8456-4024-83a3-0d52c1b891fd",
+        "name": "עופר",
+        "phone": "0522671090",
+        "email": "",
+        "supplier_type": "סנדוויצים",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "69e65c70-80a4-44d7-a4d6-10f7a53b9a31",
+        "name": "ענבל",
+        "phone": "0547770730",
+        "email": "",
+        "supplier_type": "שולחן שוק בגולן",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f5faa9d1-daac-4cb1-aabc-3f6893dd198b",
+        "name": "מוגרבי",
+        "phone": "545571903",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "db281c00-317f-497b-958b-1a73beccacb2",
+        "name": "קרני חיטין",
+        "phone": "0526834377",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "697e8019-ffd0-4850-afd0-0d00df259540",
+        "name": "רביד",
+        "phone": "0587000939",
+        "email": "",
+        "supplier_type": "מרבד גוש עציון",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "72e02605-86cc-4e92-b265-b77a12c9b540",
+        "name": "תמיר",
+        "phone": "0505443235",
+        "email": "",
+        "supplier_type": "בריסטה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fc90bdfe-462b-4ea7-86dc-801c8511f0a6",
+        "name": "נמרוד",
+        "phone": "0524843719",
+        "email": "",
+        "supplier_type": "פארק חבלים- TOP EL",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e3662426-8122-47e3-be46-12288a90e63d",
+        "name": "קרן",
+        "phone": "0523590618",
+        "email": "",
+        "supplier_type": "שחקנית עץ המוצצים",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9fea9da4-261a-46dd-86eb-ffa4b6184e81",
+        "name": "רעיה",
+        "phone": "0528831804",
+        "email": "",
+        "supplier_type": "צילום במסך ירוק",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "69a9926d-1b76-49c1-bcbf-c8750cad8a5d",
+        "name": "שני",
+        "phone": "0508335796",
+        "email": "",
+        "supplier_type": "יצירה מהטבע",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2557f10b-dc08-45ec-a87c-ab3dfcd9bd1d",
+        "name": "שרון אודי",
+        "phone": "0545544122",
+        "email": "",
+        "supplier_type": "מתנפחים",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ed956be5-0901-446c-a0bf-5fa79fc57607",
+        "name": "אריאל",
+        "phone": "528847522",
+        "email": "",
+        "supplier_type": "506555226",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "55a46c5f-5695-484f-9383-e7ec1e9ccce8",
+        "name": "דודו",
+        "phone": "506555226",
+        "email": "",
+        "supplier_type": "הסעות-כנפי יונה",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "dfee001a-93f8-47b9-8c1a-0a5a7e8b086f",
+        "name": "חיה פרידמן",
+        "phone": "584227007",
+        "email": "",
+        "supplier_type": "קורן ספרים",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7ff6c607-508b-4f22-b53d-da716e38fc63",
+        "name": "יניב אילן",
+        "phone": "523089346",
+        "email": "",
+        "supplier_type": "תכנות ופריצות פייסבוק",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "978c8bb7-3478-4fc4-b4b5-cadd90dab903",
+        "name": "ישי חמו",
+        "phone": "545845830",
+        "email": "",
+        "supplier_type": "קריינות",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8630348f-efc3-4427-b84c-b720c2281edf",
+        "name": "כפיר",
+        "phone": "509245459",
+        "email": "",
+        "supplier_type": "הובלות קטנות",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "921fa565-533c-46e2-9e0b-4b18ebb5eee9",
+        "name": "מאיר",
+        "phone": "585533888",
+        "email": "",
+        "supplier_type": "תרגום לצרפתית",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8504a4b7-76ee-4e18-b467-13ef4fc2306b",
+        "name": "ואדים",
+        "phone": "506860811",
+        "email": "",
+        "supplier_type": "מוניות בכל רחבי הארץ",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3023e377-70aa-47fd-973b-546c088c766d",
+        "name": "מיכאל",
+        "phone": "523272587",
+        "email": "",
+        "supplier_type": "קריינות באנגלית",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "61c95e16-2358-42c8-9c9b-ccba1da2770e",
+        "name": "אהרון כהן",
+        "phone": "556116444",
+        "email": "",
+        "supplier_type": "אקספרס אריזות(ספק)",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4905ef36-ed42-429c-bb94-45e9ae7e44ef",
+        "name": "אופק",
+        "phone": "26425701",
+        "email": "",
+        "supplier_type": "קופסאות תה",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1a3a1484-a04d-481b-8bb9-4c6b91e05b8a",
+        "name": "אורי סמייל",
+        "phone": "544803520",
+        "email": "",
+        "supplier_type": "ריחניות לרכב",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a6841f37-42a1-41e7-b65e-af1a381e1149",
+        "name": "אסי",
+        "phone": "543083003",
+        "email": "",
+        "supplier_type": "הדפסה על כוסות",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "469293f6-6c0a-4a6c-b95f-22cb76e3328d",
+        "name": "בזק",
+        "phone": "542193422",
+        "email": "",
+        "supplier_type": "",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d308049b-7587-416f-a8f1-11dd5d320363",
+        "name": "ביגוד",
+        "phone": "26339639",
+        "email": "",
+        "supplier_type": "",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "98dcd4e9-e0b8-40be-b232-a54b32084d4d",
+        "name": "ג'אקו גוש עציון",
+        "phone": "505853377",
+        "email": "",
+        "supplier_type": "מוצרי קדם",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "06db3ec3-b617-4b92-a986-2ff49387f9c2",
+        "name": "גימיקים",
+        "phone": "546931112",
+        "email": "",
+        "supplier_type": "שוקולד ארומה",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "47495198-8283-46e8-b5fc-cd1b4377e155",
+        "name": "דורון",
+        "phone": "525208045",
+        "email": "",
+        "supplier_type": "סיכות מתכת/מגנים וכו",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "de3a3da2-e83f-4c26-9790-fc9fb9ec94c5",
+        "name": "דורית",
+        "phone": "544532411",
+        "email": "",
+        "supplier_type": "יודאיקה",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "25571203-63e0-4905-a016-972e28ee5ba2",
+        "name": "יוני",
+        "phone": "523696457",
+        "email": "",
+        "supplier_type": "חולצות",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "90fe901d-30ef-452c-9fd1-8d07f4f0efd1",
+        "name": "יוסי",
+        "phone": "524370200",
+        "email": "",
+        "supplier_type": "פולימיל כרטיסים",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7f366af7-d7d5-407f-9f1b-8a6d46681378",
+        "name": "מירי-מילמן",
+        "phone": "544274909",
+        "email": "",
+        "supplier_type": "מגנים, בניה בעץ וכו",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d3382b51-0efe-4591-a939-60461235a7e0",
+        "name": "נעמה",
+        "phone": "0544610368",
+        "email": "",
+        "supplier_type": "סלים מהשוק",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4a659db7-ff58-44c6-aacb-f845767a5542",
+        "name": "קארין",
+        "phone": "0535413101",
+        "email": "",
+        "supplier_type": "מיתוגון",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0ec67bd4-3a73-408a-a037-e7f5710e109c",
+        "name": "רום",
+        "phone": "0545455400",
+        "email": "",
+        "supplier_type": "כרטיסים עם פס מגנטי ובלי",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c3cfe465-e8c9-457f-ba00-1598a85c35fb",
+        "name": "רננה",
+        "phone": "0502518523",
+        "email": "",
+        "supplier_type": "על המשקל",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "02607bda-11fd-42e9-90eb-64dfd3f6ae16",
+        "name": "אורית",
+        "phone": "507219389",
+        "email": "",
+        "supplier_type": "משתלת אבו גוש",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f0cc3b10-8767-4fdf-8df8-cb90264294cb",
+        "name": "אלכס",
+        "phone": "547700196",
+        "email": "",
+        "supplier_type": "עיצוב במה",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9afef234-6290-495f-a543-ab17cd570716",
+        "name": "בלונים לחתונות",
+        "phone": "528850132",
+        "email": "",
+        "supplier_type": "",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "dd9ebb2b-fd92-4eb3-b681-89e489146bd8",
+        "name": "הודיה",
+        "phone": "586535802",
+        "email": "",
+        "supplier_type": "פרחים",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d5cd1d45-af16-4727-83bb-950be587b69b",
+        "name": "טוביה לוי",
+        "phone": "544308849",
+        "email": "",
+        "supplier_type": "בינוי תערוכות",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2007551f-2008-4c27-9046-eb290ffd11d9",
+        "name": "יובל",
+        "phone": "523451517",
+        "email": "",
+        "supplier_type": "עיצוב במה",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1f4747d3-b959-4e0f-8406-35eae8021d32",
+        "name": "לירז",
+        "phone": "544730344",
+        "email": "",
+        "supplier_type": "פרחים יעקבסון",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "63af2d6b-81b3-4724-80e9-74834aadb8df",
+        "name": "פרחי ירושלים",
+        "phone": "25380768",
+        "email": "",
+        "supplier_type": "",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "974f7c07-9cf5-4958-894b-5156919ba36f",
+        "name": "רויטל",
+        "phone": "0544272057",
+        "email": "",
+        "supplier_type": "עיצובים לאירוע עם קונספט",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7457f458-b39a-498c-ba8b-8f477baed1f3",
+        "name": "אורי",
+        "phone": "544825217",
+        "email": "",
+        "supplier_type": "קני ציור",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b2ebc75c-797a-42ef-aec8-544a8d13360e",
+        "name": "אופיר",
+        "phone": "544814042",
+        "email": "",
+        "supplier_type": "הצללות ודגלים סינים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b2e89ef7-8111-4388-897f-5c7f77d8347c",
+        "name": "ברק",
+        "phone": "504400333",
+        "email": "",
+        "supplier_type": "במות/מחסומים וכו",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9d67982c-1805-4047-ae4d-e24f895df21e",
+        "name": "חיים פרידמן",
+        "phone": "525400544",
+        "email": "",
+        "supplier_type": "תאורה והגברה",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6ec06f46-903c-468b-89dd-aabb8803cf5b",
+        "name": "חלי",
+        "phone": "524202611",
+        "email": "",
+        "supplier_type": "שירותים כימים-שירותיון",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5e8311f0-0f11-4777-ad3b-0213ac6e3a4f",
+        "name": "יהודה",
+        "phone": "36341175",
+        "email": "",
+        "supplier_type": "מכשירי קשר ומטפים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "66770ea8-e1e6-43d4-9641-9d2a6c379775",
+        "name": "יעיש",
+        "phone": "526720175",
+        "email": "",
+        "supplier_type": "שירותים/גנרטורים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9b66daf3-862e-49ca-927e-3bf55ad7b368",
+        "name": "יפתח",
+        "phone": "548042330",
+        "email": "",
+        "supplier_type": "הצללות",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "48798c00-449d-4c98-aba0-7c1e765431bd",
+        "name": "מוטי",
+        "phone": "542464695",
+        "email": "",
+        "supplier_type": "מטפים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9284df7a-b918-4b6e-a0de-a2dc6f08a0ec",
+        "name": "נטלי דניאל",
+        "phone": "0779151155",
+        "email": "",
+        "supplier_type": "מפות+ מפיות",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2f5065d7-42f7-4793-85a8-02199569758c",
+        "name": "סרגיי",
+        "phone": "0547577358",
+        "email": "",
+        "supplier_type": "הגברה קטנה",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a3ec4ef3-ae49-4bc6-a057-d7023cea7ea2",
+        "name": "שגעון של שולחן",
+        "phone": "0526790259",
+        "email": "",
+        "supplier_type": "",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "291bd823-88dd-4c12-aea2-726bcef88dea",
+        "name": "שמעון גרוס",
+        "phone": "0505286686",
+        "email": "",
+        "supplier_type": "מכשירי קשר ומטפים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "25a2fcf9-21a2-4f43-9878-f3d44d4ee9ad",
+        "name": "שרגאי",
+        "phone": "039229106",
+        "email": "",
+        "supplier_type": "דגלים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7bddcadf-6cfd-4442-9e59-886511189498",
+        "name": "אברהם",
+        "phone": "547599923",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "69bcfae6-2f03-4344-a182-2c1f944ddf4a",
+        "name": "אורן חיים",
+        "phone": "507118388",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4e00bc9f-916f-43d0-b7b8-cd04a03efaf1",
+        "name": "בניה",
+        "phone": "584964154",
+        "email": "",
+        "supplier_type": "מגנטים ברמת הגולן",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b9bebd79-23d7-45ff-9f4e-e99fe410f34e",
+        "name": "גיא זגדון",
+        "phone": "526805909",
+        "email": "",
+        "supplier_type": "וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "116a5da8-a097-4376-99d4-18e43042f990",
+        "name": "דוד",
+        "phone": "549908566",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3fa39271-51f8-40d8-b884-327b79bf1711",
+        "name": "דודי",
+        "phone": "525296611",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7667de37-1bcf-46c9-aae2-0f0eea63383a",
+        "name": "דותן",
+        "phone": "502817626",
+        "email": "",
+        "supplier_type": "וידאו(קליפ מהיר)",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2ee4b813-3a88-4bae-af17-051e57af8eb4",
+        "name": "דן",
+        "phone": "526546532",
+        "email": "",
+        "supplier_type": "מגנטים+ בלוקים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7b09c113-a074-4ca2-af81-340536a84209",
+        "name": "דניאל",
+        "phone": "502515404",
+        "email": "",
+        "supplier_type": "שידור חי",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "af6f94ed-4d73-4dd8-a011-a9123146b684",
+        "name": "זאביק",
+        "phone": "538253534",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "480a3e65-4f2c-427f-87a6-5ccca61bb7e1",
+        "name": "חנה טייב",
+        "phone": "546558291",
+        "email": "",
+        "supplier_type": "סטילס",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "847fe178-a830-49f4-87ac-99c2f8743034",
+        "name": "ישראל",
+        "phone": "526879477",
+        "email": "",
+        "supplier_type": "עמדות מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "46b69550-ef1f-4eb8-995d-023100ecda20",
+        "name": "מאודי",
+        "phone": "584433527",
+        "email": "",
+        "supplier_type": "וידאו+ עריכה",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "07b98f31-1942-46f7-b689-b899d9186b8f",
+        "name": "מור מנגו",
+        "phone": "523958818",
+        "email": "",
+        "supplier_type": "קופסאת צילום",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "01704217-f87f-4758-abac-81be18e772d3",
+        "name": "מיכאל גלעדי",
+        "phone": "506475756",
+        "email": "",
+        "supplier_type": "סטילס בגולן",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "37867a3b-675e-4f51-909b-bc6dab7344d7",
+        "name": "יוסי זליגר",
+        "phone": "",
+        "email": "",
+        "supplier_type": "צילום סטילס",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "413c5151-2abe-4f87-be9c-96036101eedb",
+        "name": "מיקי לנגנטל",
+        "phone": "546644604",
+        "email": "",
+        "supplier_type": "וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "73d956b2-a2d1-4565-aaa5-9849743df325",
+        "name": "ניסן להט",
+        "phone": "0526425585",
+        "email": "",
+        "supplier_type": "שידור לייב",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "17ce60cb-5e07-4cb5-956c-c4df3a9185d4",
+        "name": "רעות",
+        "phone": "0526147581",
+        "email": "",
+        "supplier_type": "עריכת וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "11f53cee-c3d5-4c03-9310-36e7e4aadfe0",
+        "name": "אלי זינגר",
+        "phone": "0505988537",
+        "email": "",
+        "supplier_type": "צילום ועריכה- רמה גבוהה מאד",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5018d257-1ec8-454d-8f3b-8abe1e97af72",
+        "name": "רענן",
+        "phone": "0537524556",
+        "email": "",
+        "supplier_type": "צלם וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "457249b9-1833-40e9-935c-b2231671d164",
+        "name": "שניאור שיף",
+        "phone": "0525960011",
+        "email": "",
+        "supplier_type": "וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0fb510e4-6909-49b1-8f34-a3847cba6e6b",
+        "name": "אושרי מימון",
+        "phone": "544925098",
+        "email": "",
+        "supplier_type": "שחקן רחוב",
+        "category": "שחקנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "45575408-a546-4c6f-885b-3d88e20269c0",
+        "name": "אביב",
+        "phone": "546877866",
+        "email": "",
+        "supplier_type": "שירה בציבור",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6134d165-b59a-47e6-aca1-a33ee4f7cb68",
+        "name": "אודי",
+        "phone": "503041180",
+        "email": "",
+        "supplier_type": "ענק המתנפחים",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6052df9e-0fa9-4d4f-a8de-207236a6cf1e",
+        "name": "אלעד",
+        "phone": "544228029",
+        "email": "",
+        "supplier_type": "סדנאות(בישול ODT וכו')",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "996ccf29-33e6-4e5f-adb1-8c0664bddeb5",
+        "name": "אנה",
+        "phone": "508633641",
+        "email": "",
+        "supplier_type": "הרצאות חיים שפירא",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "53e3f33b-b717-41a0-bed7-2eb3f711700a",
+        "name": "ארי",
+        "phone": "50465188",
+        "email": "",
+        "supplier_type": "ריינג'רים גוש עציון",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a070b8b4-f0fd-4912-9e9f-63cecf31700a",
+        "name": "אריק",
+        "phone": "528485342",
+        "email": "",
+        "supplier_type": "שירת המונים",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8d9b8101-67bb-46bc-be36-353f140bda6b",
+        "name": "דני",
+        "phone": "545718893",
+        "email": "",
+        "supplier_type": "פלייבק תאטרון באר שבע",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7e226718-a741-465a-ba10-19bbbf26c63d",
+        "name": "הלל דודסון",
+        "phone": "526228268",
+        "email": "",
+        "supplier_type": "נגינה-צ'לו",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f7ad1dca-0126-4508-ae2b-13758dee0bb2",
+        "name": "חיים שפירא",
+        "phone": "548171259",
+        "email": "",
+        "supplier_type": "הרצאות",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f9de398e-f1e8-41d2-8d00-3fdd0e293cbb",
+        "name": "יאיר אליאב",
+        "phone": "547672678",
+        "email": "",
+        "supplier_type": "בית ספר שדה עפרה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ed4c08cc-941f-4c0b-85e1-fcf50118bb75",
+        "name": "יוחאי",
+        "phone": "544781029",
+        "email": "",
+        "supplier_type": "הרצאות עופר וינטר",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "31476977-75ad-44bf-9b24-fb9e4ecb76dc",
+        "name": "יוני רכטר",
+        "phone": "523445578",
+        "email": "",
+        "supplier_type": "",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e469724c-b687-44c7-8405-e81c7e030151",
+        "name": "יעקב-בומקה",
+        "phone": "549495199",
+        "email": "",
+        "supplier_type": "מעגל מתופיים/תיפוף המונים",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "76087146-c8d4-46b6-9dff-431bf00a1892",
+        "name": "משה",
+        "phone": "542662909",
+        "email": "",
+        "supplier_type": "רכבי ספארי",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2abdbb74-8e09-4c3f-88c9-524bc0039f51",
+        "name": "נגנית נבל",
+        "phone": "0507317773",
+        "email": "",
+        "supplier_type": "",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9fdfb9da-6234-48b3-8fe3-3499db90befe",
+        "name": "נועם רז",
+        "phone": "0528488559",
+        "email": "",
+        "supplier_type": "אומן פלסטלינה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "15cf4b27-1be6-4449-b9ae-f92d7b4fa650",
+        "name": "נורית שכטר",
+        "phone": "0526040957",
+        "email": "",
+        "supplier_type": "בניית משחקים + אפליקציה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a379cdae-22fc-4882-b3e1-015d5fc8c7c1",
+        "name": "עזרי טובי",
+        "phone": "0532449705",
+        "email": "",
+        "supplier_type": "עריכת סרטונים באותו יום",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a5f3fd31-80b7-46ac-b094-a9eed4f7fb1d",
+        "name": "צופיה",
+        "phone": "0586163799",
+        "email": "",
+        "supplier_type": "תרגום לצרפתית",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5b77481d-fb5b-4973-aa31-1beeb71c6062",
+        "name": "רוני",
+        "phone": "0522553364",
+        "email": "",
+        "supplier_type": "הופעות אריאל הורביץץ",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6569a50f-a111-4186-8e32-1e78f20754de",
+        "name": "שחר",
+        "phone": "0542339237",
+        "email": "",
+        "supplier_type": "טררם",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ef4db3b2-50ac-46fd-bbdd-2b04bad57018",
+        "name": "איציק",
+        "phone": "506927395",
+        "email": "",
+        "supplier_type": "מסעדת טרסה- בגין",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3830203e-9a4b-4f0c-89b5-7fd843b62c8d",
+        "name": "איתמר",
+        "phone": "523777250",
+        "email": "",
+        "supplier_type": "המתפרה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1e1749b0-a171-4e98-b52a-d72f405e652c",
+        "name": "אסף",
+        "phone": "02-6303609/0545392233",
+        "email": "",
+        "supplier_type": "החאן",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "52bb61af-2278-4c59-9a44-dd73515301c4",
+        "name": "אסף",
+        "phone": "542161323",
+        "email": "",
+        "supplier_type": "יקב גוש עציון",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "635f0f76-2218-4585-a484-ec85afa25fb8",
+        "name": "בטי",
+        "phone": "506419732",
+        "email": "",
+        "supplier_type": "מלון ורט ירושלים",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7e099e73-85c3-417a-b27e-bbf6b506fa09",
+        "name": "גבעת התחמושת",
+        "phone": "25697314",
+        "email": "",
+        "supplier_type": "",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f2925819-f124-49e0-a3d8-eaaf00aaae6e",
+        "name": "הילה",
+        "phone": "503820191",
+        "email": "",
+        "supplier_type": "ישרוטל",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "539176ee-b41e-499a-9140-8f01b2e6d392",
+        "name": "זאב",
+        "phone": "545414578",
+        "email": "",
+        "supplier_type": "מצודת דוד(מלון)",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5b0fc60b-b7d5-4ecc-b700-973f3f6c2763",
+        "name": "חוות שחרית",
+        "phone": "555570501",
+        "email": "",
+        "supplier_type": "",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "16903b60-2db3-4762-ae93-faacaab673e4",
+        "name": "חני",
+        "phone": "504204050",
+        "email": "",
+        "supplier_type": "מסעדת מונטיפיורי",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6829337b-d9ea-4198-85d4-6933a4bd7769",
+        "name": "טל",
+        "phone": "546111191",
+        "email": "",
+        "supplier_type": "היכל התרבות ירושלים",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "67fd1578-24aa-46cb-ad37-62098b72be3f",
+        "name": "טל",
+        "phone": "505602103",
+        "email": "",
+        "supplier_type": "מסעדת טרסה-בגין",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "980cb2e0-c8ac-479c-87f6-b9d297b44533",
+        "name": "טראסק תל אביב",
+        "phone": "36021319",
+        "email": "",
+        "supplier_type": "",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "636273ba-6056-4447-a494-99e787cdc0e6",
+        "name": "יעל",
+        "phone": "547909806",
+        "email": "",
+        "supplier_type": "היכל יד בנימין",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8a86a737-386c-4175-b414-6b6d9d4a29d9",
+        "name": "ליאת",
+        "phone": "506313389",
+        "email": "",
+        "supplier_type": "נפש בנפש",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9df1c9e9-6597-4edd-b9e6-c0837edad043",
+        "name": "ליאת",
+        "phone": "528391451",
+        "email": "",
+        "supplier_type": "מלון נוה אילן",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "537002a5-a331-445d-9d79-f3a812550a36",
+        "name": "לירון",
+        "phone": "546997767",
+        "email": "",
+        "supplier_type": "2C-עזריאלי",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6303ea56-ee45-408c-b802-0ddd1c890e9b",
+        "name": "מורן",
+        "phone": "544608924",
+        "email": "",
+        "supplier_type": "מוזיאון ארצות המקרא",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ad96d9b0-e7c9-4906-83f3-d81132d62792",
+        "name": "מושיק",
+        "phone": "502408215",
+        "email": "",
+        "supplier_type": "מסעדת קדמא ממילא",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e8d069c7-80b1-4679-bc2c-7814c959d68d",
+        "name": "מירב",
+        "phone": "542609691",
+        "email": "",
+        "supplier_type": "יקב ברקן",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fea062ba-e403-4ddc-bfdf-943e0aaa86b2",
+        "name": "מירי",
+        "phone": "528744033",
+        "email": "",
+        "supplier_type": "טכנודע חדרה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fa02938c-dc41-492d-aba1-22c1e641deae",
+        "name": "מלכי",
+        "phone": "585222662",
+        "email": "",
+        "supplier_type": "אש התורה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "217e3670-e50a-400c-8723-de57fc5a1b94",
+        "name": "בני",
+        "phone": "505222219",
+        "email": "",
+        "supplier_type": "קדמא",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "765b230a-7a15-4b0e-b023-b1378b541329",
+        "name": "עמית",
+        "phone": "545622999",
+        "email": "",
+        "supplier_type": "מסעדת מונטיפיורי",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d73dfe30-89d4-4cb9-8691-a276433d8580",
+        "name": "פיראס",
+        "phone": "0506419740",
+        "email": "",
+        "supplier_type": "מנהל אירועים וורט ירושלים",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "88c4a396-91c2-45a3-9cac-9af92fe2fde7",
+        "name": "קסניה",
+        "phone": "0549509014",
+        "email": "",
+        "supplier_type": "וולדורף אוסטוריה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "63870cd4-ae5b-4cab-a10a-a3af5f89ff73",
+        "name": "רחל",
+        "phone": "0528883982",
+        "email": "",
+        "supplier_type": "היכל התרבות פתח תקווה",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9dac1789-091b-45af-9ba2-ef9b88f9b7d1",
+        "name": "שלומי",
+        "phone": "0506371051",
+        "email": "",
+        "supplier_type": "חוות עמק איילון- מבוא חורון",
+        "category": "אולמות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fb14d553-99cb-475f-bb53-af0a4388f0d1",
+        "name": "איתי זוארץ",
+        "phone": "545420465",
+        "email": "",
+        "supplier_type": "יוני שרון",
+        "category": "אומנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c6aec1ef-29da-463b-b0c0-c1428e6120f9",
+        "name": "אלין",
+        "phone": "543060211",
+        "email": "",
+        "supplier_type": "סברס",
+        "category": "אומנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7f0d8be9-84a4-43f9-a6b2-b9d8e0a9b401",
+        "name": "אודי אולמן",
+        "phone": "504865800",
+        "email": "",
+        "supplier_type": "חזנות",
+        "category": "אומנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f292c29a-f3ae-44b4-9580-da5a05389e03",
+        "name": "ליאת",
+        "phone": "545343474",
+        "email": "",
+        "supplier_type": "אגוסטינה- קונדיטוריה במבשרת",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "82bac98a-75d6-46b0-9344-39a629bd664b",
+        "name": "אורי מלמד",
+        "phone": "549930490",
+        "email": "",
+        "supplier_type": "מנפיס- פודטראק",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0cca5ae7-91ff-4183-8424-b030ae6ec665",
+        "name": "אלירן",
+        "phone": "542166512",
+        "email": "",
+        "supplier_type": "קייאק פירות",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "cb0c499f-2fa4-4fce-aa2a-f910b6c1c926",
+        "name": "אלמוג",
+        "phone": "545366720",
+        "email": "",
+        "supplier_type": "בריסטה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f95e3695-8151-412d-b0ab-538c851093c3",
+        "name": "אסף",
+        "phone": "545999910",
+        "email": "",
+        "supplier_type": "קייטרינג- סזאן",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4580e11e-621f-4826-a765-59d1b331bc72",
+        "name": "אריאל/מתן",
+        "phone": "506775098/0524895477",
+        "email": "",
+        "supplier_type": "זיסלק-גלידה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a1c40f1c-63aa-4b4a-b98c-924826c48664",
+        "name": "בן",
+        "phone": "542081813",
+        "email": "",
+        "supplier_type": "שולחן שוק השניצליה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7b9ad5ea-3208-454a-8cf4-ffd589e9e38c",
+        "name": "דוד שיבולים",
+        "phone": "555565922",
+        "email": "",
+        "supplier_type": "קייטרינג בשרי",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1021ff8f-b269-4581-8dd2-51603d005e8b",
+        "name": "חוויה מתוקה",
+        "phone": "545816035",
+        "email": "",
+        "supplier_type": "דוכני מתוקים(קרפ, גלידה וכו",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5c7ba8fa-1830-4607-9a2c-b49c163098b9",
+        "name": "כהן חמוצים-שוק",
+        "phone": "26253456",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0c1f6a6e-77bf-4ae5-8bff-5a186041f0e2",
+        "name": "אלברט",
+        "phone": "545417864",
+        "email": "",
+        "supplier_type": "אוכל ארוז",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "cf7bf4d5-4cd0-4afc-b19e-9a7d9b9eb992",
+        "name": "כהן חמוציםג אולה",
+        "phone": "25383921",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "55f3c475-6d57-426a-b8d0-8d3f8c9d56a2",
+        "name": "נעמי",
+        "phone": "0559401122",
+        "email": "",
+        "supplier_type": "גריל בר מבשרת",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "eb9a36cd-2241-4be6-92ba-a02ff2753a2c",
+        "name": "עודד(של שושי)",
+        "phone": "0546520604",
+        "email": "",
+        "supplier_type": "יין",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9e1ce21b-7d2c-4d12-9a50-50f0d6551087",
+        "name": "עוזי",
+        "phone": "0506509603",
+        "email": "",
+        "supplier_type": "אוטו גלידה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2e48a226-604b-467d-b69a-b8fe2901a666",
+        "name": "עופר",
+        "phone": "0522671090",
+        "email": "",
+        "supplier_type": "סנדוויצים",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "177e2c80-06fa-41b6-8acf-eff9eed51511",
+        "name": "ענבל",
+        "phone": "0547770730",
+        "email": "",
+        "supplier_type": "שולחן שוק בגולן",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a3b24bc1-983c-439f-ac32-17870875be95",
+        "name": "מוגרבי",
+        "phone": "545571903",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3b0506f1-974d-47b9-9c7a-91b24de6cd29",
+        "name": "קרני חיטין",
+        "phone": "0526834377",
+        "email": "",
+        "supplier_type": "",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0e1f3915-af29-4747-a3fc-d7a26a7e686e",
+        "name": "רביד",
+        "phone": "0587000939",
+        "email": "",
+        "supplier_type": "מרבד גוש עציון",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c7f14eff-4eec-4445-a7f0-f6cc457d961d",
+        "name": "תמיר",
+        "phone": "0505443235",
+        "email": "",
+        "supplier_type": "בריסטה",
+        "category": "הסעדה",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "366e6e3b-17c8-438f-b123-73e6dd3d0d07",
+        "name": "נמרוד",
+        "phone": "0524843719",
+        "email": "",
+        "supplier_type": "פארק חבלים- TOP EL",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a7a02538-ddf0-4edc-b9a3-641964ffcf7c",
+        "name": "קרן",
+        "phone": "0523590618",
+        "email": "",
+        "supplier_type": "שחקנית עץ המוצצים",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "90f99977-ecc4-4965-a5a6-b47e757ac580",
+        "name": "רעיה",
+        "phone": "0528831804",
+        "email": "",
+        "supplier_type": "צילום במסך ירוק",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "31e38f1b-274c-4f8d-8681-60023550addc",
+        "name": "שני",
+        "phone": "0508335796",
+        "email": "",
+        "supplier_type": "יצירה מהטבע",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8c20d1de-5388-46f9-b66d-3e19d85a7029",
+        "name": "שרון אודי",
+        "phone": "0545544122",
+        "email": "",
+        "supplier_type": "מתנפחים",
+        "category": "ילדים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5b9f36a6-aeb6-4386-83df-1a7d3e02fafc",
+        "name": "אריאל",
+        "phone": "528847522",
+        "email": "",
+        "supplier_type": "506555226",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e3e9c9b0-407b-428c-a58c-470abe1cefd8",
+        "name": "דודו",
+        "phone": "506555226",
+        "email": "",
+        "supplier_type": "הסעות-כנפי יונה",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "29feaee8-59b5-47b3-873d-5cd06eab7a62",
+        "name": "חיה פרידמן",
+        "phone": "584227007",
+        "email": "",
+        "supplier_type": "קורן ספרים",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "feebe7c2-2bce-4085-a04c-91669a70700a",
+        "name": "יניב אילן",
+        "phone": "523089346",
+        "email": "",
+        "supplier_type": "תכנות ופריצות פייסבוק",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f6d9eed5-d5d4-4c0b-a907-e5316c1be4fc",
+        "name": "ישי חמו",
+        "phone": "545845830",
+        "email": "",
+        "supplier_type": "קריינות",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6480a2bc-0577-4481-8154-aabcf379ee90",
+        "name": "כפיר",
+        "phone": "509245459",
+        "email": "",
+        "supplier_type": "הובלות קטנות",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "feffd811-2bd9-40b1-998b-0d96bfb4c7d8",
+        "name": "מאיר",
+        "phone": "585533888",
+        "email": "",
+        "supplier_type": "תרגום לצרפתית",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a4bce5a9-73e2-45ef-a577-fe50202f06c1",
+        "name": "ואדים",
+        "phone": "506860811",
+        "email": "",
+        "supplier_type": "מוניות בכל רחבי הארץ",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "186df66a-ee6e-4b03-a6fc-2db55d33f098",
+        "name": "מיכאל",
+        "phone": "523272587",
+        "email": "",
+        "supplier_type": "קריינות באנגלית",
+        "category": "כללי",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "91d1af07-4892-4c46-a26a-b7c501ad8496",
+        "name": "אהרון כהן",
+        "phone": "556116444",
+        "email": "",
+        "supplier_type": "אקספרס אריזות(ספק)",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "13e1d529-63fc-43ca-b34a-3b22b62f866f",
+        "name": "אופק",
+        "phone": "26425701",
+        "email": "",
+        "supplier_type": "קופסאות תה",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "782a01ee-fce4-4ef1-8214-21a67be58a93",
+        "name": "אורי סמייל",
+        "phone": "544803520",
+        "email": "",
+        "supplier_type": "ריחניות לרכב",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f6ac49f1-508e-4590-8209-a43766eb23ae",
+        "name": "אסי",
+        "phone": "543083003",
+        "email": "",
+        "supplier_type": "הדפסה על כוסות",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "85615afc-7965-4d50-bd67-09afc2c8ff7a",
+        "name": "בזק",
+        "phone": "542193422",
+        "email": "",
+        "supplier_type": "",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f9f102b2-4fa6-4139-aea8-dedb42c0530b",
+        "name": "ביגוד",
+        "phone": "26339639",
+        "email": "",
+        "supplier_type": "",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "cb920cc1-1a01-4e5f-937d-2f322d8218be",
+        "name": "ג'אקו גוש עציון",
+        "phone": "505853377",
+        "email": "",
+        "supplier_type": "מוצרי קדם",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0c783c47-f8a9-4ecf-b31f-ba82b37e1453",
+        "name": "גימיקים",
+        "phone": "546931112",
+        "email": "",
+        "supplier_type": "שוקולד ארומה",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3b2ffefd-151a-40fc-abbb-d5be63ee30ba",
+        "name": "דורון",
+        "phone": "525208045",
+        "email": "",
+        "supplier_type": "סיכות מתכת/מגנים וכו",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8053dc26-7916-4cd6-a4cd-254b71ba31c3",
+        "name": "דורית",
+        "phone": "544532411",
+        "email": "",
+        "supplier_type": "יודאיקה",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0a20ccf2-5b31-42da-ab1b-6db3f3d0ccf7",
+        "name": "שלומי",
+        "phone": "544897406",
+        "email": "",
+        "supplier_type": "קופסאות מתכת-דקובוקס",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9630f274-102e-4a26-9abc-8de85b10c7c7",
+        "name": "ואדים",
+        "phone": "544443194",
+        "email": "",
+        "supplier_type": "מדבקות לרכב",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f45db0d7-8fbd-415a-898b-d1d765d73d41",
+        "name": "יוני",
+        "phone": "523696457",
+        "email": "",
+        "supplier_type": "חולצות",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "cbf948f0-bbc6-4c12-888a-ecfe1c286768",
+        "name": "יוסי",
+        "phone": "524370200",
+        "email": "",
+        "supplier_type": "פולימיל כרטיסים",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "88e2717a-5efb-4266-a701-33e914c09537",
+        "name": "מירי-מילמן",
+        "phone": "544274909",
+        "email": "",
+        "supplier_type": "מגנים, בניה בעץ וכו",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4041a9e6-c33f-4349-99f9-a3c936b0fab5",
+        "name": "נעמה",
+        "phone": "0544610368",
+        "email": "",
+        "supplier_type": "סלים מהשוק",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0c6dec0a-7ace-4db8-8a5f-0ea3da1db32b",
+        "name": "קארין",
+        "phone": "0535413101",
+        "email": "",
+        "supplier_type": "מיתוגון",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0d460f46-405b-40a7-bc54-e9bdd39ae475",
+        "name": "רום",
+        "phone": "0545455400",
+        "email": "",
+        "supplier_type": "כרטיסים עם פס מגנטי ובלי",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4d99cf82-0b69-4951-a348-3415af7be43f",
+        "name": "רננה",
+        "phone": "0502518523",
+        "email": "",
+        "supplier_type": "על המשקל",
+        "category": "מתנות",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ff3e88ef-8a0d-4ac8-bfdf-a69ce3ad89db",
+        "name": "אורית",
+        "phone": "507219389",
+        "email": "",
+        "supplier_type": "משתלת אבו גוש",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e46678ea-d09b-4fc4-9701-f4743ed6f8b6",
+        "name": "אלכס",
+        "phone": "547700196",
+        "email": "",
+        "supplier_type": "עיצוב במה",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ded62091-ea85-42c6-8def-93ce48bfdc93",
+        "name": "בלונים לחתונות",
+        "phone": "528850132",
+        "email": "",
+        "supplier_type": "",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5da665f7-d260-4f77-8dc2-8378989b39ed",
+        "name": "הודיה",
+        "phone": "586535802",
+        "email": "",
+        "supplier_type": "פרחים",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8e3984c4-bf27-4742-8dde-cfe3ff1f7c85",
+        "name": "טוביה לוי",
+        "phone": "544308849",
+        "email": "",
+        "supplier_type": "בינוי תערוכות",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0b08665e-6692-4fee-a0d4-103cfc0b7459",
+        "name": "יובל",
+        "phone": "523451517",
+        "email": "",
+        "supplier_type": "עיצוב במה",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7d837b6a-cb7e-4bf1-aab6-3155f1ff3866",
+        "name": "לירז",
+        "phone": "544730344",
+        "email": "",
+        "supplier_type": "פרחים יעקבסון",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b2d80ea8-7e24-414e-97c1-e1fac291de10",
+        "name": "מושיק",
+        "phone": "506670560",
+        "email": "",
+        "supplier_type": "עיצוב במה",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "37c03e56-43d9-4e45-8c44-39621121baf2",
+        "name": "פרחי ירושלים",
+        "phone": "25380768",
+        "email": "",
+        "supplier_type": "",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "cda26787-5d27-4b0e-8da9-f2150c462517",
+        "name": "רויטל",
+        "phone": "0544272057",
+        "email": "",
+        "supplier_type": "עיצובים לאירוע עם קונספט",
+        "category": "עיצוב",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "25fd8c46-59e6-4f71-9dee-643dc8254eec",
+        "name": "אורי",
+        "phone": "544825217",
+        "email": "",
+        "supplier_type": "קני ציור",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fc0a80ea-4860-4a83-a22f-bb5ec8d76ee6",
+        "name": "אופיר",
+        "phone": "544814042",
+        "email": "",
+        "supplier_type": "הצללות ודגלים סינים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e0d5631a-1c4d-42a6-b4ae-0caf0b982dd0",
+        "name": "איציק",
+        "phone": "504050406",
+        "email": "",
+        "supplier_type": "אוהב ציון",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "0cd0932c-99b0-474f-b90e-2dab90a1efb1",
+        "name": "איתמר",
+        "phone": "545724052",
+        "email": "",
+        "supplier_type": "הגברה בצפון",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a8598e7f-fafc-4da7-b4b1-31fde639d53e",
+        "name": "אריאל",
+        "phone": "548933122",
+        "email": "",
+        "supplier_type": "מיתוג בירושלים-ואזנה",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1922908b-e49f-479a-a80f-29d348631be4",
+        "name": "ברק",
+        "phone": "504400333",
+        "email": "",
+        "supplier_type": "במות/מחסומים וכו",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e67c3b1e-f7b1-42cc-8ec7-9bec730b736a",
+        "name": "חיים פרידמן",
+        "phone": "525400544",
+        "email": "",
+        "supplier_type": "תאורה והגברה",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fa767020-6d89-4807-b83d-6fe49539167e",
+        "name": "חלי",
+        "phone": "524202611",
+        "email": "",
+        "supplier_type": "שירותים כימים-שירותיון",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "4c9de5f4-fac3-4788-9ee1-6e024a18bdcf",
+        "name": "יהודה",
+        "phone": "36341175",
+        "email": "",
+        "supplier_type": "מכשירי קשר ומטפים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "635f93b4-74ac-4f68-b99f-02f3624fa1db",
+        "name": "יוני",
+        "phone": "548332320",
+        "email": "",
+        "supplier_type": "טלפרומטר",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "28fdd918-1128-43a0-9ba4-701a6b322169",
+        "name": "יעיש",
+        "phone": "526720175",
+        "email": "",
+        "supplier_type": "שירותים/גנרטורים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9d05f96a-a9ba-4917-b1d7-93cba0b4dc1e",
+        "name": "יפתח",
+        "phone": "548042330",
+        "email": "",
+        "supplier_type": "הצללות",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "3ce214a3-5c8b-4530-9079-c69a4b010876",
+        "name": "נעמי",
+        "phone": "39619538",
+        "email": "",
+        "supplier_type": "כליף אירועים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "5509e9ac-e10a-4847-b311-7e57d8f4b7e0",
+        "name": "מוטי",
+        "phone": "542464695",
+        "email": "",
+        "supplier_type": "מטפים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ab4d1ca8-d4a9-415b-b71b-2a31440f5ba5",
+        "name": "נטלי דניאל",
+        "phone": "0779151155",
+        "email": "",
+        "supplier_type": "מפות+ מפיות",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "daec6dc8-1cbd-417c-af96-32716edc92b6",
+        "name": "סרגיי",
+        "phone": "0547577358",
+        "email": "",
+        "supplier_type": "הגברה קטנה",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "80a81c0b-c9b3-4f29-9e53-25b45589d4e1",
+        "name": "שגעון של שולחן",
+        "phone": "0526790259",
+        "email": "",
+        "supplier_type": "",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "468dca99-ea50-4095-85ef-6ed538724eb9",
+        "name": "שמעון גרוס",
+        "phone": "0505286686",
+        "email": "",
+        "supplier_type": "מכשירי קשר ומטפים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "add7ab58-951b-4ba9-bcc4-d2a849322f9a",
+        "name": "שרגאי",
+        "phone": "039229106",
+        "email": "",
+        "supplier_type": "דגלים",
+        "category": "ציוד",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "38dbe0ac-cf0c-47c4-a9f3-279116232c9b",
+        "name": "אברהם",
+        "phone": "547599923",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "94b3b9c4-31c8-4b88-bcfe-4a487127c022",
+        "name": "אורן חיים",
+        "phone": "507118388",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e89a6240-a4d5-4108-8192-f3f6dea80cfb",
+        "name": "בניה",
+        "phone": "584964154",
+        "email": "",
+        "supplier_type": "מגנטים ברמת הגולן",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e22602ab-82ca-4825-8ccf-345c4e15727f",
+        "name": "גיא זגדון",
+        "phone": "526805909",
+        "email": "",
+        "supplier_type": "וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "1d327d6f-6305-49a8-ac57-5f0af44781ea",
+        "name": "דוד",
+        "phone": "549908566",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d4efed60-7124-4ffa-959c-34fb980f5abc",
+        "name": "דודי",
+        "phone": "525296611",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "14efb998-6f6a-40fe-939c-99a0290e7335",
+        "name": "דותן",
+        "phone": "502817626",
+        "email": "",
+        "supplier_type": "וידאו(קליפ מהיר)",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "931a3699-9f53-4a39-89be-9ba9f55063cb",
+        "name": "דן",
+        "phone": "526546532",
+        "email": "",
+        "supplier_type": "מגנטים+ בלוקים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "6b2f24f5-c65b-4282-b0a5-a0e34cb54903",
+        "name": "דניאל",
+        "phone": "502515404",
+        "email": "",
+        "supplier_type": "שידור חי",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "497715d0-c420-4159-8eab-2678bb98d845",
+        "name": "זאביק",
+        "phone": "538253534",
+        "email": "",
+        "supplier_type": "מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "431ce4f0-900e-4098-a487-eb3ef228c2ea",
+        "name": "חנה טייב",
+        "phone": "546558291",
+        "email": "",
+        "supplier_type": "סטילס",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7569f6e1-b306-4229-b402-6296c7130a6a",
+        "name": "ישראל",
+        "phone": "526879477",
+        "email": "",
+        "supplier_type": "עמדות מגנטים",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "a8f17897-0ccd-4339-bb01-0d72fec784af",
+        "name": "מאודי",
+        "phone": "584433527",
+        "email": "",
+        "supplier_type": "וידאו+ עריכה",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7dec79f7-ede8-4812-8df0-98ba16431e17",
+        "name": "מור מנגו",
+        "phone": "523958818",
+        "email": "",
+        "supplier_type": "קופסאת צילום",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "767a35c9-6b89-4580-ae22-c638196de1f6",
+        "name": "מיכאל גלעדי",
+        "phone": "506475756",
+        "email": "",
+        "supplier_type": "סטילס בגולן",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "372b9f25-e704-40c1-a836-e5de435075c9",
+        "name": "יוסי זליגר",
+        "phone": "",
+        "email": "",
+        "supplier_type": "צילום סטילס",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "211545ec-e1dd-476b-97ed-11821a362c01",
+        "name": "מיקי לנגנטל",
+        "phone": "546644604",
+        "email": "",
+        "supplier_type": "וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "02a53b0c-717b-4432-bd22-564999cd0068",
+        "name": "ניסן להט",
+        "phone": "0526425585",
+        "email": "",
+        "supplier_type": "שידור לייב",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ef8c35d4-ea93-483d-a2c7-ce70123d8485",
+        "name": "רעות",
+        "phone": "0526147581",
+        "email": "",
+        "supplier_type": "עריכת וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "488076c9-b0e7-41d9-a8a2-97d24665f149",
+        "name": "אלי זינגר",
+        "phone": "0505988537",
+        "email": "",
+        "supplier_type": "צילום ועריכה- רמה גבוהה מאד",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "fe07a923-f7d5-4a46-9f39-fb67fd5f3f95",
+        "name": "רענן",
+        "phone": "0537524556",
+        "email": "",
+        "supplier_type": "צלם וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ca63bbcd-b979-46b7-a39a-dcf42e1e01fb",
+        "name": "שניאור שיף",
+        "phone": "0525960011",
+        "email": "",
+        "supplier_type": "וידאו",
+        "category": "צילום",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "8e16fc80-57ec-4799-9d91-9ac104eab9e4",
+        "name": "אושרי מימון",
+        "phone": "544925098",
+        "email": "",
+        "supplier_type": "שחקן רחוב",
+        "category": "שחקנים",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "75d6126f-8112-4b7a-b9a1-b7adb244f65e",
+        "name": "אביב",
+        "phone": "546877866",
+        "email": "",
+        "supplier_type": "שירה בציבור",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "2ac60c1b-e357-43e4-809e-29368d64c853",
+        "name": "אודי",
+        "phone": "503041180",
+        "email": "",
+        "supplier_type": "ענק המתנפחים",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e243963b-a1a1-4c05-a028-f8b574d20dca",
+        "name": "אלעד",
+        "phone": "544228029",
+        "email": "",
+        "supplier_type": "סדנאות(בישול ODT וכו')",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e635bdbf-2403-4760-b453-6865e805fa55",
+        "name": "אנה",
+        "phone": "508633641",
+        "email": "",
+        "supplier_type": "הרצאות חיים שפירא",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "e1b7affe-368c-48c2-aaa2-4e2cc93e1605",
+        "name": "ארי",
+        "phone": "50465188",
+        "email": "",
+        "supplier_type": "ריינג'רים גוש עציון",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c86f9221-6655-4afa-9bdf-e46526fcaa69",
+        "name": "אריק",
+        "phone": "528485342",
+        "email": "",
+        "supplier_type": "שירת המונים",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "611dc3bb-a5b3-42ca-be56-c32a2d561a35",
+        "name": "דני",
+        "phone": "545718893",
+        "email": "",
+        "supplier_type": "פלייבק תאטרון באר שבע",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "475944b3-663e-448d-b82c-380e416e8c51",
+        "name": "הלל דודסון",
+        "phone": "526228268",
+        "email": "",
+        "supplier_type": "נגינה-צ'לו",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "ad8f23b6-ec93-4142-a6a6-65b2aa7c5871",
+        "name": "חיים שפירא",
+        "phone": "548171259",
+        "email": "",
+        "supplier_type": "הרצאות",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "69f470a4-3757-4d47-8d44-d2428faff060",
+        "name": "יאיר אליאב",
+        "phone": "547672678",
+        "email": "",
+        "supplier_type": "בית ספר שדה עפרה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "d8917238-a38c-428f-90cc-99861109ae15",
+        "name": "יוחאי",
+        "phone": "544781029",
+        "email": "",
+        "supplier_type": "הרצאות עופר וינטר",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "db079730-c394-4ee4-8f33-82a04d42d5e5",
+        "name": "יוני רכטר",
+        "phone": "523445578",
+        "email": "",
+        "supplier_type": "",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9e671c1f-7ef3-4347-91eb-111491c9c0fa",
+        "name": "יעקב-בומקה",
+        "phone": "549495199",
+        "email": "",
+        "supplier_type": "מעגל מתופיים/תיפוף המונים",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "bc07ad5e-2ebc-408b-961a-61fbccb5e745",
+        "name": "משה",
+        "phone": "542662909",
+        "email": "",
+        "supplier_type": "רכבי ספארי",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "7bba46e4-9651-44d6-a748-dba4bf075545",
+        "name": "נגנית נבל",
+        "phone": "0507317773",
+        "email": "",
+        "supplier_type": "",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b3fb0462-929c-4533-ba9e-7b92ec210ce0",
+        "name": "נועם רז",
+        "phone": "0528488559",
+        "email": "",
+        "supplier_type": "אומן פלסטלינה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b7f8780b-e8ea-419d-9e75-bad43cda7159",
+        "name": "נורית שכטר",
+        "phone": "0526040957",
+        "email": "",
+        "supplier_type": "בניית משחקים + אפליקציה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "c2874077-5d53-4287-aaf8-af1a44845edd",
+        "name": "נעמי",
+        "phone": "0527632926",
+        "email": "",
+        "supplier_type": "אומנית חול",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9898a52c-2c9f-43cd-b36f-596ecc8c0c2a",
+        "name": "עזרי טובי",
+        "phone": "0532449705",
+        "email": "",
+        "supplier_type": "עריכת סרטונים באותו יום",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9235fee5-7bb8-41c5-9ee8-1d2df4410149",
+        "name": "צופיה",
+        "phone": "0586163799",
+        "email": "",
+        "supplier_type": "תרגום לצרפתית",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "b6354259-7152-46d8-8c36-188549dec151",
+        "name": "רום",
+        "phone": "0505877784",
+        "email": "",
+        "supplier_type": "משחקים בשוק מחנה יהודה",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "9192b61a-19f8-4fca-9a30-ac63f6ca324d",
+        "name": "רוני",
+        "phone": "0522553364",
+        "email": "",
+        "supplier_type": "הופעות אריאל הורביץץ",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    },
+    {
+        "id": "f851b508-cbab-447f-9172-ff310537d08b",
+        "name": "שחר",
+        "phone": "0542339237",
+        "email": "",
+        "supplier_type": "טררם",
+        "category": "תוכן",
+        "notes": "",
+        "created_date": "22/12/25"
+    }
+]

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הודעות | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <style>
+        .modal { display: none; position: fixed; z-index: 10000; right: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 50px auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close { font-size: 2rem; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .message-item { background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e6e9ef; border-right: 4px solid var(--primary); }
+        .message-item.unread { background: #f0f7ff; border-right-color: #0073ea; }
+        .message-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .message-meta { color: #666; font-size: 0.85rem; }
+        .message-content { margin-top: 10px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+            <div class="users-dropdown">
+                {% for uid, info in sidebar_users.items() %}
+                <a href="/all_clients?user={{ uid }}" class="user-sub-link">• {{ info.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/finance" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/messages" class="nav-link active">💬 הודעות</a>
+        <a href="/forms" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        <a href="/admin/dashboard" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            דוח מנהלים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 style="margin: 0;">הודעות</h1>
+            <button onclick="openSendModal()" class="btn btn-success">+ שלח הודעה חדשה</button>
+        </div>
+
+        <div class="card">
+            {% for message in messages %}
+            <div class="message-item {% if not message.read and message.to_user == current_user.id %}unread{% endif %}">
+                <div class="message-header">
+                    <div>
+                        <strong>
+                            {% if message.from_user in users %}
+                                מ: {{ users[message.from_user].name }}
+                            {% else %}
+                                מ: משתמש לא ידוע
+                            {% endif %}
+                        </strong>
+                        {% if message.to_user in users %}
+                            → {{ users[message.to_user].name }}
+                        {% endif %}
+                    </div>
+                    <div class="message-meta">{{ message.created_date }}</div>
+                </div>
+                {% if message.subject %}
+                <div><strong>נושא:</strong> {{ message.subject }}</div>
+                {% endif %}
+                {% if message.client_id %}
+                <div class="message-meta">לקוח: 
+                    <a href="/client/{{ message.client_id }}">צפה בלקוח</a>
+                </div>
+                {% endif %}
+                <div class="message-content">{{ message.content }}</div>
+                {% if message.to_user == current_user.id and not message.read %}
+                <form action="/mark_message_read/{{ message.id }}" method="POST" style="display: inline; margin-top: 10px;">
+                    <button type="submit" class="btn" style="padding: 5px 10px; font-size: 0.85rem;">סימון כנקרא</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if not messages %}
+            <div style="text-align: center; padding: 40px; color: #999;">אין הודעות עדיין. שלח הודעה ראשונה באמצעות הכפתור למעלה.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal לשליחת הודעה -->
+    <div id="sendModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>שלח הודעה חדשה</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="messageForm" method="POST" action="/send_message">
+                <div class="form-group">
+                    <label>אל</label>
+                    <select name="to_user" required>
+                        <option value="">בחר נמען</option>
+                        {% for uid, info in users.items() %}
+                            {% if uid != current_user.id %}
+                            <option value="{{ uid }}">{{ info.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>נושא</label>
+                    <input type="text" name="subject">
+                </div>
+                <div class="form-group">
+                    <label>תוכן ההודעה *</label>
+                    <textarea name="content" rows="6" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>לקוח (אופציונלי - לחיבור למשימה/פרויקט)</label>
+                    <select name="client_id" id="clientSelect" onchange="loadClientProjects()">
+                        <option value="">ללא לקוח</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" id="projectGroup" style="display: none;">
+                    <label>פרויקט (אופציונלי)</label>
+                    <select name="project_id" id="projectSelect">
+                        <option value="">ללא פרויקט</option>
+                    </select>
+                </div>
+                <div class="form-group" id="taskGroup" style="display: none;">
+                    <label>משימה (אופציונלי)</label>
+                    <select name="task_id" id="taskSelect">
+                        <option value="">ללא משימה</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeModal()" class="btn" style="background: #6c757d;">ביטול</button>
+                    <button type="submit" class="btn">שלח</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const clientsData = {{ clients|tojson|safe }};
+        
+        function openSendModal() {
+            document.getElementById('messageForm').reset();
+            document.getElementById('projectGroup').style.display = 'none';
+            document.getElementById('taskGroup').style.display = 'none';
+            document.getElementById('sendModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('sendModal').style.display = 'none';
+        }
+        
+        function loadClientProjects() {
+            const clientId = document.getElementById('clientSelect').value;
+            const projectSelect = document.getElementById('projectSelect');
+            const taskSelect = document.getElementById('taskSelect');
+            
+            if (!clientId) {
+                document.getElementById('projectGroup').style.display = 'none';
+                document.getElementById('taskGroup').style.display = 'none';
+                return;
+            }
+            
+            const client = clientsData.find(c => c.id === clientId);
+            if (client && client.projects) {
+                projectSelect.innerHTML = '<option value="">ללא פרויקט</option>';
+                client.projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.title;
+                    projectSelect.appendChild(option);
+                });
+                document.getElementById('projectGroup').style.display = 'block';
+                loadProjectTasks();
+            } else {
+                document.getElementById('projectGroup').style.display = 'none';
+                document.getElementById('taskGroup').style.display = 'none';
+            }
+        }
+        
+        function loadProjectTasks() {
+            const clientId = document.getElementById('clientSelect').value;
+            const projectId = document.getElementById('projectSelect').value;
+            const taskSelect = document.getElementById('taskSelect');
+            
+            if (!projectId || !clientId) {
+                document.getElementById('taskGroup').style.display = 'none';
+                return;
+            }
+            
+            const client = clientsData.find(c => c.id === clientId);
+            if (client) {
+                const project = client.projects?.find(p => p.id === projectId);
+                if (project && project.tasks) {
+                    taskSelect.innerHTML = '<option value="">ללא משימה</option>';
+                    project.tasks.forEach(task => {
+                        const option = document.createElement('option');
+                        option.value = task.id;
+                        option.textContent = task.title;
+                        taskSelect.appendChild(option);
+                    });
+                    document.getElementById('taskGroup').style.display = 'block';
+                } else {
+                    document.getElementById('taskGroup').style.display = 'none';
+                }
+            }
+        }
+        
+        document.getElementById('projectSelect').onchange = loadProjectTasks;
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('sendModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
+

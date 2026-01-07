@@ -1,0 +1,30 @@
+[
+    {
+        "id": "ac92f6e9-b254-45c1-ab64-860354a3fe20",
+        "token": "6d11da80-e345-43f5-af38-86af458195c8",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "title": "גרפיקה מועצת בנימין",
+        "fields": [
+            {
+                "id": "field_1766479469191_3xhvclqmr",
+                "type": "text",
+                "label": "שם המשימה",
+                "required": false
+            },
+            {
+                "id": "field_1766479469191_wgyepzryu",
+                "type": "textarea",
+                "label": "מה רוצים שיהיה?",
+                "required": false,
+                "max_length": 255
+            },
+            {
+                "id": "field_1766479469191_hx0lqopaf",
+                "type": "file",
+                "label": "תתעלו לוגו",
+                "required": false
+            }
+        ],
+        "created_date": "23/12/25 10:44"
+    }
+]

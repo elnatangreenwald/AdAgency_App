@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>אירועים | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <style>
+        .event-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            border: none;
+            border-right: 4px solid var(--primary); 
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+        .event-card:hover { 
+            box-shadow: var(--shadow-md); 
+            transform: translateY(-2px); 
+        }
+        .event-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; }
+        .event-title { font-size: 1.3rem; font-weight: bold; color: #292f4c; margin: 0; }
+        .event-meta { display: flex; gap: 20px; flex-wrap: wrap; color: #666; font-size: 0.9rem; }
+        .event-type-badge { padding: 5px 12px; border-radius: 15px; font-size: 0.85rem; font-weight: bold; }
+        .type-כנס { background: #e1e6ff; color: #0073ea; }
+        .type-חתונה { background: #ffe1e6; color: #d66b74; }
+        .type-השקה { background: #e6ffe6; color: #00c875; }
+        
+        /* סוויצ'ר אירוע פעיל */
+        .event-active-toggle {
+            display: flex !important;
+            align-items: center;
+            gap: 12px;
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            z-index: 100;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        
+        .event-active-toggle-label {
+            font-family: 'Heebo', sans-serif;
+            font-weight: 400;
+            font-size: 0.95rem;
+            color: #043841;
+            margin: 0;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            cursor: pointer;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #14a675;
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .toggle-switch input:focus + .toggle-slider {
+            box-shadow: 0 0 0 3px rgba(20, 166, 117, 0.1);
+        }
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 10000; 
+            right: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content { 
+            background: white; 
+            margin: 50px auto; 
+            padding: 30px; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 600px; 
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e6e9ef;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #292f4c;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .close { 
+            font-size: 2rem; 
+            cursor: pointer;
+            color: #64748b;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .close:hover {
+            color: #292f4c;
+        }
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600;
+            color: #292f4c;
+            font-size: 0.95rem;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e6e9ef;
+            border-radius: 12px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            color: #292f4c;
+            background: white;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="date"]:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(61, 129, 122, 0.1);
+        }
+        .form-group input[type="text"]::placeholder {
+            color: #94a3b8;
+        }
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2349381f' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 16px center;
+            padding-right: 40px;
+        }
+        .form-group select option {
+            padding: 10px;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e6e9ef;
+        }
+        .modal-footer .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-family: 'Heebo', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .modal-footer .btn[type="button"] {
+            background: #e6e9ef;
+            color: #64748b;
+        }
+        .modal-footer .btn[type="button"]:hover {
+            background: #cbd5e1;
+            color: #475569;
+        }
+        .modal-footer .btn[type="submit"] {
+            background: var(--accent-lime);
+            color: #292f4c;
+        }
+        .modal-footer .btn[type="submit"]:hover {
+            background: #a3d477;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(184, 233, 148, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+            <div class="users-dropdown">
+                {% for uid, info in sidebar_users.items() %}
+                <a href="/all_clients?user={{ uid }}" class="user-sub-link">• {{ info.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/finance" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/forms" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        <a href="/admin/dashboard" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            דוח מנהלים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 style="margin: 0;">ניהול אירועים</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                {% if current_user.id == 'admin' or user_role in ['מנהל', 'אדמין'] %}
+                <a href="/events_archive" class="btn" style="background: #64748b;">ארכיון אירועים</a>
+                {% endif %}
+                <button onclick="openAddModal()" class="btn btn-success">+ צור אירוע חדש</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top: 0;">אירועים פתוחים</h2>
+            {% for event in events %}
+            <div class="event-card">
+                {% if current_user.id == 'admin' or user_role in ['מנהל', 'אדמין'] %}
+                <div class="event-active-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="eventActiveToggle{{ event.id }}" {% if not event.get('archived', False) %}checked{% endif %} onchange="toggleEventActive('{{ event.id }}', this)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="event-active-toggle-label">אירוע פעיל</span>
+                </div>
+                {% endif %}
+                <div class="event-header">
+                    <div style="flex: 1;">
+                        <h3 class="event-title">{{ event.name }}</h3>
+                        <div class="event-meta">
+                            <span><strong>לקוח:</strong> {{ event.client_name }}</span>
+                            {% if event.date %}<span><strong>תאריך:</strong> {{ event.date }}</span>{% endif %}
+                            {% if event.location %}<span><strong>מיקום:</strong> {{ event.location }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <span class="event-type-badge type-{{ event.event_type }}">{{ event.event_type }}</span>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <a href="/event/{{ event.id }}" class="btn">פתח אירוע</a>
+                </div>
+            </div>
+            {% endfor %}
+            {% if not events %}
+            <div style="text-align: center; padding: 40px; color: #999;">אין אירועים פתוחים. צור אירוע ראשון באמצעות הכפתור למעלה.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal ליצירת אירוע חדש -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>צור אירוע חדש</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form method="POST" action="/add_event">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-group">
+                    <label>שם האירוע *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>לקוח *</label>
+                    <select name="client_id" required>
+                        <option value="">בחר לקוח</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>סוג אירוע *</label>
+                    <select name="event_type" required>
+                        <option value="">בחר סוג אירוע</option>
+                        <option value="כנס">כנס</option>
+                        <option value="חתונה">חתונה</option>
+                        <option value="השקה">השקה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>תאריך האירוע *</label>
+                    <input type="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label>מיקום</label>
+                    <input type="text" name="location" placeholder="כתובת/אולם">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn">ביטול</button>
+                    <button type="submit" class="btn">צור אירוע</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAddModal() {
+            document.getElementById('eventModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('eventModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('eventModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        // פונקציה לעדכון סטטוס פעיל/לא פעיל של אירוע
+        async function toggleEventActive(eventId, checkbox) {
+            const isActive = checkbox.checked;
+            
+            try {
+                const response = await fetch(`/toggle_event_active/${eventId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active: isActive })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // רענון הדף כדי להציג את השינויים
+                    window.location.reload();
+                } else {
+                    // אם הייתה שגיאה, החזר את הסוויצ'ר למצב הקודם
+                    checkbox.checked = !isActive;
+                    alert('שגיאה בעדכון הסטטוס: ' + (data.error || 'שגיאה לא ידועה'));
+                }
+            } catch (error) {
+                console.error('Error toggling event active status:', error);
+                checkbox.checked = !isActive;
+                alert('שגיאה בעדכון הסטטוס');
+            }
+        }
+    </script>
+    {% include '_chat_widget.html' %}
+</body>
+</html>
+

@@ -1,0 +1,180 @@
+[
+    {
+        "id": "91f09ba9-5b78-4bfd-9cd2-8bd7691fa914",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "תיק לקוח",
+        "content": "מה נשמע?",
+        "project_id": "4644db53-42cc-40e4-b83b-d928883d47e6",
+        "task_id": "37fde067-c820-48fb-bead-d389fc97651c",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "created_date": "22/12/25 16:36",
+        "read": true
+    },
+    {
+        "id": "e811795c-0caa-4e48-bd51-29d949487cc7",
+        "from_user": "admin",
+        "to_user": "NERYA",
+        "subject": "",
+        "content": "מה קורה?",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "24/12/25 09:34",
+        "read": false
+    },
+    {
+        "id": "b057f59c-4d43-4431-802f-c728131ccf26",
+        "from_user": "admin",
+        "to_user": "NERYA",
+        "subject": "",
+        "content": "",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "24/12/25 09:49",
+        "read": false,
+        "files": [
+            {
+                "filename": "20ca049a-87c8-4d25-a217-5fc3059fd7e1.jpg",
+                "original_name": "244.jpg"
+            }
+        ]
+    },
+    {
+        "id": "c64a08e8-6a9d-466e-a6c0-69e0bc7def33",
+        "from_user": "admin",
+        "to_user": "NERYA",
+        "subject": "",
+        "content": "עה",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "24/12/25 11:53",
+        "read": false,
+        "files": []
+    },
+    {
+        "id": "cd4d8755-bbb2-4d69-b1d6-e6ba9a0a9786",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "המנהל הוסיף הערה למשימה 'איפיון שני' בפרויקט 'הקמת אתר' של הלקוח 'פורום תקוה':\n\nמתקדם?\n\n👉 <a href='/client/4349ca26-39be-4e51-8b45-1921c091a9e5' style='color: #0073ea; text-decoration: underline;'>פתח תיק לקוח</a>",
+        "project_id": "a696db18-205e-41af-a9ef-0a1916c321ce",
+        "task_id": "4cc1ae66-4861-49a4-9424-fc6df364512f",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "created_date": "24/12/25 15:35",
+        "read": true,
+        "files": [],
+        "is_manager_note": true
+    },
+    {
+        "id": "c13f595a-63e8-415c-a3b3-25905457e612",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "המנהל הוסיף הערה למשימה 'איפיון ראשוני' בפרויקט 'הקמת אתר' של הלקוח 'פורום תקוה':\n\nתתקדמו דחוף\n\n👉 <a href='/client/4349ca26-39be-4e51-8b45-1921c091a9e5'>פתח תיק לקוח</a>",
+        "project_id": "a696db18-205e-41af-a9ef-0a1916c321ce",
+        "task_id": "c40e449d-28e7-4177-a9f3-f68942e6c301",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "created_date": "24/12/25 15:39",
+        "read": true,
+        "files": [],
+        "is_manager_note": true
+    },
+    {
+        "id": "5e138cbe-5815-41a1-8743-04fcc240f4b9",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "המנהל הוסיף הערה למשימה 'איפיון ראשוני' בפרויקט 'הקמת אתר' של הלקוח 'פורום תקוה':\n\nתתקדמו דחוף!\n\n👉 <a href='/client/4349ca26-39be-4e51-8b45-1921c091a9e5'>פתח תיק לקוח</a>",
+        "project_id": "a696db18-205e-41af-a9ef-0a1916c321ce",
+        "task_id": "c40e449d-28e7-4177-a9f3-f68942e6c301",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "created_date": "24/12/25 18:44",
+        "read": true,
+        "files": [],
+        "is_manager_note": true
+    },
+    {
+        "id": "f0266378-5a50-4279-bf40-57fff2b11547",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "מה נשמע?",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "25/12/25 11:53",
+        "read": true,
+        "files": []
+    },
+    {
+        "id": "25e1b1ea-87a5-43a1-9529-31cc795bb3ed",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "המנהל הוסיף הערה למשימה 'איפיון שני' בפרויקט 'הקמת אתר' של הלקוח 'פורום תקוה':\n\nמתקדם?\n\n👉 <a href='/client/4349ca26-39be-4e51-8b45-1921c091a9e5'>פתח תיק לקוח</a>",
+        "project_id": "a696db18-205e-41af-a9ef-0a1916c321ce",
+        "task_id": "4cc1ae66-4861-49a4-9424-fc6df364512f",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "created_date": "25/12/25 13:01",
+        "read": false,
+        "files": [],
+        "is_manager_note": true
+    },
+    {
+        "id": "743390c4-a572-4e8c-9e8f-ba5815b1d15e",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "30/12/25 11:17",
+        "read": false,
+        "files": [
+            {
+                "filename": "e70887c2-ed3d-4191-aff4-9aac2ceda629.jpeg",
+                "original_name": "WhatsApp_Image_2025-12-18_at_14.34.36_1.jpeg"
+            }
+        ]
+    },
+    {
+        "id": "e2b65078-3c87-4979-bff8-3f15c5791056",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "30/12/25 11:17",
+        "read": false,
+        "files": [
+            {
+                "filename": "02e8a2f9-b7b5-439b-909d-89b6a951394d.png",
+                "original_name": "pasted-image-1767086267312.png"
+            }
+        ]
+    },
+    {
+        "id": "e4a707e2-7633-44e0-847b-315658201f4e",
+        "from_user": "admin",
+        "to_user": "shachar",
+        "subject": "",
+        "content": "",
+        "project_id": "",
+        "task_id": "",
+        "client_id": "",
+        "created_date": "30/12/25 13:13",
+        "read": false,
+        "files": [
+            {
+                "filename": "05cbdba4-5019-4b06-93e0-35815346d1fb.jpeg",
+                "original_name": "WhatsApp_Image_2025-12-18_at_14.34.36_1.jpeg"
+            }
+        ]
+    }
+]

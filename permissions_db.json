@@ -1,0 +1,12 @@
+{
+    "/": "עובד",
+    "/all_clients": "עובד",
+    "/client/": "עובד",
+    "/finance": "מנהל",
+    "/events": "עובד",
+    "/suppliers": "עובד",
+    "/quotes": "עובד",
+    "/forms": "עובד",
+    "/admin/dashboard": "מנהל",
+    "/admin/users": "אדמין"
+}

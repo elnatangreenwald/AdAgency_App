@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ form.title }} | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            direction: rtl;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 25px;
+            border-bottom: 3px solid #0073ea;
+        }
+        
+        .form-header h1 {
+            color: #292f4c;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .form-header .client-name {
+            color: #64748b;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #292f4c;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .form-group label .required {
+            color: #d66b74;
+            margin-right: 5px;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e6e9ef;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Heebo', sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0073ea;
+            box-shadow: 0 0 0 3px rgba(0,115,234,0.1);
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e6e9ef;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Heebo', sans-serif;
+            resize: vertical;
+            min-height: 120px;
+            direction: rtl;
+            transition: all 0.3s;
+        }
+        
+        .form-group .char-counter {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            text-align: left;
+        }
+        
+        .form-group .char-counter.max-reached {
+            color: #d66b74;
+            font-weight: bold;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #0073ea;
+            background: #f0f9ff;
+        }
+        
+        .file-upload-area.drag-over {
+            border-color: #0073ea;
+            background: #e0f2fe;
+        }
+        
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+        
+        .file-upload-area .upload-text {
+            color: #64748b;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        
+        .file-list {
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .file-item {
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-item-name {
+            color: #292f4c;
+            font-weight: 500;
+        }
+        
+        .file-item-remove {
+            background: #fee2e2;
+            color: #d66b74;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #0073ea 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 30px;
+            box-shadow: 0 4px 12px rgba(0,115,234,0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,115,234,0.4);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .message.success {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 2px solid #badbcc;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #842029;
+            border: 2px solid #f5c2c7;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <h1>{{ form.title }}</h1>
+            <div class="client-name">{{ client_name }}</div>
+        </div>
+        
+        <div id="messageContainer"></div>
+        
+        <form id="publicForm" enctype="multipart/form-data">
+            {% for field in form.fields %}
+            <div class="form-group">
+                <label>
+                    {% if field.required %}<span class="required">*</span>{% endif %}
+                    {{ field.label }}
+                </label>
+                
+                {% if field.type == 'text' %}
+                <input type="text" 
+                       name="field_{{ field.id }}" 
+                       {% if field.required %}required{% endif %}
+                       {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}
+                       {% if field.max_length %}oninput="updateCharCounter(this, '{{ field.id }}', {{ field.max_length }})"{% endif %}>
+                {% if field.max_length %}
+                <div class="char-counter" id="counter_{{ field.id }}">0/{{ field.max_length }}</div>
+                {% endif %}
+                
+                {% elif field.type == 'textarea' %}
+                <textarea name="field_{{ field.id }}" 
+                          {% if field.required %}required{% endif %}
+                          {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}
+                          {% if field.max_length %}oninput="updateCharCounter(this, '{{ field.id }}', {{ field.max_length }})"{% endif %}></textarea>
+                {% if field.max_length %}
+                <div class="char-counter" id="counter_{{ field.id }}">0/{{ field.max_length }}</div>
+                {% endif %}
+                
+                {% elif field.type == 'date' %}
+                <input type="date" 
+                       name="field_{{ field.id }}" 
+                       {% if field.required %}required{% endif %}>
+                
+                {% elif field.type == 'select' %}
+                <select name="field_{{ field.id }}" {% if field.required %}required{% endif %}>
+                    <option value="">בחר אפשרות</option>
+                    {% for option in field.options %}
+                    <option value="{{ option }}">{{ option }}</option>
+                    {% endfor %}
+                </select>
+                
+                {% elif field.type == 'file' %}
+                <div class="file-upload-area" onclick="document.getElementById('file_{{ field.id }}').click()">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">📎</div>
+                    <div class="upload-text">לחץ לבחירת קובץ או גרור לכאן</div>
+                    <input type="file" 
+                           id="file_{{ field.id }}" 
+                           name="field_{{ field.id }}" 
+                           {% if field.required %}required{% endif %}
+                           onchange="handleFileSelect(this, '{{ field.id }}')">
+                </div>
+                <div class="file-list" id="fileList_{{ field.id }}"></div>
+                
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                📤 שלח טופס
+            </button>
+        </form>
+    </div>
+    
+    <script>
+        function updateCharCounter(input, fieldId, maxLength) {
+            const counter = document.getElementById(`counter_${fieldId}`);
+            const currentLength = input.value.length;
+            counter.textContent = `${currentLength}/${maxLength}`;
+            if (currentLength >= maxLength) {
+                counter.classList.add('max-reached');
+            } else {
+                counter.classList.remove('max-reached');
+            }
+        }
+        
+        function handleFileSelect(input, fieldId) {
+            const fileList = document.getElementById(`fileList_${fieldId}`);
+            if (input.files && input.files.length > 0) {
+                fileList.style.display = 'block';
+                const fileName = input.files[0].name;
+                fileList.innerHTML = `
+                    <div class="file-item">
+                        <span class="file-item-name">📎 ${fileName}</span>
+                        <button type="button" class="file-item-remove" onclick="removeFile('${fieldId}')">🗑️ הסר</button>
+                    </div>
+                `;
+            } else {
+                fileList.style.display = 'none';
+            }
+        }
+        
+        function removeFile(fieldId) {
+            const input = document.getElementById(`file_${fieldId}`);
+            input.value = '';
+            document.getElementById(`fileList_${fieldId}`).style.display = 'none';
+        }
+        
+        // Drag and drop for file upload
+        document.querySelectorAll('.file-upload-area').forEach(area => {
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('drag-over');
+            });
+            
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('drag-over');
+            });
+            
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('drag-over');
+                const input = area.querySelector('input[type="file"]');
+                if (e.dataTransfer.files.length > 0) {
+                    input.files = e.dataTransfer.files;
+                    handleFileSelect(input, input.id.replace('file_', ''));
+                }
+            });
+        });
+        
+        document.getElementById('publicForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span>שולח...';
+            
+            const formData = new FormData(this);
+            const formToken = '{{ form.token }}';
+            
+            try {
+                const response = await fetch(`/submit_form/${formToken}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('messageContainer').innerHTML = `
+                        <div class="message success">
+                            ✅ ${data.message || 'הטופס נשלח בהצלחה! תודה.'}
+                        </div>
+                    `;
+                    this.reset();
+                    document.querySelectorAll('.file-list').forEach(list => list.style.display = 'none');
+                    document.querySelectorAll('.char-counter').forEach(counter => {
+                        counter.textContent = '0/' + counter.textContent.split('/')[1];
+                        counter.classList.remove('max-reached');
+                    });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    document.getElementById('messageContainer').innerHTML = `
+                        <div class="message error">
+                            ❌ שגיאה: ${data.error || 'שגיאה לא ידועה'}
+                        </div>
+                    `;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (error) {
+                document.getElementById('messageContainer').innerHTML = `
+                    <div class="message error">
+                        ❌ שגיאה בהתקשרות לשרת. אנא נסה שוב.
+                    </div>
+                `;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    </script>
+</body>
+</html>

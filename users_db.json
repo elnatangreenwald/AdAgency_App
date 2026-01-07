@@ -1,0 +1,30 @@
+{
+    "admin": {
+        "password": "scrypt:32768:8:1$pI0TlwcZiY5i3xfw$9c58dc3f3f93d3b3feeb07ba7cf727952fceaaf25253ee942e491d8a2e62744f344cb40e5185316926a14c7006263cbbaa1a1f3572119ec494bcd083c0664aea",
+        "name": "מנהל המשרד",
+        "role": "אדמין"
+    },
+    "shachar": {
+        "password": "scrypt:32768:8:1$bRAaNc3u8XKKrFvT$72989867cf701d378cc27418c3cb214ecb58157ace6f4979613ac0e2a3ca762103eeec89260aabe5b011e40486dcfa3dfeedfe81a702baca32fc5c1ce4a8ab64",
+        "name": "שחר פילבר",
+        "role": "עובד"
+    },
+    "NERYA": {
+        "password": "scrypt:32768:8:1$JhoycbIpLUf4yq2T$d512a9d6a2fa412d2742c9923d3e0909df86063a0eb2622bb664b66b27643d4264798dbeb2de2dcc5ed902e5877aeb915947291893bb4bcefbf441f9a5df15fd",
+        "name": "נריה ותקין",
+        "role": "מנהל"
+    },
+    "elnatan": {
+        "password": "scrypt:32768:8:1$TsWbKwVCGrlnVPIw$a6af982eb2b36d65f4695557f11d5ad805798c612f9a2689f8fcda63b38b9f3bd8903556162f0925012fe498b3a7b7f9768eb7489d55bb506b1c151620728cb9",
+        "name": "אלנתן גרינולד",
+        "email": "ELNATAN@VATKIN.CO.IL",
+        "role": "עובד"
+    },
+    "אלנתן": {
+        "password": "scrypt:32768:8:1$0b2fe5PCOTBUZYg0$216d9ceca8b1250f1e5d10a6fd2c159f5044bc74637645b782ba6fa7ff44ee51240090cafb214a0853fa90666acae1902a65588c780080a60a42d1258380eb8e",
+        "name": "אלנתן גרינולד",
+        "email": "ELNATAN@VATKIN.CO.IL",
+        "email_password": "dWhmYyBjcHlvIHRpbHMganVzZg==",
+        "role": "עובד"
+    }
+}

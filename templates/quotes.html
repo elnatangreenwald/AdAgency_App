@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הצעות מחיר | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <style>
+        .modal { display: none; position: fixed; z-index: 10000; right: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 50px auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close { font-size: 2rem; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .item-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 0.85rem; font-weight: bold; }
+        .status-draft { background: #f0f0f0; color: #666; }
+        .status-sent { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+            <div class="users-dropdown">
+                {% for uid, info in sidebar_users.items() %}
+                <a href="/all_clients?user={{ uid }}" class="user-sub-link">• {{ info.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/finance" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/forms" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        <a href="/admin/dashboard" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            דוח מנהלים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 style="margin: 0;">הצעות מחיר</h1>
+            <button onclick="openAddModal()" class="btn btn-success">+ צור הצעת מחיר חדשה</button>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם התבנית</th>
+                        <th>לקוח</th>
+                        <th>מספר פריטים</th>
+                        <th>סה"כ</th>
+                        <th>סטטוס</th>
+                        <th>תאריך</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for quote in quotes %}
+                    <tr>
+                        <td><strong>{{ quote.name }}</strong></td>
+                        <td>
+                            {% for client in clients %}
+                                {% if client.id == quote.client_id %}{{ client.name }}{% endif %}
+                            {% endfor %}
+                            {% if not quote.client_id %}-{% endif %}
+                        </td>
+                        <td>{{ quote.items|length }}</td>
+                        <td><strong>₪{{ "%.2f"|format(quote.total) }}</strong></td>
+                        <td>
+                            <span class="status-badge status-{{ quote.status }}">
+                                {% if quote.status == 'draft' %}טיוטה
+                                {% elif quote.status == 'sent' %}נשלח
+                                {% elif quote.status == 'approved' %}אושר
+                                {% elif quote.status == 'rejected' %}נדחה
+                                {% else %}{{ quote.status }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ quote.created_date }}</td>
+                        <td>
+                            <button onclick="openEditModal('{{ quote.id }}')" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85rem;">ערוך</button>
+                            <form action="/delete_quote/{{ quote.id }}" method="POST" style="display: inline;" onsubmit="return confirm('האם אתה בטוח שברצונך למחוק את הצעת המחיר?');">
+                                <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 0.85rem;">מחק</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not quotes %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #999;">אין הצעות מחיר עדיין. צור הצעת מחיר ראשונה באמצעות הכפתור למעלה.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal להוספת/עריכת הצעת מחיר -->
+    <div id="quoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">צור הצעת מחיר חדשה</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="quoteForm" method="POST">
+                <div class="form-group">
+                    <label>שם התבנית *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>לקוח (אופציונלי)</label>
+                    <select name="client_id">
+                        <option value="">ללא לקוח ספציפי</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>סטטוס</label>
+                    <select name="status">
+                        <option value="draft">טיוטה</option>
+                        <option value="sent">נשלח</option>
+                        <option value="approved">אושר</option>
+                        <option value="rejected">נדחה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>פריטים</label>
+                    <div id="itemsContainer">
+                        <div class="item-row">
+                            <input type="text" name="item_title[]" placeholder="תיאור פריט" required>
+                            <input type="number" name="item_quantity[]" placeholder="כמות" value="1" min="1" required>
+                            <input type="number" name="item_price[]" placeholder="מחיר" step="0.01" min="0" required>
+                            <button type="button" onclick="removeItem(this)" class="btn btn-danger" style="padding: 5px 10px;">-</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addItem()" class="btn btn-secondary" style="margin-top: 10px;">+ הוסף פריט</button>
+                    <div style="margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 5px;">
+                        <strong>סה"כ: <span id="totalDisplay">₪0.00</span></strong>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>הערות</label>
+                    <textarea name="notes" rows="4"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">ביטול</button>
+                    <button type="submit" class="btn">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const quotesData = {{ quotes|tojson|safe }};
+        const clientsData = {{ clients|tojson|safe }};
+        
+        function addItem() {
+            const container = document.getElementById('itemsContainer');
+            const itemRow = document.createElement('div');
+            itemRow.className = 'item-row';
+            itemRow.innerHTML = `
+                <input type="text" name="item_title[]" placeholder="תיאור פריט" required>
+                <input type="number" name="item_quantity[]" placeholder="כמות" value="1" min="1" required>
+                <input type="number" name="item_price[]" placeholder="מחיר" step="0.01" min="0" required oninput="calculateTotal()">
+                <button type="button" onclick="removeItem(this)" class="btn btn-danger" style="padding: 5px 10px;">-</button>
+            `;
+            container.appendChild(itemRow);
+            attachItemListeners();
+        }
+        
+        function removeItem(btn) {
+            if (document.querySelectorAll('.item-row').length > 1) {
+                btn.closest('.item-row').remove();
+                calculateTotal();
+            }
+        }
+        
+        function attachItemListeners() {
+            document.querySelectorAll('input[name="item_quantity[]"], input[name="item_price[]"]').forEach(input => {
+                input.oninput = calculateTotal;
+            });
+        }
+        
+        function calculateTotal() {
+            const rows = document.querySelectorAll('.item-row');
+            let total = 0;
+            rows.forEach(row => {
+                const quantity = parseFloat(row.querySelector('input[name="item_quantity[]"]').value) || 0;
+                const price = parseFloat(row.querySelector('input[name="item_price[]"]').value) || 0;
+                total += quantity * price;
+            });
+            document.getElementById('totalDisplay').textContent = '₪' + total.toFixed(2);
+        }
+        
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'צור הצעת מחיר חדשה';
+            document.getElementById('quoteForm').action = '/add_quote';
+            document.getElementById('quoteForm').reset();
+            document.getElementById('itemsContainer').innerHTML = `
+                <div class="item-row">
+                    <input type="text" name="item_title[]" placeholder="תיאור פריט" required>
+                    <input type="number" name="item_quantity[]" placeholder="כמות" value="1" min="1" required>
+                    <input type="number" name="item_price[]" placeholder="מחיר" step="0.01" min="0" required oninput="calculateTotal()">
+                    <button type="button" onclick="removeItem(this)" class="btn btn-danger" style="padding: 5px 10px;">-</button>
+                </div>
+            `;
+            calculateTotal();
+            attachItemListeners();
+            document.getElementById('quoteModal').style.display = 'block';
+        }
+        
+        function openEditModal(quoteId) {
+            const quote = quotesData.find(q => q.id === quoteId);
+            if (!quote) return;
+            
+            const form = document.getElementById('quoteForm');
+            document.getElementById('modalTitle').textContent = 'ערוך הצעת מחיר';
+            form.action = '/edit_quote/' + quoteId;
+            form.querySelector('input[name="name"]').value = quote.name || '';
+            form.querySelector('select[name="client_id"]').value = quote.client_id || '';
+            form.querySelector('select[name="status"]').value = quote.status || 'draft';
+            form.querySelector('textarea[name="notes"]').value = quote.notes || '';
+            
+            const itemsContainer = document.getElementById('itemsContainer');
+            itemsContainer.innerHTML = '';
+            quote.items.forEach(item => {
+                const itemRow = document.createElement('div');
+                itemRow.className = 'item-row';
+                itemRow.innerHTML = `
+                    <input type="text" name="item_title[]" value="${item.title || ''}" required>
+                    <input type="number" name="item_quantity[]" value="${item.quantity || 1}" min="1" required>
+                    <input type="number" name="item_price[]" value="${item.price || 0}" step="0.01" min="0" required oninput="calculateTotal()">
+                    <button type="button" onclick="removeItem(this)" class="btn btn-danger" style="padding: 5px 10px;">-</button>
+                `;
+                itemsContainer.appendChild(itemRow);
+            });
+            calculateTotal();
+            attachItemListeners();
+            document.getElementById('quoteModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('quoteModal').style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('quoteModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        attachItemListeners();
+    </script>
+    {% include '_chat_widget.html' %}
+</body>
+</html>
+

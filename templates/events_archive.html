@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ארכיון אירועים | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <style>
+        .archive-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 20px 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            border: 1px solid #e6e9ef;
+        }
+        .archive-header h1 {
+            color: #64748b;
+            font-size: 2rem;
+            margin: 0 0 10px 0;
+        }
+        .archive-header p {
+            color: #94a3b8;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        .event-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            border: none;
+            border-right: 4px solid #94a3b8; 
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+            opacity: 0.8;
+        }
+        .event-card:hover { 
+            box-shadow: var(--shadow-md); 
+            transform: translateY(-2px);
+            opacity: 1;
+        }
+        .event-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; }
+        .event-title { font-size: 1.3rem; font-weight: bold; color: #292f4c; margin: 0; }
+        .event-meta { display: flex; gap: 20px; flex-wrap: wrap; color: #666; font-size: 0.9rem; }
+        .event-type-badge { padding: 5px 12px; border-radius: 15px; font-size: 0.85rem; font-weight: bold; }
+        .type-כנס { background: #e1e6ff; color: #0073ea; }
+        .type-חתונה { background: #ffe1e6; color: #d66b74; }
+        .type-השקה { background: #e6ffe6; color: #00c875; }
+        .archived-date {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 8px;
+            font-weight: 400;
+        }
+        .empty-archive {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .empty-archive svg {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            stroke: #cbd5e1;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .empty-archive h2 {
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+        .empty-archive p {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+        </div>
+        <a href="/finance" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/forms" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        <a href="/admin/dashboard" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            דוח מנהלים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        <a href="/archive" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+            ארכיון
+        </a>
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <div class="archive-header" style="margin: 0; flex: 1;">
+                <h1 style="margin: 0 0 10px 0;">ארכיון אירועים</h1>
+                <p style="margin: 0;">אירועים שהועברו לארכיון. ניתן לצפות בפרטי האירוע בלחיצה על הכרטיס.</p>
+            </div>
+            <a href="/events" class="btn" style="margin-right: 20px;">← חזרה לאירועים</a>
+        </div>
+        
+        {% if events %}
+        <div class="card">
+            {% for event in events %}
+            <div class="event-card">
+                <div class="event-header">
+                    <div style="flex: 1;">
+                        <h3 class="event-title">{{ event.name }}</h3>
+                        <div class="event-meta">
+                            <span><strong>לקוח:</strong> {{ event.client_name }}</span>
+                            {% if event.date %}<span><strong>תאריך:</strong> {{ event.date }}</span>{% endif %}
+                            {% if event.location %}<span><strong>מיקום:</strong> {{ event.location }}</span>{% endif %}
+                        </div>
+                        {% if event.get('archived_at') %}
+                            {% set archived_date = event.get('archived_at')[:10] %}
+                            <div class="archived-date">אויש ב-{{ archived_date.split('-')[2] }}/{{ archived_date.split('-')[1] }}/{{ archived_date.split('-')[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <span class="event-type-badge type-{{ event.event_type }}">{{ event.event_type }}</span>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <a href="/event/{{ event.id }}" class="btn">פתח אירוע</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-archive">
+            <svg viewBox="0 0 24 24">
+                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                <rect x="1" y="3" width="22" height="5"></rect>
+                <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
+            <h2>הארכיון ריק</h2>
+            <p>אין אירועים בארכיון כרגע.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% include '_chat_widget.html' %}
+</body>
+</html>
+

@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>דוח מנהלים | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <style>
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-widget {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .dashboard-widget:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .widget-header {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #292f4c;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e6e9ef;
+        }
+        
+        .gauge-container {
+            position: relative;
+            height: 200px;
+            margin: 20px 0;
+        }
+        
+        .gauge-info {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .gauge-info .name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #292f4c;
+            margin-bottom: 8px;
+        }
+        
+        .gauge-info .tasks {
+            font-size: 0.95rem;
+            color: #64748b;
+        }
+        
+        .gauge-info .overloaded {
+            color: #d66b74;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        
+        .line-chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        #calendarContainer {
+            direction: rtl;
+        }
+        
+        #calendar {
+            direction: rtl;
+            font-family: 'Heebo', sans-serif;
+        }
+        
+        .fc {
+            direction: rtl;
+            font-family: 'Heebo', sans-serif;
+        }
+        
+        .fc-button {
+            background: #1e4c54 !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 8px 16px !important;
+            font-weight: 600 !important;
+            font-family: 'Heebo', sans-serif !important;
+            color: white !important;
+            margin: 0 4px !important;
+        }
+        
+        .fc-button:hover {
+            background: #2a6874 !important;
+        }
+        
+        .fc-button-active {
+            background: #256a77 !important;
+        }
+        
+        .fc-toolbar-chunk {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .fc-toolbar-title {
+            font-family: 'Heebo', sans-serif;
+            font-weight: bold;
+            color: #292f4c;
+            font-size: 1.5rem;
+        }
+        
+        .fc-daygrid-event {
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none !important;
+        }
+        
+        .fc-daygrid-event:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            opacity: 0.9;
+        }
+        
+        .fc-event-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .fc-daygrid-day-frame {
+            min-height: 100px;
+        }
+        
+        .fc-daygrid-day {
+            background: white;
+        }
+        
+        .fc-day-today {
+            background: #f0f4ff !important;
+        }
+        
+        .fc-col-header-cell {
+            background: #f8fafc;
+            font-weight: bold;
+            color: #292f4c;
+            padding: 10px;
+        }
+        
+        .fc-daygrid-day-number {
+            padding: 8px;
+            font-weight: 600;
+            color: #292f4c;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        
+        .error-message {
+            background: #fee2e2;
+            color: #d66b74;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .note-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 10001;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .note-modal-content {
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 90%;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+            animation: modalSlideIn 0.3s ease-out;
+            position: relative;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 10002;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Open Tasks Styling - Modern Card Design */
+        #openTasksContainer {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 20px !important;
+        }
+        
+        .task-item {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e6e9ef;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .task-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-color: #cbd5e1;
+        }
+        
+        .task-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .task-title-section {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .task-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #292f4c;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        
+        .task-meta {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.5;
+        }
+        
+        .task-meta strong {
+            color: #0073ea;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        
+        .task-status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            width: fit-content;
+        }
+        
+        /* Status Badge Colors */
+        .task-status-pending {
+            background: rgba(254, 249, 231, 0.8);
+            color: #854d0e;
+            border-color: rgba(251, 191, 36, 0.3);
+        }
+        
+        .task-status-studio {
+            background: rgba(245, 243, 255, 0.8);
+            color: #5b21b6;
+            border-color: rgba(196, 181, 253, 0.3);
+        }
+        
+        .task-status-digital {
+            background: rgba(240, 249, 255, 0.8);
+            color: #0c4a6e;
+            border-color: rgba(125, 211, 252, 0.3);
+        }
+        
+        .task-status-sent {
+            background: rgba(253, 242, 248, 0.8);
+            color: #9f1239;
+            border-color: rgba(249, 168, 212, 0.3);
+        }
+        
+        .task-status-completed {
+            background: rgba(240, 253, 244, 0.8);
+            color: #14532d;
+            border-color: rgba(134, 239, 172, 0.3);
+        }
+        
+        .task-note-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e6e9ef;
+        }
+        
+        .task-note {
+            font-size: 0.75rem;
+            color: #64748b;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+        
+        .task-note:last-child {
+            margin-bottom: 0;
+        }
+        
+        .manager-note {
+            font-size: 0.75rem;
+            color: #92400e;
+            line-height: 1.4;
+            padding: 6px 10px;
+            background: rgba(255, 247, 237, 0.6);
+            border-right: 3px solid #f59e0b;
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+        
+        .manager-note::before {
+            content: "👔 ";
+            font-weight: bold;
+        }
+        
+        /* Responsive grid for open tasks */
+        @media (max-width: 1600px) {
+            #openTasksContainer {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            #openTasksContainer {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #openTasksContainer {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+            <div class="users-dropdown">
+                {% for uid, info in sidebar_users.items() %}
+                <a href="/all_clients?user={{ uid }}" class="user-sub-link">• {{ info.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/finance" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/forms" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        <a href="/admin/dashboard" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            דוח מנהלים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>דוח מנהלים</h1>
+        
+        <div id="loading" class="loading">טוען נתונים...</div>
+        <div id="error" class="error-message" style="display: none;"></div>
+        
+        <div id="dashboardContent" style="display: none;">
+            <!-- Gauge Charts - User Loads -->
+            <h2 style="margin-top: 30px; margin-bottom: 20px; color: #292f4c;">מד עומס עובדים</h2>
+            <div class="dashboard-container" id="gaugeContainer">
+                <!-- Gauge charts will be inserted here -->
+            </div>
+            
+            <!-- Line Chart - Tasks Opened/Closed -->
+            <h2 style="margin-top: 40px; margin-bottom: 20px; color: #292f4c;">משימות שנפתחו/נסגרו - 7 ימים אחרונים</h2>
+            <div class="dashboard-widget">
+                <div class="widget-header">מגמת משימות</div>
+                <div class="line-chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Open Tasks -->
+            <h2 style="margin-top: 40px; margin-bottom: 20px; color: #292f4c;">משימות פתוחות</h2>
+            <div class="dashboard-widget" style="padding: 0;">
+                <div style="padding: 25px 25px 15px 25px; border-bottom: 2px solid #e6e9ef;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div class="widget-header" style="margin-bottom: 0;">כל המשימות הפתוחות</div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <label style="font-size: 0.9rem; color: #64748b; font-weight: 600;">סינון לפי עובד:</label>
+                            <select id="taskFilterUser" style="padding: 8px 16px; border: 2px solid #e6e9ef; border-radius: 8px; font-size: 0.9rem; min-width: 180px; cursor: pointer; background: white;" onchange="filterTasksByUser()">
+                                <option value="">כל העובדים</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="openTasksContainer" style="padding: 20px; max-height: 600px; overflow-y: auto;">
+                    <div class="loading">טוען משימות...</div>
+                </div>
+            </div>
+            
+            <!-- Calendar - Upcoming Events -->
+            <h2 style="margin-top: 40px; margin-bottom: 20px; color: #292f4c;">אירועים קרובים (30 ימים הקרובים)</h2>
+            <div class="dashboard-widget" style="padding: 0;">
+                <div class="widget-header" style="margin-bottom: 0; padding: 25px 25px 15px 25px;">לוח זמנים</div>
+                <div id="calendarContainer" style="padding: 20px;">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Note Modal -->
+    <div id="taskNoteModal" class="note-modal">
+        <div class="note-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e6e9ef;">
+                <div>
+                    <h3 id="taskNoteModalTitle" style="margin: 0 0 5px 0; color: #292f4c; font-size: 1.5rem; font-weight: bold;">הערת מנהל</h3>
+                    <div id="taskNoteModalClientInfo" style="color: #64748b; font-size: 0.9rem;"></div>
+                </div>
+                <button onclick="closeTaskNoteModal()" style="background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #64748b; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#292f4c';" onmouseout="this.style.background='none'; this.style.color='#64748b';">×</button>
+            </div>
+            <div style="flex: 1; overflow-y: auto; margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 10px; color: #64748b; font-size: 0.95rem; font-weight: 600;">הערת מנהל:</label>
+                <textarea id="taskNoteModalText" placeholder="הזן הערת מנהל כאן..." style="width: 100%; min-height: 200px; max-height: 400px; padding: 16px; border: 2px solid #e6e9ef; border-radius: 10px; font-family: 'Heebo', sans-serif; font-size: 1rem; resize: vertical; transition: all 0.3s; direction: rtl; line-height: 1.6;" onfocus="this.style.borderColor='#0073ea'; this.style.boxShadow='0 0 0 3px rgba(0,115,234,0.1)';" onblur="this.style.borderColor='#e6e9ef'; this.style.boxShadow='none';"></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 20px; border-top: 2px solid #e6e9ef;">
+                <button onclick="closeTaskNoteModal()" style="padding: 12px 24px; border: 2px solid #e6e9ef; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #64748b; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e1'; this.style.color='#292f4c';" onmouseout="this.style.borderColor='#e6e9ef'; this.style.color='#64748b';">ביטול</button>
+                <button onclick="saveManagerNote()" class="btn-black" style="padding: 12px 28px; font-weight: 600; border-radius: 10px;">💾 שמור הערה</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let lineChart = null;
+        
+        // טעינת נתונים
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('dashboardContent').style.display = 'block';
+                    
+                    renderGauges(data.user_loads);
+                    renderLineChart(data.line_chart);
+                    renderCalendar(data.upcoming_events);
+                    loadOpenTasks();
+                } else {
+                    showError('שגיאה בטעינת הנתונים: ' + (data.error || 'שגיאה לא ידועה'));
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('שגיאה בטעינת הנתונים. אנא רענן את הדף.');
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = message;
+        }
+        
+        // רינדור Gauge Charts
+        function renderGauges(userLoads) {
+            const container = document.getElementById('gaugeContainer');
+            container.innerHTML = '';
+            
+            userLoads.forEach(user => {
+                const widget = document.createElement('div');
+                widget.className = 'dashboard-widget';
+                if (user.is_overloaded) {
+                    widget.style.border = '3px solid #d66b74';
+                }
+                
+                const canvas = document.createElement('canvas');
+                canvas.id = `gauge-${user.user_id}`;
+                canvas.width = 200;
+                canvas.height = 200;
+                
+                widget.innerHTML = `
+                    <div class="widget-header">${user.name}</div>
+                    <div class="gauge-container">
+                        <canvas id="gauge-${user.user_id}"></canvas>
+                    </div>
+                    <div class="gauge-info">
+                        <div class="name">${user.name}</div>
+                        <div class="tasks">${user.active_tasks} מתוך ${user.capacity} משימות</div>
+                        ${user.is_overloaded ? '<div class="overloaded">⚠️ עומס יתר!</div>' : ''}
+                    </div>
+                `;
+                
+                container.appendChild(widget);
+                
+                // יצירת Gauge Chart
+                setTimeout(() => {
+                    const ctx = document.getElementById(`gauge-${user.user_id}`).getContext('2d');
+                    const percentage = user.percentage;
+                    const color = user.is_overloaded ? '#d66b74' : percentage > 70 ? '#ffc107' : '#28a745';
+                    
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{
+                                data: [percentage, 100 - percentage],
+                                backgroundColor: [color, '#e6e9ef'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            cutout: '75%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            }
+                        },
+                        plugins: [{
+                            id: 'gaugeText',
+                            beforeDraw: (chart) => {
+                                const ctx = chart.ctx;
+                                const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                                const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+                                
+                                ctx.save();
+                                ctx.font = 'bold 24px Heebo';
+                                ctx.fillStyle = '#292f4c';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(`${Math.round(percentage)}%`, centerX, centerY);
+                                ctx.restore();
+                            }
+                        }]
+                    });
+                }, 100);
+            });
+        }
+        
+        // רינדור Line Chart
+        function renderLineChart(chartData) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            
+            if (lineChart) {
+                lineChart.destroy();
+            }
+            
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'נפתחו',
+                            data: chartData.opened,
+                            borderColor: '#0073ea',
+                            backgroundColor: 'rgba(0, 115, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'נסגרו',
+                            data: chartData.closed,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Heebo', size: 14 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // רינדור Calendar
+        let calendarInstance = null;
+        function renderCalendar(events) {
+            const calendarEl = document.getElementById('calendar');
+            calendarEl.innerHTML = ''; // נקה לוח שנה קודם אם קיים
+            
+            // בניית events ל-FullCalendar
+            const calendarEvents = events.map(event => ({
+                id: event.id,
+                title: event.name,
+                start: event.date,
+                extendedProps: {
+                    client_name: event.client_name,
+                    location: event.location || 'ללא מיקום',
+                    event_type: event.event_type || 'ללא סוג',
+                    event_id: event.id
+                }
+            }));
+            
+            if (calendarInstance) {
+                calendarInstance.destroy();
+            }
+            
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'he',
+                direction: 'rtl',
+                headerToolbar: {
+                    right: 'prev,next today',
+                    center: 'title',
+                    left: 'dayGridMonth,listWeek'
+                },
+                events: calendarEvents,
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    window.location.href = `/event/${info.event.extendedProps.event_id}`;
+                },
+                eventContent: function(arg) {
+                    const event = arg.event;
+                    const clientName = event.extendedProps.client_name;
+                    const location = event.extendedProps.location;
+                    
+                    const html = document.createElement('div');
+                    html.style.padding = '4px';
+                    html.style.cursor = 'pointer';
+                    html.innerHTML = `
+                        <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.title}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${clientName}</div>
+                        ${location !== 'ללא מיקום' ? `<div style="font-size: 0.65rem; opacity: 0.8;">📍 ${location}</div>` : ''}
+                    `;
+                    return { domNodes: [html] };
+                },
+                height: 'auto',
+                eventColor: '#0073ea',
+                eventBorderColor: '#0073ea',
+                eventTextColor: '#ffffff',
+                dayMaxEventRows: 3,
+                moreLinkClick: 'popover',
+                buttonText: {
+                    today: 'היום',
+                    month: 'חודש',
+                    week: 'שבוע',
+                    day: 'יום',
+                    list: 'רשימה'
+                },
+                firstDay: 0, // יום ראשון הוא היום הראשון בשבוע
+                weekNumbers: false,
+                navLinks: true,
+                editable: false,
+                selectable: false
+            });
+            
+            calendarInstance.render();
+        }
+        
+        // טעינת משימות פתוחות
+        let allTasks = []; // שמירה של כל המשימות
+        async function loadOpenTasks() {
+            try {
+                const response = await fetch('/api/admin/open_tasks');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allTasks = data.tasks;
+                    // טעינת רשימת עובדים לסינון
+                    loadUsersForFilter(data.tasks);
+                    renderOpenTasks(data.tasks);
+                } else {
+                    document.getElementById('openTasksContainer').innerHTML = '<div class="error-message">שגיאה בטעינת המשימות</div>';
+                }
+            } catch (error) {
+                console.error('Error loading open tasks:', error);
+                document.getElementById('openTasksContainer').innerHTML = '<div class="error-message">שגיאה בטעינת המשימות</div>';
+            }
+        }
+        
+        // טעינת רשימת עובדים לסינון
+        function loadUsersForFilter(tasks) {
+            const userSelect = document.getElementById('taskFilterUser');
+            const users = new Set();
+            const userMap = {}; // user_id -> name
+            
+            // איסוף כל המשתמשים הייחודיים מהמשימות
+            tasks.forEach(task => {
+                if (task.assigned_user && task.assigned_user !== 'admin') {
+                    users.add(task.assigned_user);
+                    if (task.assigned_user_name) {
+                        userMap[task.assigned_user] = task.assigned_user_name;
+                    }
+                }
+            });
+            
+            // הוספת אופציות ל-select
+            users.forEach(userId => {
+                const option = document.createElement('option');
+                option.value = userId;
+                option.textContent = userMap[userId] || userId;
+                userSelect.appendChild(option);
+            });
+        }
+        
+        // סינון משימות לפי עובד
+        function filterTasksByUser() {
+            const selectedUserId = document.getElementById('taskFilterUser').value;
+            
+            if (!selectedUserId) {
+                // הצגת כל המשימות
+                renderOpenTasks(allTasks);
+            } else {
+                // סינון לפי עובד נבחר
+                const filteredTasks = allTasks.filter(task => task.assigned_user === selectedUserId);
+                renderOpenTasks(filteredTasks);
+            }
+        }
+        
+        function renderOpenTasks(tasks) {
+            const container = document.getElementById('openTasksContainer');
+            
+            if (tasks.length === 0) {
+                container.innerHTML = '<div class="loading">אין משימות פתוחות</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'task-item';
+                taskDiv.onclick = () => openTaskNoteModal(task);
+                
+                const statusClass = getStatusClass(task.task_status);
+                const statusLabel = getStatusLabel(task.task_status);
+                
+                let noteHtml = '';
+                if (task.task_note) {
+                    noteHtml += `<div class="task-note">📝 ${escapeHtml(task.task_note)}</div>`;
+                }
+                if (task.manager_note) {
+                    noteHtml += `<div class="manager-note">${escapeHtml(task.manager_note)}</div>`;
+                }
+                
+                taskDiv.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-status-badge ${statusClass}" style="margin-bottom: 8px;">${statusLabel.replace(/📋|🎨|💻|📤|✅/g, '')}</div>
+                        <div class="task-title-section">
+                            <div class="task-title">
+                                ${task.task_number ? `<span style="color: #94a3b8; font-size: 0.7rem; font-weight: normal; margin-left: 6px; font-family: 'Heebo', monospace;">#${task.task_number}</span>` : ''}
+                                ${escapeHtml(task.task_title)}
+                            </div>
+                            <div class="task-meta">
+                                <strong>${escapeHtml(task.client_name)}</strong><br>
+                                ${escapeHtml(task.project_title)}<br>
+                                אחראי: ${escapeHtml(task.assigned_user_name)}<br>
+                                תאריך: ${task.created_date || 'ללא תאריך'}
+                            </div>
+                        </div>
+                    </div>
+                    ${noteHtml ? `<div class="task-note-section">${noteHtml}</div>` : ''}
+                `;
+                
+                container.appendChild(taskDiv);
+            });
+        }
+        
+        function getStatusClass(status) {
+            const statusMap = {
+                'לביצוע': 'task-status-pending',
+                'הועבר לסטודיו': 'task-status-studio',
+                'הועבר לדיגיטל': 'task-status-digital',
+                'נשלח ללקוח': 'task-status-sent',
+                'הושלם': 'task-status-completed'
+            };
+            return statusMap[status] || 'task-status-pending';
+        }
+        
+        function getStatusLabel(status) {
+            const labelMap = {
+                'לביצוע': 'לביצוע',
+                'הועבר לסטודיו': 'הועבר לסטודיו',
+                'הועבר לדיגיטל': 'הועבר לדיגיטל',
+                'נשלח ללקוח': 'נשלח ללקוח',
+                'הושלם': 'הושלם'
+            };
+            return labelMap[status] || status;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        let currentTaskData = null;
+        
+        function openTaskNoteModal(task) {
+            currentTaskData = task;
+            const modal = document.getElementById('taskNoteModal');
+            const textarea = document.getElementById('taskNoteModalText');
+            
+            // הצגת הערה קיימת
+            textarea.value = task.manager_note || '';
+            textarea.placeholder = 'הזן הערת מנהל כאן...';
+            
+            // עדכון כותרת
+            document.getElementById('taskNoteModalTitle').textContent = `הערת מנהל - ${task.task_title}`;
+            document.getElementById('taskNoteModalClientInfo').textContent = `${task.client_name} → ${task.project_title}`;
+            
+            modal.style.display = 'flex';
+            setTimeout(() => textarea.focus(), 100);
+        }
+        
+        function closeTaskNoteModal() {
+            document.getElementById('taskNoteModal').style.display = 'none';
+            currentTaskData = null;
+        }
+        
+        async function saveManagerNote() {
+            if (!currentTaskData) return;
+            
+            const textarea = document.getElementById('taskNoteModalText');
+            const managerNote = textarea.value.trim();
+            
+            try {
+                const response = await fetch(`/api/admin/add_manager_note/${currentTaskData.client_id}/${currentTaskData.project_id}/${currentTaskData.task_id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ manager_note: managerNote })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeTaskNoteModal();
+                    loadOpenTasks(); // רענון רשימת המשימות
+                    alert('הערת המנהל נשמרה וההודעה נשלחה למשתמש האחראי');
+                } else {
+                    alert('שגיאה בשמירת ההערה: ' + (data.error || 'שגיאה לא ידועה'));
+                }
+            } catch (error) {
+                console.error('Error saving manager note:', error);
+                alert('שגיאה בהתקשרות לשרת');
+            }
+        }
+        
+        // טעינה ראשונית
+        loadDashboardData();
+        
+        // עדכון אוטומטי כל 30 שניות
+        setInterval(loadDashboardData, 30000);
+        setInterval(loadOpenTasks, 30000);
+    </script>
+    
+    {% include '_chat_widget.html' %}
+</body>
+</html>
+

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>טפסים | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <style>
+        .form-builder {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .field-item {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e6e9ef;
+        }
+        .field-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .field-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .form-link {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px dashed #0073ea;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+            <div class="users-dropdown">
+                {% for uid, info in sidebar_users.items() %}
+                <a href="/all_clients?user={{ uid }}" class="user-sub-link">• {{ info.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/finance" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/forms" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h1 style="margin: 0;">ניהול טפסים</h1>
+            <button onclick="openAddModal()" class="btn btn-success">+ צור טופס חדש</button>
+        </div>
+
+        <div class="card">
+            {% if forms %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding: 15px; text-align: right; border-bottom: 2px solid #e6e9ef;">כותרת</th>
+                        <th style="padding: 15px; text-align: right; border-bottom: 2px solid #e6e9ef;">לקוח</th>
+                        <th style="padding: 15px; text-align: right; border-bottom: 2px solid #e6e9ef;">תאריך יצירה</th>
+                        <th style="padding: 15px; text-align: right; border-bottom: 2px solid #e6e9ef;">קישור</th>
+                        <th style="padding: 15px; text-align: center; border-bottom: 2px solid #e6e9ef;">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for form in forms %}
+                    <tr style="border-bottom: 1px solid #e6e9ef;">
+                        <td style="padding: 15px;">{{ form.title }}</td>
+                        <td style="padding: 15px;">{{ clients_dict.get(form.client_id, 'לא משויך') }}</td>
+                        <td style="padding: 15px;">{{ form.created_date }}</td>
+                        <td style="padding: 15px;">
+                            <div class="form-link">
+                                <strong>קישור לטופס:</strong><br>
+                                <input type="text" readonly value="{{ request.url_root }}form/{{ form.token }}" id="link_{{ form.id }}" style="width: 100%; padding: 5px; border: none; background: transparent; font-size: 0.9rem;">
+                                <button onclick="copyLink('{{ form.id }}')" style="margin-top: 5px; padding: 5px 10px; background: #0073ea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.85rem;">📋 העתק קישור</button>
+                            </div>
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            <button onclick="editForm('{{ form.id }}')" class="btn btn-primary btn-small" style="margin-left: 5px;">✏️ ערוך</button>
+                            <form action="/delete_form/{{ form.id }}" method="POST" style="display: inline;" onsubmit="return confirm('האם אתה בטוח שברצונך למחוק את הטופס?');">
+                                <button type="submit" class="btn btn-danger btn-small">🗑️ מחק</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state" style="padding: 40px; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📝</div>
+                <div style="font-weight: bold; color: #64748b; font-size: 1.2rem;">אין טפסים עדיין</div>
+                <div style="color: #94a3b8; margin-top: 10px;">לחץ על "צור טופס חדש" כדי להתחיל</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal ליצירת/עריכת טופס -->
+    <div id="formModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; overflow-y: auto; padding: 20px;">
+        <div style="background: white; padding: 35px; border-radius: 16px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e6e9ef;">
+                <h2 style="margin: 0; color: #292f4c;" id="modalTitle">צור טופס חדש</h2>
+                <button onclick="closeFormModal()" style="background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #64748b;">×</button>
+            </div>
+            
+            <form id="formForm" onsubmit="event.preventDefault(); saveForm();">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">כותרת הטופס:</label>
+                    <input type="text" id="formTitle" name="title" required style="width: 100%; padding: 12px; border: 2px solid #e6e9ef; border-radius: 8px; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">לקוח:</label>
+                    <select id="formClientId" name="client_id" required style="width: 100%; padding: 12px; border: 2px solid #e6e9ef; border-radius: 8px; font-size: 1rem;">
+                        <option value="">בחר לקוח</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <label style="color: #64748b; font-weight: 600;">שדות הטופס:</label>
+                        <button type="button" onclick="addField()" class="btn btn-success btn-small">+ הוסף שדה</button>
+                    </div>
+                    <div id="fieldsContainer"></div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 20px; border-top: 2px solid #e6e9ef;">
+                    <button type="button" onclick="closeFormModal()" style="padding: 12px 24px; border: 2px solid #e6e9ef; background: white; border-radius: 10px; cursor: pointer; font-weight: 600; color: #64748b;">ביטול</button>
+                    <button type="submit" class="btn-black" style="padding: 12px 28px; font-weight: 600; border-radius: 10px;">💾 שמור טופס</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentFormId = null;
+        let fieldCounter = 0;
+        
+        function openAddModal() {
+            currentFormId = null;
+            document.getElementById('modalTitle').textContent = 'צור טופס חדש';
+            document.getElementById('formTitle').value = '';
+            document.getElementById('formClientId').value = '';
+            document.getElementById('fieldsContainer').innerHTML = '';
+            fieldCounter = 0;
+            document.getElementById('formModal').style.display = 'flex';
+        }
+        
+        function editForm(formId) {
+            // TODO: טעינת נתוני הטופס לעריכה
+            openAddModal();
+            currentFormId = formId;
+            document.getElementById('modalTitle').textContent = 'ערוך טופס';
+        }
+        
+        function closeFormModal() {
+            document.getElementById('formModal').style.display = 'none';
+        }
+        
+        function addField() {
+            fieldCounter++;
+            const fieldHtml = `
+                <div class="field-item" data-field-id="${fieldCounter}">
+                    <div class="field-item-header">
+                        <strong>שדה #${fieldCounter}</strong>
+                        <button type="button" onclick="removeField(${fieldCounter})" style="background: #d66b74; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">🗑️ מחק</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">סוג שדה:</label>
+                            <select name="field_type_${fieldCounter}" onchange="updateFieldType(${fieldCounter}, this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                                <option value="text">טקסט קצר</option>
+                                <option value="textarea">טקסט ארוך</option>
+                                <option value="date">תאריך</option>
+                                <option value="select">בחירה מרשימה</option>
+                                <option value="file">העלאת קובץ</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">תווית (Label):</label>
+                            <input type="text" name="field_label_${fieldCounter}" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                                <input type="checkbox" name="field_required_${fieldCounter}">
+                                שדה חובה
+                            </label>
+                        </div>
+                        <div id="field_options_${fieldCounter}">
+                            <!-- אופציות נוספות לפי סוג השדה -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('fieldsContainer').insertAdjacentHTML('beforeend', fieldHtml);
+        }
+        
+        function removeField(fieldId) {
+            document.querySelector(`[data-field-id="${fieldId}"]`).remove();
+        }
+        
+        function updateFieldType(fieldId, type) {
+            const optionsContainer = document.getElementById(`field_options_${fieldId}`);
+            if (type === 'textarea' || type === 'text') {
+                optionsContainer.innerHTML = `
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">מקסימום תווים:</label>
+                    <input type="number" name="field_maxlength_${fieldId}" value="255" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                `;
+            } else if (type === 'select') {
+                optionsContainer.innerHTML = `
+                    <label style="display: block; margin-bottom: 5px; font-size: 0.9rem;">אפשרויות (מופרדות בפסיק):</label>
+                    <input type="text" name="field_options_${fieldId}" placeholder="אפשרות 1, אפשרות 2, אפשרות 3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                `;
+            } else {
+                optionsContainer.innerHTML = '';
+            }
+        }
+        
+        function saveForm() {
+            const fields = [];
+            const fieldItems = document.querySelectorAll('.field-item');
+            
+            fieldItems.forEach(item => {
+                const fieldId = item.getAttribute('data-field-id');
+                const type = document.querySelector(`[name="field_type_${fieldId}"]`).value;
+                const label = document.querySelector(`[name="field_label_${fieldId}"]`).value;
+                const required = document.querySelector(`[name="field_required_${fieldId}"]`).checked;
+                
+                const field = {
+                    id: `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    type: type,
+                    label: label,
+                    required: required
+                };
+                
+                if (type === 'textarea' || type === 'text') {
+                    const maxlength = document.querySelector(`[name="field_maxlength_${fieldId}"]`);
+                    if (maxlength) field.max_length = parseInt(maxlength.value) || null;
+                } else if (type === 'select') {
+                    const options = document.querySelector(`[name="field_options_${fieldId}"]`);
+                    if (options && options.value) {
+                        field.options = options.value.split(',').map(o => o.trim()).filter(o => o);
+                    }
+                }
+                
+                fields.push(field);
+            });
+            
+            const formData = {
+                title: document.getElementById('formTitle').value,
+                client_id: document.getElementById('formClientId').value,
+                fields: fields
+            };
+            
+            fetch(currentFormId ? `/edit_form/${currentFormId}` : '/add_form', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('שגיאה: ' + (data.error || 'שגיאה לא ידועה'));
+                }
+            })
+            .catch(err => {
+                alert('שגיאה בשמירה: ' + err);
+            });
+        }
+        
+        function copyLink(formId) {
+            const input = document.getElementById(`link_${formId}`);
+            input.select();
+            document.execCommand('copy');
+            alert('הקישור הועתק!');
+        }
+        
+        // סגירה בלחיצה מחוץ למודאל
+        document.getElementById('formModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFormModal();
+        });
+    </script>
+    {% include '_chat_widget.html' %}
+</body>
+</html>

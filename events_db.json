@@ -1,0 +1,256 @@
+[
+    {
+        "id": "9588b8a6-200d-431e-808b-4cd779077b86",
+        "name": "סיכום פעילות פורום תקווה",
+        "client_id": "4349ca26-39be-4e51-8b45-1921c091a9e5",
+        "date": "2025-12-23",
+        "location": "בית העם",
+        "event_type": "כנס",
+        "checklist": [
+            {
+                "completed": false,
+                "task": "הזמנת קייטרינג"
+            },
+            {
+                "completed": false,
+                "task": "עיצוב רול-אפים"
+            },
+            {
+                "completed": false,
+                "task": "שליחת Save the date"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת הגברה ותאורה"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת מקרן ומסך"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת מקומות ישיבה"
+            },
+            {
+                "completed": false,
+                "task": "אישור מיקום"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת צלמים/וידאו"
+            },
+            {
+                "completed": false,
+                "task": "הכנת מצגות"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת מתנות למשתתפים"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת קייטרינג"
+            }
+        ],
+        "suppliers": [],
+        "equipment": [
+            "פלטה/במה",
+            "באנרים",
+            "כסאות",
+            "שולחן"
+        ],
+        "charges": [
+            {
+                "id": "58fb851e-ccf4-41ce-a0d6-42903a8125c8",
+                "title": "גב במה",
+                "amount": 100.0,
+                "date": "22/12/25"
+            },
+            {
+                "id": "aeff79ba-772b-4034-84e7-d49a4490a473",
+                "title": "גב במה",
+                "amount": 1000.0,
+                "date": "23/12/25",
+                "completed": false
+            },
+            {
+                "id": "5adcf88b-57fb-4aac-9963-31f504c60d74",
+                "title": "מיקרופון נייד",
+                "amount": 250.0,
+                "our_cost": 50.0,
+                "date": "23/12/25",
+                "completed": false
+            },
+            {
+                "id": "78d19b2f-53e9-4db5-814a-4c74f33894b5",
+                "title": "בדיקת סאונד",
+                "amount": 41.0,
+                "our_cost": 100.0,
+                "date": "23/12/25",
+                "completed": false
+            }
+        ],
+        "reminders": [],
+        "notes": "",
+        "created_date": "22/12/25",
+        "status": "active",
+        "graphics_items": [
+            {
+                "arrived": false,
+                "dimensions": "10*30",
+                "id": "1766569791213",
+                "name": "קאפה פודים",
+                "quantity": 2,
+                "status": "ממתין",
+                "studio_notes": "בדגדגד"
+            },
+            {
+                "id": "1766594834037",
+                "name": "",
+                "dimensions": "",
+                "quantity": 1,
+                "studio_notes": "",
+                "status": "ממתין",
+                "arrived": false
+            }
+        ],
+        "archived": true,
+        "archived_at": "2025-12-25T10:50:04.267731"
+    },
+    {
+        "id": "dff79807-48f0-40b0-ab95-6ac378f980a1",
+        "name": "תצפית איתמר",
+        "client_id": "0756012e-1d82-469d-ae50-9ecdce25fac1",
+        "date": "2025-12-25",
+        "location": "בית העם",
+        "event_type": "כנס",
+        "checklist": [
+            {
+                "completed": true,
+                "task": "הזמנת קייטרינג"
+            },
+            {
+                "completed": true,
+                "task": "עיצוב רול-אפים"
+            },
+            {
+                "completed": true,
+                "task": "שליחת Save the date"
+            },
+            {
+                "completed": true,
+                "task": "הזמנת הגברה ותאורה"
+            },
+            {
+                "completed": true,
+                "task": "הזמנת מקרן ומסך"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת מקומות ישיבה"
+            },
+            {
+                "completed": false,
+                "task": "אישור מיקום"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת צלמים/וידאו"
+            },
+            {
+                "completed": false,
+                "task": "הכנת מצגות"
+            },
+            {
+                "completed": false,
+                "task": "הזמנת מתנות למשתתפים"
+            }
+        ],
+        "suppliers": [
+            {
+                "supplier_id": "a44bc0ae-0919-4294-8326-2c8b64c5d43e",
+                "name": "איתמר",
+                "phone": "523777250",
+                "category": "אולמות",
+                "price": 175.0,
+                "payment_status": "pending",
+                "notes": ""
+            }
+        ],
+        "equipment": [],
+        "charges": [],
+        "reminders": [],
+        "notes": "",
+        "created_date": "22/12/25",
+        "status": "active",
+        "archived": true,
+        "archived_at": "2025-12-25T10:44:47.737597"
+    },
+    {
+        "id": "6b82b894-749b-4edd-bcd6-2b2c923536b9",
+        "name": "אירוע משרדי",
+        "client_id": "0977739c-4f7c-4cff-8131-af7953835745",
+        "date": "2025-12-10",
+        "location": "בית העם",
+        "event_type": "כנס",
+        "checklist": [
+            {
+                "task": "הזמנת קייטרינג",
+                "completed": false
+            },
+            {
+                "task": "עיצוב רול-אפים",
+                "completed": false
+            },
+            {
+                "task": "שליחת Save the date",
+                "completed": false
+            },
+            {
+                "task": "הזמנת הגברה ותאורה",
+                "completed": false
+            },
+            {
+                "task": "הזמנת מקרן ומסך",
+                "completed": false
+            },
+            {
+                "task": "הזמנת מקומות ישיבה",
+                "completed": false
+            },
+            {
+                "task": "אישור מיקום",
+                "completed": false
+            },
+            {
+                "task": "הזמנת צלמים/וידאו",
+                "completed": false
+            },
+            {
+                "task": "הכנת מצגות",
+                "completed": false
+            },
+            {
+                "task": "הזמנת מתנות למשתתפים",
+                "completed": false
+            }
+        ],
+        "suppliers": [
+            {
+                "supplier_id": "04afa5c2-1aa7-4ceb-b844-8c0f9e2cda66",
+                "name": "כהן חמוצים-שוק",
+                "phone": "26253456",
+                "category": "הסעדה",
+                "price": 2333.0,
+                "payment_status": "deposit_paid",
+                "notes": "ffef"
+            }
+        ],
+        "equipment": [],
+        "charges": [],
+        "reminders": [],
+        "notes": "",
+        "created_date": "30/12/25",
+        "status": "active"
+    }
+]

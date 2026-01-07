@@ -1,0 +1,46 @@
+הגדרות שליחת מייל - הוראות
+
+כדי להפעיל שליחת מייל אוטומטית כאשר טופס מולא, יש להגדיר משתני סביבה:
+
+1. Gmail:
+   SMTP_SERVER=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USERNAME=your-email@gmail.com
+   SMTP_PASSWORD=your-app-password  (לא הסיסמה הרגילה - צריך App Password)
+
+2. Outlook/Hotmail:
+   SMTP_SERVER=smtp-mail.outlook.com
+   SMTP_PORT=587
+   SMTP_USERNAME=your-email@outlook.com
+   SMTP_PASSWORD=your-password
+
+3. שרת מייל מותאם:
+   SMTP_SERVER=your-smtp-server.com
+   SMTP_PORT=587 (או 465 ל-SSL)
+   SMTP_USERNAME=your-email@domain.com
+   SMTP_PASSWORD=your-password
+
+דרכים להגדיר משתני סביבה:
+
+א. דרך הקוד (לא מומלץ לפרודקשן):
+   הוסף ב-app.py בתחילת הפונקציה send_form_email:
+   SMTP_USERNAME = 'your-email@example.com'
+   SMTP_PASSWORD = 'your-password'
+
+ב. דרך משתני סביבה של Windows:
+   setx SMTP_SERVER "smtp.gmail.com"
+   setx SMTP_PORT "587"
+   setx SMTP_USERNAME "your-email@gmail.com"
+   setx SMTP_PASSWORD "your-password"
+
+ג. דרך קובץ .env (אם תוסיף flask-dotenv):
+   צור קובץ .env בתיקיית הפרויקט:
+   SMTP_SERVER=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USERNAME=your-email@gmail.com
+   SMTP_PASSWORD=your-app-password
+
+המייל ישלח ל: studio@vatkin.co.il
+
+שים לב: אם לא הוגדרו משתני סביבה, המייל לא יישלח אבל המשימה עדיין תיווצר במערכת.
+

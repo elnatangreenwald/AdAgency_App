@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>לקוחות | ותקין בוטיק</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <style>
+        .user-header { 
+            border-bottom: 3px solid var(--primary); 
+            color: var(--primary); 
+            padding-bottom: 10px; 
+            margin: 40px 0 20px; 
+            font-size: 1.6rem; 
+            font-weight: bold;
+        }
+        .client-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px;
+        }
+        .client-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 16px; 
+            text-decoration: none; 
+            color: black; 
+            border: none;
+            text-align: center; 
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .client-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-primary);
+            transform: scaleY(0);
+            transition: transform 0.3s;
+        }
+        .client-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: var(--shadow-lg);
+        }
+        .client-card:hover::before {
+            transform: scaleY(1);
+        }
+        
+        h1 {
+            color: #292f4c;
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="/" class="sidebar-logo"><img src="{{ url_for('static', filename='Vatkin_Logo.jpg') }}"></a>
+        <a href="/" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            דשבורד
+        </a>
+        <div class="nav-item">
+            <a href="/all_clients" class="nav-link active">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                לוח לקוחות
+            </a>
+            <div class="users-dropdown">
+                {% for uid, info in sidebar_users.items() %}
+                <a href="/all_clients?user={{ uid }}" class="user-sub-link">• {{ info.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="/finance" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            כספים
+        </a>
+        <a href="/events" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            אירועים
+        </a>
+        <a href="/suppliers" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ספקים
+        </a>
+        <a href="/quotes" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            הצעות מחיר
+        </a>
+        <a href="/forms" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            טפסים
+        </a>
+        <a href="/admin/dashboard" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            דוח מנהלים
+        </a>
+        {% if current_user.id == 'admin' %}
+        <a href="/admin/users" class="nav-link active">
+            <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+            ניהול צוות
+        </a>
+        {% endif %}
+        {% if current_user.id == 'admin' or user_role in ['מנהל', 'אדמין'] %}
+        <a href="/archive" class="nav-link">
+            <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+            ארכיון
+        </a>
+        {% endif %}
+        <div class="sidebar-user-area">
+            <div class="sidebar-user-name">{{ current_user.name }}</div>
+            <a href="/logout" class="sidebar-logout-link">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                התנתק
+            </a>
+        </div>
+    </div>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1 style="margin: 0;">לוח לקוחות המשרד</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="position: relative; width: 300px;">
+                    <input type="text" id="clientSearch" placeholder="חפש לקוח..." oninput="filterClients()" style="width: 100%; padding: 12px 16px; padding-right: 40px; border: 2px solid #e6e9ef; border-radius: 12px; font-size: 1rem; direction: rtl; transition: all 0.3s;" onfocus="this.style.borderColor='#0073ea';" onblur="this.style.borderColor='#e6e9ef';">
+                </div>
+                {% if current_user.id == 'admin' or user_role in ['מנהל', 'אדמין'] %}
+                <button onclick="document.getElementById('addClientModal').style.display='block'" class="btn-black" style="padding: 12px 24px; white-space: nowrap;">+ לקוח חדש</button>
+                {% endif %}
+            </div>
+        </div>
+        {% if filter_user %}
+            {# מצב סינון לפי משתמש ספציפי #}
+            {% if clients %}
+                <div class="user-header" data-user-id="{{ filter_user }}">{{ users.get(filter_user, {}).get('name', filter_user) }}</div>
+                <div class="client-grid" data-user-id="{{ filter_user }}">
+                    {% for c in clients %}
+                    <a href="/client/{{ c.id }}" class="client-card" data-client-name="{{ c.name|lower }}">{{ c.name }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            {# מצב רגיל - הצגת כל המשתמשים #}
+            {% for uid, info in users.items() %}
+                {% set u_clients = clients_by_user.get(uid, []) %}
+                {% if u_clients %}
+                    <div class="user-header" data-user-id="{{ uid }}">{{ info.name }}</div>
+                    <div class="client-grid" data-user-id="{{ uid }}">
+                        {% for c in u_clients %}
+                        <a href="/client/{{ c.id }}" class="client-card" data-client-name="{{ c.name|lower }}">{{ c.name }}</a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <!-- Chat Button and Modal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+    <script src="{{ url_for('static', filename='chat.js') }}"></script>
+    <script>
+        var currentUserId = '{{ current_user.id }}';
+        
+        // פונקציית סינון לקוחות
+        function filterClients() {
+            const searchTerm = document.getElementById('clientSearch').value.toLowerCase().trim();
+            const clientCards = document.querySelectorAll('.client-card');
+            const userHeaders = document.querySelectorAll('.user-header');
+            
+            let hasVisibleClients = false;
+            const visibleUsers = new Set();
+            
+            // סינון כרטיסי לקוחות
+            clientCards.forEach(card => {
+                const clientName = card.getAttribute('data-client-name') || '';
+                const grid = card.closest('.client-grid');
+                const userId = grid ? grid.getAttribute('data-user-id') : null;
+                
+                if (clientName.includes(searchTerm)) {
+                    card.style.display = '';
+                    if (userId) {
+                        visibleUsers.add(userId);
+                    }
+                    hasVisibleClients = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // הצג/הסתר כותרות משתמשים בהתאם
+            userHeaders.forEach(header => {
+                const userId = header.getAttribute('data-user-id');
+                const grid = header.nextElementSibling;
+                
+                if (userId && visibleUsers.has(userId)) {
+                    header.style.display = '';
+                    if (grid && grid.classList.contains('client-grid')) {
+                        grid.style.display = '';
+                    }
+                } else if (searchTerm === '') {
+                    // אם אין חיפוש, הצג הכל
+                    header.style.display = '';
+                    if (grid && grid.classList.contains('client-grid')) {
+                        grid.style.display = '';
+                    }
+                } else {
+                    // בדוק אם יש לקוחות גלויים בתוך הקבוצה הזו
+                    const hasVisible = Array.from(grid?.querySelectorAll('.client-card') || []).some(card => {
+                        return card.style.display !== 'none';
+                    });
+                    if (hasVisible) {
+                        header.style.display = '';
+                        if (grid && grid.classList.contains('client-grid')) {
+                            grid.style.display = '';
+                        }
+                    } else {
+                        header.style.display = 'none';
+                        if (grid && grid.classList.contains('client-grid')) {
+                            grid.style.display = 'none';
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+    <button class="chat-button" onclick="ChatManager.openChat()" title="תמיכה והדרכה">
+        💬
+        <span class="chat-button-badge" id="chatUnreadBadge" style="display: none;">0</span>
+    </button>
+    
+    <div id="chatModal" class="chat-modal">
+        <div class="chat-header">
+            <div class="chat-header-content">
+                <span class="chat-header-emoji">👋</span>
+                <div class="chat-header-text">
+                    <h2 class="chat-header-title">שלום</h2>
+                    <p class="chat-header-subtitle">נשמח לסייע בכל נושא</p>
+                    <p class="chat-header-hours">זמני הפעילות: ימים א-ה בשעות 9:00-17:00</p>
+                </div>
+            </div>
+            <button class="chat-close-btn" onclick="ChatManager.closeChat()">×</button>
+        </div>
+        <div class="chat-body">
+            <!-- Users List Section -->
+            <div id="chatUsersSection">
+                <div class="chat-new-conversation-header">
+                    <h3 class="chat-new-conversation-title">התחלת שיחה חדשה</h3>
+                    <div class="chat-average-response">
+                        <div class="chat-avatar-small">👤</div>
+                        <span>מענה ממוצע תוך מספר דקות</span>
+                    </div>
+                </div>
+                <div class="chat-users-list" id="chatUsersList">
+                    <!-- Users will be loaded here -->
+                </div>
+                <button class="chat-new-conversation-btn" onclick="ChatManager.showNewConversationModal()">
+                    💬 שיחה חדשה
+                </button>
+            </div>
+            
+            <!-- Messages Section -->
+            <div id="chatMessagesSection">
+                <div class="chat-messages-header">
+                    <button class="chat-back-btn" onclick="ChatManager.backToUsers()">←</button>
+                    <div class="chat-user-avatar" id="chatWithUserAvatar"></div>
+                    <div>
+                        <div style="font-weight: bold; color: #292f4c;" id="chatWithUserName"></div>
+                        <div style="font-size: 12px; color: #64748b;">מחובר כעת</div>
+                    </div>
+                </div>
+                <div id="chatMessagesContainer">
+                    <!-- Messages will be loaded here -->
+                </div>
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea id="chatMessageInput" placeholder="הקלד הודעה..." rows="1"></textarea>
+                        <button class="chat-send-btn" onclick="ChatManager.sendMessage()">→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Client Modal -->
+    <div id="addClientModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin: 0; color: #292f4c;">הוספת לקוח חדש</h2>
+                <span class="close" onclick="document.getElementById('addClientModal').style.display='none'" style="font-size: 2rem; cursor: pointer; color: #64748b;">&times;</span>
+            </div>
+            <form action="/add_client" method="POST">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 600;">שם הלקוח:</label>
+                    <input type="text" name="name" required style="width: 100%; padding: 12px; border: 2px solid #e6e9ef; border-radius: 8px; font-family: 'Heebo', sans-serif; font-size: 1rem; box-sizing: border-box;">
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" onclick="document.getElementById('addClientModal').style.display='none'" style="padding: 12px 24px; border: 2px solid #e6e9ef; background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e1'; this.style.color='#292f4c';" onmouseout="this.style.borderColor='#e6e9ef'; this.style.color='#64748b';">ביטול</button>
+                    <button type="submit" class="btn-black" style="padding: 12px 24px;">הוסף לקוח</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            right: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e6e9ef;
+        }
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+        .close:hover {
+            color: #333;
+        }
+    </style>
+    <script>
+        window.onclick = function(event) {
+            const modal = document.getElementById('addClientModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
