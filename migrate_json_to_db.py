@@ -1,16 +1,52 @@
 """
 Migration script to import JSON files into PostgreSQL database
 Run this once to migrate your existing data to PostgreSQL
+
+Usage:
+    # Option 1: Set DATABASE_URL environment variable
+    export DATABASE_URL="postgresql://user:password@host:port/database"
+    python migrate_json_to_db.py
+    
+    # Option 2: Set it inline (Windows PowerShell)
+    $env:DATABASE_URL="postgresql://user:password@host:port/database"
+    python migrate_json_to_db.py
+    
+    # Option 3: Set it inline (Windows CMD)
+    set DATABASE_URL=postgresql://user:password@host:port/database
+    python migrate_json_to_db.py
+    
+    # Option 4: Set it inline (Linux/Mac)
+    DATABASE_URL="postgresql://user:password@host:port/database" python migrate_json_to_db.py
 """
 import os
 import json
 import sys
+from sqlalchemy import text
 from database import (
-    init_db, get_db, User, Client, Supplier, Quote, Message, Event,
+    init_db, get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def verify_connection():
+    """Verify database connection before starting migration (SQLAlchemy 2.0 compatible)"""
+    try:
+        # Try to connect to the database - SQLAlchemy 2.0 requires text() for raw SQL
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT 1"))
+            result.fetchone()  # Consume the result
+        print("✓ Database connection verified")
+        return True
+    except Exception as e:
+        print(f"✗ Failed to connect to database: {e}")
+        print("\nPlease check:")
+        print("1. DATABASE_URL is set correctly")
+        print("2. The connection string is valid")
+        print("3. The database server is accessible from your network")
+        print("\nExample DATABASE_URL format:")
+        print("postgresql://username:password@host:port/database")
+        return False
 
 def migrate_users():
     """Migrate users from users_db.json"""
@@ -416,13 +452,48 @@ def main():
     print("Starting JSON to PostgreSQL Migration")
     print("=" * 60)
     
+    # Check if DATABASE_URL is set
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        print("\n⚠️  DATABASE_URL environment variable is not set!")
+        print("\nPlease set it using one of these methods:")
+        print("\nWindows PowerShell:")
+        print('  $env:DATABASE_URL="postgresql://user:password@host:port/database"')
+        print("\nWindows CMD:")
+        print('  set DATABASE_URL=postgresql://user:password@host:port/database')
+        print("\nLinux/Mac:")
+        print('  export DATABASE_URL="postgresql://user:password@host:port/database"')
+        print("\nOr run inline:")
+        print('  DATABASE_URL="postgresql://..." python migrate_json_to_db.py')
+        print("\nTo get your Railway DATABASE_URL:")
+        print("1. Go to Railway dashboard")
+        print("2. Select your PostgreSQL service")
+        print("3. Go to 'Connect' or 'Variables' tab")
+        print("4. Copy the DATABASE_URL or Connection URL")
+        sys.exit(1)
+    
+    print(f"\nUsing DATABASE_URL: {database_url.split('@')[1] if '@' in database_url else '***'}")
+    
+    # Verify connection
+    print("\n1. Verifying database connection...")
+    if not verify_connection():
+        sys.exit(1)
+    
     # Initialize database tables
-    print("\n1. Initializing database tables...")
-    init_db()
-    print("✓ Database tables created")
+    print("\n2. Initializing database tables...")
+    try:
+        init_db()
+        print("✓ Database tables created")
+    except Exception as e:
+        print(f"✗ Error creating tables: {e}")
+        print("\nThis might happen if:")
+        print("- Tables already exist (this is OK, continuing...)")
+        print("- Database permissions issue")
+        print("- Connection problem")
+        # Continue anyway, tables might already exist
     
     # Run migrations
-    print("\n2. Migrating data...")
+    print("\n3. Migrating data...")
     migrate_users()
     migrate_clients()
     migrate_suppliers()
@@ -438,8 +509,12 @@ def main():
     print("\n" + "=" * 60)
     print("Migration completed successfully!")
     print("=" * 60)
-    print("\n⚠️  IMPORTANT: Backup your JSON files before switching to database mode")
-    print("   You can now set USE_DATABASE=true in your environment variables")
+    print("\n⚠️  IMPORTANT:")
+    print("   1. Backup your JSON files (they are still your source of truth)")
+    print("   2. Set USE_DATABASE=true in Railway environment variables")
+    print("   3. Redeploy your app to Railway")
+    print("   4. Verify data is working correctly")
+    print("\n✓ Your data is now in PostgreSQL and will persist across deployments!")
 
 if __name__ == '__main__':
     try:
