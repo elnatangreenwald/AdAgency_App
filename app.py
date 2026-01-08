@@ -33,6 +33,19 @@ if sys.platform == 'win32':
 # טעינת משתני סביבה מקובץ .env (אם קיים)
 load_dotenv()
 
+# Use database helpers if USE_DATABASE is enabled (for Railway deployment)
+USE_DATABASE = os.environ.get('USE_DATABASE', 'false').lower() == 'true'
+if USE_DATABASE:
+    # Import database helpers to override JSON functions
+    from database_helpers import (
+        load_users, save_users, load_data, save_data,
+        load_suppliers, save_suppliers, load_quotes, save_quotes,
+        load_messages, save_messages, load_events, save_events,
+        load_equipment_bank, save_equipment_bank,
+        load_checklist_templates, save_checklist_templates,
+        load_forms, save_forms
+    )
+
 app = Flask(__name__)
 # SECRET_KEY מ-environment variable, או יוצר אחד חדש (לא מומלץ בפרודקשן)
 app.secret_key = os.environ.get('SECRET_KEY') or 'vatkin_master_final_v100_CHANGE_IN_PRODUCTION'
