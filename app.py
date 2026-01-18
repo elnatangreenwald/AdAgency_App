@@ -48,15 +48,16 @@ if USE_DATABASE:
     )
 
 app = Flask(__name__)
-# SECRET_KEY מ-environment variable, או יוצר אחד חדש (לא מומלץ בפרודקשן)
+# SECRET_KEY מ-environment variable (חובה בפרודקשן!)
 app.secret_key = os.environ.get('SECRET_KEY') or 'vatkin_master_final_v100_CHANGE_IN_PRODUCTION'
-# הגדרת timeout ל-session - שעה (3600 שניות)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+# הגדרת timeout ל-session - 24 שעות
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 # הגדרות אבטחה ל-session cookies
-app.config['SESSION_COOKIE_HTTPONLY'] = True  # למנוע גישה מ-JavaScript
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # הגנה מפני CSRF
-# SESSION_COOKIE_SECURE = True רק ב-HTTPS (פעיל רק בפרודקשן עם HTTPS)
-if os.environ.get('FLASK_ENV') == 'production':
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# Railway uses HTTPS, so we need secure cookies
+is_production = os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('PORT')
+if is_production:
     app.config['SESSION_COOKIE_SECURE'] = True
 
 # הגדרת נתיבים ותיקיות
