@@ -1080,19 +1080,8 @@ def reset_password(token):
 @app.route('/')
 @login_required
 def home():
-    user_role = get_user_role(current_user.id)
-    if not check_permission('/', user_role):
-        return "גישה חסומה - אין לך הרשאה לגשת לדף זה", 403
-    all_c = load_data()
-    # סינון לקוחות מאוישים
-    all_c = filter_active_clients(all_c)
-    if is_manager_or_admin(current_user.id, user_role):
-        display = all_c
-    else:
-        # בדוק אם המשתמש בשיוך של הלקוח
-        display = [c for c in all_c if can_user_access_client(current_user.id, user_role, c)]
-    # מיון לפי סדר אלפביתי לפי שם הלקוח
-    display = sorted(display, key=lambda x: x.get('name', '').lower())
+    # Redirect to React app
+    return redirect('/app')
     users = load_users()
     sidebar_users = {uid: {'name': info.get('name', '')} for uid, info in users.items() if uid != 'admin'}
     return render_template('index.html', clients=display, sidebar_users=sidebar_users)
