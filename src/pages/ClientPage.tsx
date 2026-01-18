@@ -28,7 +28,6 @@ import {
   Plus,
   Trash2,
   Upload,
-  Download,
   ChevronDown,
   ChevronUp,
   Edit,
@@ -36,7 +35,6 @@ import {
   Mail,
   Calendar,
   FileText,
-  User,
   Clock,
   Users,
 } from 'lucide-react';
@@ -218,7 +216,7 @@ export function ClientPage() {
         setClient(response.data.client);
         setRetainerAmount(response.data.client.retainer?.toString() || '0');
         // Expand all projects by default
-        const allProjectIds = new Set(
+        const allProjectIds = new Set<string>(
           response.data.client.projects?.map((p: Project) => p.id) || []
         );
         setExpandedProjects(allProjectIds);
@@ -1257,7 +1255,7 @@ export function ClientPage() {
                             key={`task-form-${project.id}-${taskFormKeys[project.id] || 0}`}
                             projectId={project.id}
                             clientId={client.id}
-                            onSubmit={(formData) => handleAddTask(new Event('submit'), project.id, formData)}
+                            onSubmit={(formData) => handleAddTask({ preventDefault: () => {} } as React.FormEvent, project.id, formData)}
                             users={users}
                             currentUserId={currentUser?.id || ''}
                             existingTasks={project.tasks || []}

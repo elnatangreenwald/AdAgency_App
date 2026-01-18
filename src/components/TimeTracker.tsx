@@ -11,9 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { Play, Square, Clock, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface TimeTrackerProps {
   clientId: string;
@@ -41,10 +39,9 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
   const [reminderShown, setReminderShown] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const reminderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reminderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
 
   useEffect(() => {
     checkActiveSession();
