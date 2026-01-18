@@ -1,0 +1,17 @@
+node_modules
+dist
+static/dist
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.env
+.env.local
+*.log
+.DS_Store
+.vscode
+.idea
+*.md
+!README.md
