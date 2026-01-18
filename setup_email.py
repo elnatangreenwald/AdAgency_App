@@ -13,7 +13,11 @@ print()
 
 # קבלת פרטים מהמשתמש
 email = input("הזן את כתובת ה-Gmail שלך: ").strip()
-password = input("הזן את App Password (nhvi efyc emwf gatv): ").strip() or "nhvi efyc emwf gatv"
+password = input("הזן את App Password (מ-Google Account Settings): ").strip()
+if not password:
+    print("❌ שגיאה: חובה להזין App Password!")
+    print("צור App Password ב: https://myaccount.google.com/apppasswords")
+    sys.exit(1)
 
 # הגדרת משתני סביבה (Windows)
 if sys.platform == "win32":

@@ -5,6 +5,8 @@
     <title>ותקין בוטיק | דשבורד</title>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='common_styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <style>
         .client-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; margin-top: 30px; }
         .client-card { 
@@ -195,6 +197,87 @@
             background: white;
             color: #043841;
         }
+        
+        /* Calendar Styles */
+        #tasksCalendar {
+            direction: rtl;
+            font-family: 'Heebo', sans-serif;
+        }
+        
+        .fc {
+            direction: rtl;
+            font-family: 'Heebo', sans-serif;
+        }
+        
+        .fc-button {
+            background: #1e4c54 !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 8px 16px !important;
+            font-weight: 600 !important;
+            font-family: 'Heebo', sans-serif !important;
+            color: white !important;
+            margin: 0 4px !important;
+        }
+        
+        .fc-button:hover {
+            background: #2a6874 !important;
+        }
+        
+        .fc-button-active {
+            background: #256a77 !important;
+        }
+        
+        .fc-toolbar-title {
+            font-family: 'Heebo', sans-serif;
+            font-weight: bold;
+            color: #292f4c;
+            font-size: 1.5rem;
+        }
+        
+        .fc-daygrid-event {
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none !important;
+        }
+        
+        .fc-daygrid-event:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            opacity: 0.9;
+        }
+        
+        .fc-event-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .fc-daygrid-day-frame {
+            min-height: 100px;
+        }
+        
+        .fc-daygrid-day {
+            background: white;
+        }
+        
+        .fc-day-today {
+            background: #f0f4ff !important;
+        }
+        
+        .fc-col-header-cell {
+            background: #f8fafc;
+            font-weight: bold;
+            color: #292f4c;
+            padding: 10px;
+        }
+        
+        .fc-daygrid-day-number {
+            padding: 8px;
+            font-weight: 600;
+            color: #292f4c;
+        }
     </style>
 </head>
 <body>
@@ -288,6 +371,14 @@
             </div>
         </div>
         
+        <!-- לוח שנה - משימות -->
+        <div style="margin-top: 40px; margin-bottom: 40px;">
+            <h2 style="margin-bottom: 20px; color: #292f4c;">לוח שנה - משימות</h2>
+            <div style="background: white; padding: 25px; border-radius: 16px; box-shadow: var(--shadow-md);">
+                <div id="tasksCalendar" style="direction: rtl;"></div>
+            </div>
+        </div>
+        
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 30px;">
             <h3 style="margin: 0;">הלקוחות שלך:</h3>
             <div style="position: relative; width: 300px;">
@@ -351,6 +442,11 @@
                         </select>
                     </div>
                     <div>
+                        <label style="display: block; margin-bottom: 5px; color: #666; font-weight: bold;">תאריך לביצוע (Deadline) - אופציונלי:</label>
+                        <input type="date" name="task_deadline" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; direction: ltr; text-align: right;">
+                        <small style="color: #94a3b8; font-size: 0.85rem;">התאריך יקבע את מיקום המשימה בלוח השנה</small>
+                    </div>
+                    <div>
                         <label style="display: block; margin-bottom: 5px; color: #666; font-weight: bold;">הערה (אופציונלי):</label>
                         <textarea name="task_note" placeholder="הערה למשימה..." style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; min-height: 80px; box-sizing: border-box; resize: vertical;"></textarea>
                     </div>
@@ -360,6 +456,19 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+    
+    <!-- Modal לפרטי משימה מלוח שנה -->
+    <div id="taskCalendarModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">פרטי משימה</h3>
+                <span class="close" onclick="closeTaskCalendarModal()">&times;</span>
+            </div>
+            <div id="taskModalContent" style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- תוכן יוטען דינמית -->
+            </div>
         </div>
     </div>
     
@@ -545,17 +654,6 @@
             });
         }
         
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const taskModal = document.getElementById('addTaskModal');
-            const chargeModal = document.getElementById('addChargeModal');
-            if (event.target == taskModal) {
-                closeAddTaskModal();
-            }
-            if (event.target == chargeModal) {
-                closeAddChargeModal();
-            }
-        }
         
         // פונקציית סינון לקוחות
         function filterClients() {
@@ -584,8 +682,422 @@
                     this.setAttribute('data-status', this.value);
                 });
             }
+            
+            // טעינת לוח שנה
+            loadTasksCalendar();
+        });
+        
+        // טעינת לוח שנה עם משימות
+        let tasksCalendar = null;
+        async function loadTasksCalendar() {
+            try {
+                console.log('Loading tasks calendar...');
+                const response = await fetch('/api/tasks/calendar');
+                const data = await response.json();
+                
+                console.log('Calendar data received:', data);
+                
+                if (data.success) {
+                    console.log('Tasks count:', data.tasks.length);
+                    renderTasksCalendar(data.tasks);
+                } else {
+                    console.error('Error loading tasks for calendar:', data.error);
+                    const calendarEl = document.getElementById('tasksCalendar');
+                    if (calendarEl) {
+                        calendarEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">שגיאה בטעינת המשימות: ' + (data.error || 'שגיאה לא ידועה') + '</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading tasks calendar:', error);
+                const calendarEl = document.getElementById('tasksCalendar');
+                if (calendarEl) {
+                    calendarEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #d66b74;">שגיאה בטעינת לוח השנה. אנא רענן את הדף.</div>';
+                }
+            }
+        }
+        
+        function renderTasksCalendar(tasks) {
+            const calendarEl = document.getElementById('tasksCalendar');
+            if (!calendarEl) {
+                console.error('Calendar element not found!');
+                return;
+            }
+            
+            console.log('Rendering calendar with', tasks.length, 'tasks');
+            
+            // בניית events ל-FullCalendar
+            const calendarEvents = tasks.map(task => {
+                // קביעת צבע לפי סטאטוס
+                let color = '#0073ea'; // ברירת מחדל
+                switch(task.status) {
+                    case 'לביצוע':
+                        color = '#bfc9f2';
+                        break;
+                    case 'הועבר לסטודיו':
+                        color = '#2b585e';
+                        break;
+                    case 'הועבר לדיגיטל':
+                        color = '#043841';
+                        break;
+                    case 'נשלח ללקוח':
+                        color = '#b8e994';
+                        break;
+                    case 'הושלם':
+                        color = '#14a675';
+                        break;
+                }
+                
+                return {
+                    id: task.id,
+                    title: task.title,
+                    start: task.start,
+                    color: color,
+                    extendedProps: {
+                        client_name: task.client_name,
+                        project_title: task.project_title,
+                        assignee_name: task.assignee_name,
+                        status: task.status,
+                        client_id: task.client_id,
+                        project_id: task.project_id,
+                        task_id: task.task_id
+                    }
+                };
+            });
+            
+            if (tasksCalendar) {
+                tasksCalendar.destroy();
+            }
+            
+            tasksCalendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'he',
+                direction: 'rtl',
+                headerToolbar: {
+                    right: 'prev,next today',
+                    center: 'title',
+                    left: 'dayGridMonth,listWeek'
+                },
+                events: calendarEvents,
+                eventClick: function(info) {
+                    info.jsEvent.preventDefault();
+                    // פתיחת modal עם פרטי המשימה
+                    openTaskModal(info.event);
+                },
+                eventContent: function(arg) {
+                    const event = arg.event;
+                    const clientName = event.extendedProps.client_name;
+                    const assigneeName = event.extendedProps.assignee_name;
+                    
+                    const html = document.createElement('div');
+                    html.style.padding = '4px';
+                    html.style.cursor = 'pointer';
+                    html.innerHTML = `
+                        <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.title}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${clientName}</div>
+                        <div style="font-size: 0.65rem; opacity: 0.8;">👤 ${assigneeName}</div>
+                    `;
+                    return { domNodes: [html] };
+                },
+                height: 'auto',
+                dayMaxEventRows: 3,
+                moreLinkClick: 'popover',
+                buttonText: {
+                    today: 'היום',
+                    month: 'חודש',
+                    week: 'שבוע',
+                    day: 'יום',
+                    list: 'רשימה'
+                },
+                firstDay: 0, // יום ראשון הוא היום הראשון בשבוע
+                weekNumbers: false,
+                navLinks: true,
+                editable: false,
+                selectable: false
+            });
+            
+            tasksCalendar.render();
+        }
+        
+        // פתיחת modal עם פרטי משימה
+        let currentTaskEvent = null;
+        function openTaskModal(event) {
+            currentTaskEvent = event;
+            const props = event.extendedProps;
+            
+            // בניית תוכן ה-modal
+            const modalContent = document.getElementById('taskModalContent');
+            const modalTitle = document.getElementById('taskModalTitle');
+            
+            modalTitle.textContent = props.title || 'פרטי משימה';
+            
+            // קביעת צבע לפי סטאטוס
+            let statusColor = '#0073ea';
+            switch(props.status) {
+                case 'לביצוע':
+                    statusColor = '#bfc9f2';
+                    break;
+                case 'הועבר לסטודיו':
+                    statusColor = '#2b585e';
+                    break;
+                case 'הועבר לדיגיטל':
+                    statusColor = '#043841';
+                    break;
+                case 'נשלח ללקוח':
+                    statusColor = '#b8e994';
+                    break;
+                case 'הושלם':
+                    statusColor = '#14a675';
+                    break;
+            }
+            
+            // קבלת תאריך deadline מהאירוע
+            const currentDeadline = event.start ? event.start.toISOString().split('T')[0] : '';
+            
+            modalContent.innerHTML = `
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-right: 4px solid ${statusColor};">
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #e6e9ef;">
+                        <strong style="color: #64748b; font-size: 0.9rem;">שם המשימה:</strong>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #292f4c; margin-top: 5px;">${escapeHtml(props.title || event.title || 'ללא כותרת')}</div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong style="color: #64748b; font-size: 0.9rem;">לקוח:</strong>
+                        <div style="font-size: 1.1rem; font-weight: 600; color: #292f4c; margin-top: 5px;">${escapeHtml(props.client_name)}</div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong style="color: #64748b; font-size: 0.9rem;">פרויקט:</strong>
+                        <div style="font-size: 1rem; color: #4a5568; margin-top: 5px;">${escapeHtml(props.project_title)}</div>
+                    </div>
+                    <div>
+                        <strong style="color: #64748b; font-size: 0.9rem;">אחראי:</strong>
+                        <div style="font-size: 1rem; color: #4a5568; margin-top: 5px;">👤 ${escapeHtml(props.assignee_name)}</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 10px; color: #666; font-weight: bold;">סטאטוס:</label>
+                    <select id="taskModalStatus" class="task-status-select" data-status="${props.status}" style="width: 100%; padding: 12px 16px; border: 2px solid #e6e9ef; border-radius: 12px; font-size: 0.95rem; font-weight: 600; background: white; color: #043841; font-family: 'Heebo', sans-serif; cursor: pointer;">
+                        <option value="לביצוע" ${props.status === 'לביצוע' ? 'selected' : ''}>לביצוע</option>
+                        <option value="הועבר לסטודיו" ${props.status === 'הועבר לסטודיו' ? 'selected' : ''}>הועבר לסטודיו</option>
+                        <option value="הועבר לדיגיטל" ${props.status === 'הועבר לדיגיטל' ? 'selected' : ''}>הועבר לדיגיטל</option>
+                        <option value="נשלח ללקוח" ${props.status === 'נשלח ללקוח' ? 'selected' : ''}>נשלח ללקוח</option>
+                        <option value="הושלם" ${props.status === 'הושלם' ? 'selected' : ''}>הושלם</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 10px; color: #666; font-weight: bold;">תאריך לביצוע (Deadline):</label>
+                    <input type="date" id="taskModalDeadline" value="${currentDeadline}" style="width: 100%; padding: 12px 16px; border: 2px solid #e6e9ef; border-radius: 12px; font-size: 0.95rem; font-family: 'Heebo', sans-serif; direction: ltr; text-align: right;">
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e6e9ef;">
+                    <button type="button" onclick="closeTaskCalendarModal()" style="background: #666; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold;">סגור</button>
+                    <button type="button" onclick="saveTaskChanges()" style="background: #14a675; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold;">💾 שמור שינויים</button>
+                    <a href="/client/${props.client_id}" style="background: #0073ea; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block;">עבור לדף הלקוח</a>
+                </div>
+            `;
+            
+            // עדכון data-status של ה-select
+            const statusSelect = document.getElementById('taskModalStatus');
+            if (statusSelect) {
+                statusSelect.setAttribute('data-status', props.status);
+                statusSelect.addEventListener('change', function() {
+                    this.setAttribute('data-status', this.value);
+                });
+            }
+            
+            document.getElementById('taskCalendarModal').style.display = 'block';
+        }
+        
+        function closeTaskCalendarModal() {
+            document.getElementById('taskCalendarModal').style.display = 'none';
+            currentTaskEvent = null;
+        }
+        
+        async function saveTaskChanges() {
+            if (!currentTaskEvent) return;
+            
+            const statusSelect = document.getElementById('taskModalStatus');
+            const deadlineInput = document.getElementById('taskModalDeadline');
+            
+            if (!statusSelect || !deadlineInput) {
+                if (typeof Toast !== 'undefined') {
+                    Toast.show('❌ שגיאה: לא נמצאו שדות לעדכון', 'error');
+                } else {
+                    alert('❌ שגיאה: לא נמצאו שדות לעדכון');
+                }
+                return;
+            }
+            
+            const newStatus = statusSelect.value;
+            const newDeadline = deadlineInput.value;
+            const props = currentTaskEvent.extendedProps;
+            const oldStatus = props.status;
+            const oldDeadline = currentTaskEvent.start ? currentTaskEvent.start.toISOString().split('T')[0] : '';
+            
+            // בדיקה אם יש שינויים
+            if (newStatus === oldStatus && newDeadline === oldDeadline) {
+                if (typeof Toast !== 'undefined') {
+                    Toast.show('ℹ️ לא בוצעו שינויים', 'info');
+                } else {
+                    alert('ℹ️ לא בוצעו שינויים');
+                }
+                return;
+            }
+            
+            try {
+                const updateData = { status: newStatus };
+                if (newDeadline) {
+                    updateData.deadline = newDeadline;
+                }
+                
+                // Use API.post to include CSRF token automatically
+                const result = await API.post(`/update_task_status/${props.client_id}/${props.project_id}/${props.task_id}`, updateData);
+                
+                if (!result.ok || !result.data || result.data.status !== 'success') {
+                    const errorMsg = (result.data && result.data.error) || 'שגיאה בעדכון המשימה';
+                    if (typeof Toast !== 'undefined') {
+                        Toast.show('❌ ' + errorMsg, 'error');
+                    } else {
+                        alert('❌ ' + errorMsg);
+                    }
+                    return;
+                }
+                
+                const data = result.data;
+                
+                if (data.status === 'success') {
+                    // אם הסטאטוס שונה ל"הושלם", הסר מהלוח שנה
+                    if (newStatus === 'הושלם') {
+                        currentTaskEvent.remove();
+                        closeTaskCalendarModal();
+                        if (typeof Toast !== 'undefined') {
+                            Toast.show('✅ המשימה הושלמה והוסרה מלוח השנה', 'success');
+                        } else {
+                            alert('✅ המשימה הושלמה והוסרה מלוח השנה');
+                        }
+                    } else {
+                        // עדכן את הסטאטוס
+                        if (currentTaskEvent) {
+                            updateEventColor(currentTaskEvent, newStatus);
+                            currentTaskEvent.setExtendedProp('status', newStatus);
+                        }
+                        
+                        // עדכן את התאריך אם השתנה
+                        if (newDeadline && newDeadline !== oldDeadline) {
+                            // שמור את כל הנתונים של האירוע
+                            const eventId = currentTaskEvent.id;
+                            const eventTitle = currentTaskEvent.title;
+                            const eventProps = currentTaskEvent.extendedProps;
+                            const eventColor = updateEventColor(null, newStatus);
+                            
+                            // הסר את האירוע הישן
+                            currentTaskEvent.remove();
+                            
+                            // צור אירוע חדש עם התאריך החדש
+                            const newEvent = {
+                                id: eventId,
+                                title: eventTitle,
+                                start: newDeadline,
+                                end: newDeadline,
+                                color: eventColor,
+                                extendedProps: {
+                                    ...eventProps,
+                                    deadline: newDeadline,
+                                    status: newStatus
+                                }
+                            };
+                            
+                            // הוסף את האירוע החדש ללוח השנה
+                            tasksCalendar.addEvent(newEvent);
+                            
+                            // עדכן את currentTaskEvent לאירוע החדש
+                            currentTaskEvent = tasksCalendar.getEventById(eventId);
+                        } else if (!newDeadline && oldDeadline) {
+                            // אם הוסר התאריך, הסר את האירוע
+                            currentTaskEvent.remove();
+                            closeTaskCalendarModal();
+                            if (typeof Toast !== 'undefined') {
+                                Toast.show('✅ תאריך היעד הוסר והמשימה הוסרה מלוח השנה', 'success');
+                            } else {
+                                alert('✅ תאריך היעד הוסר והמשימה הוסרה מלוח השנה');
+                            }
+                            return;
+                        }
+                        
+                        closeTaskCalendarModal();
+                        if (typeof Toast !== 'undefined') {
+                            Toast.show('✅ השינויים נשמרו בהצלחה', 'success');
+                        } else {
+                            alert('✅ השינויים נשמרו בהצלחה');
+                        }
+                    }
+                } else {
+                    if (typeof Toast !== 'undefined') {
+                        Toast.show('❌ שגיאה בעדכון המשימה: ' + (data.error || 'שגיאה לא ידועה'), 'error');
+                    } else {
+                        alert('❌ שגיאה בעדכון המשימה: ' + (data.error || 'שגיאה לא ידועה'));
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating task:', error);
+                if (typeof Toast !== 'undefined') {
+                    Toast.show('❌ שגיאה בהתקשרות לשרת: ' + error.message, 'error');
+                } else {
+                    alert('❌ שגיאה בהתקשרות לשרת: ' + error.message);
+                }
+            }
+        }
+        
+        function updateEventColor(event, status) {
+            let color = '#0073ea';
+            switch(status) {
+                case 'לביצוע':
+                    color = '#bfc9f2';
+                    break;
+                case 'הועבר לסטודיו':
+                    color = '#2b585e';
+                    break;
+                case 'הועבר לדיגיטל':
+                    color = '#043841';
+                    break;
+                case 'נשלח ללקוח':
+                    color = '#b8e994';
+                    break;
+                case 'הושלם':
+                    color = '#14a675';
+                    break;
+            }
+            if (event) {
+                event.setProp('color', color);
+            }
+            return color;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // סגירת modal בלחיצה מחוץ לו
+        window.addEventListener('click', function(event) {
+            const taskCalendarModal = document.getElementById('taskCalendarModal');
+            const taskModalContent = taskCalendarModal ? taskCalendarModal.querySelector('.modal-content') : null;
+            if (event.target == taskCalendarModal && taskModalContent && !taskModalContent.contains(event.target)) {
+                closeTaskCalendarModal();
+            }
+            
+            const addTaskModal = document.getElementById('addTaskModal');
+            const addChargeModal = document.getElementById('addChargeModal');
+            if (event.target == addTaskModal) {
+                closeAddTaskModal();
+            }
+            if (event.target == addChargeModal) {
+                closeAddChargeModal();
+            }
         });
     </script>
+    <script src="{{ url_for('static', filename='global.js') }}"></script>
     <script src="{{ url_for('static', filename='deadline_alerts.js') }}"></script>
     {% include '_chat_widget.html' %}
 </body>

@@ -362,6 +362,55 @@ const TaskManager = {
         }
     },
     
+    updateDeadline: async function(inputElement) {
+        const clientId = inputElement.getAttribute('data-client-id');
+        const projectId = inputElement.getAttribute('data-project-id');
+        const taskId = inputElement.getAttribute('data-task-id');
+        const newDeadline = inputElement.value;
+        
+        if (!clientId || !projectId || !taskId) {
+            Toast.show('שגיאה: פרטי משימה לא נמצאו', 'error');
+            return;
+        }
+        
+        const loader = Loader.show(inputElement.closest('.task-row'));
+        try {
+            const result = await API.post(`/update_task_status/${clientId}/${projectId}/${taskId}`, {
+                deadline: newDeadline
+            });
+            
+            Loader.hide(loader);
+            
+            if (result.ok && result.data && result.data.status === 'success') {
+                Toast.show('תאריך היעד עודכן בהצלחה', 'success');
+                // עדכן את ה-data attribute
+                inputElement.setAttribute('data-deadline', newDeadline);
+                // עדכן את הסגנון אם יש תאריך
+                if (newDeadline) {
+                    inputElement.style.background = '#3d817a';
+                    inputElement.style.color = 'white';
+                    inputElement.style.border = '1px solid #3d817a';
+                } else {
+                    inputElement.style.background = '#f8fafc';
+                    inputElement.style.color = '#64748b';
+                    inputElement.style.border = '1px dashed #cbd5e1';
+                }
+            } else {
+                Toast.show(result.data?.error || 'שגיאה בעדכון תאריך היעד', 'error');
+                // החזר את הערך הקודם
+                const oldDeadline = inputElement.getAttribute('data-deadline') || '';
+                inputElement.value = oldDeadline;
+            }
+        } catch (error) {
+            Loader.hide(loader);
+            Toast.show('שגיאה בהתקשרות לשרת', 'error');
+            console.error('Update deadline error:', error);
+            // החזר את הערך הקודם
+            const oldDeadline = inputElement.getAttribute('data-deadline') || '';
+            inputElement.value = oldDeadline;
+        }
+    },
+    
     currentNoteData: null
 };
 

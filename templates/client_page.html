@@ -759,7 +759,23 @@
                                 <span style="background: {{ priority_colors.get(task_priority, '#3d817a') }}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">{{ priority_texts.get(task_priority, '') }}</span>
                                 {% endif %}
                                 {% if deadline_display %}
-                                <span class="task-deadline-badge" data-deadline="{{ task_deadline }}" style="font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px; background: #3d817a; color: white;">⏰ {{ deadline_display }}</span>
+                                <input type="date" 
+                                       class="task-deadline-input" 
+                                       data-client-id="{{ client.id }}" 
+                                       data-project-id="{{ project.id }}" 
+                                       data-task-id="{{ task.id }}"
+                                       value="{{ deadline_display }}"
+                                       onchange="TaskManager.updateDeadline(this)"
+                                       style="font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 8px; border: 1px solid #3d817a; background: #3d817a; color: white; cursor: pointer; font-family: 'Heebo', sans-serif; direction: ltr; text-align: right; min-width: 120px;">
+                                {% else %}
+                                <input type="date" 
+                                       class="task-deadline-input" 
+                                       data-client-id="{{ client.id }}" 
+                                       data-project-id="{{ project.id }}"
+                                       data-task-id="{{ task.id }}"
+                                       placeholder="הוסף תאריך"
+                                       onchange="TaskManager.updateDeadline(this)"
+                                       style="font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 8px; border: 1px dashed #cbd5e1; background: #f8fafc; color: #64748b; cursor: pointer; font-family: 'Heebo', sans-serif; direction: ltr; text-align: right; min-width: 120px;">
                                 {% endif %}
                             </div>
                         </div>
@@ -853,6 +869,11 @@
                                     <option value="{{ uid }}" {% if uid == current_user.id %}selected{% endif %}>{{ user_info.name }}</option>
                                     {% endfor %}
                                 </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; color: #666; font-size: 0.85rem;">תאריך לביצוע (Deadline):</label>
+                                <input type="date" name="deadline" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-family: 'Heebo', sans-serif; direction: ltr; text-align: right;">
+                                <small style="color: #94a3b8; font-size: 0.7rem;">יקבע את מיקום המשימה בלוח השנה</small>
                             </div>
                             <div>
                                 <label style="display: block; margin-bottom: 5px; color: #666; font-size: 0.85rem;">שעות משוערות:</label>

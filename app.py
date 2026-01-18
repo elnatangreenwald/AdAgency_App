@@ -5,6 +5,7 @@ import uuid
 import smtplib
 import secrets
 import base64
+import time
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory, send_file, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -79,6 +80,7 @@ SUPPLIER_FILES_FOLDER = os.path.join(BASE_DIR, 'static', 'supplier_files')
 PERMISSIONS_FILE = os.path.join(BASE_DIR, 'permissions_db.json')
 USER_ACTIVITY_FILE = os.path.join(BASE_DIR, 'user_activity.json')
 ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
+TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
 
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -225,6 +227,29 @@ def get_next_project_number(client):
     project_number = f"{client_num:03d}{next_seq:04d}"
     return project_number
 
+def get_next_workday(from_date=None):
+    """מחזיר את יום העבודה הקרוב (א'-ה')
+    בישראל: ראשון=0, שני=1, שלישי=2, רביעי=3, חמישי=4, שישי=5, שבת=6
+    ימי עבודה: ראשון עד חמישי (0-4)"""
+    if from_date is None:
+        from_date = datetime.now()
+    
+    # אם היום יום עבודה (א'-ה'), החזר היום
+    # weekday() מחזיר: Monday=0, Sunday=6
+    # אנחנו צריכים להמיר לשבוע ישראלי
+    day_of_week = from_date.weekday()  # 0=Monday, 6=Sunday
+    
+    # המרה לשבוע ישראלי: Sunday=0, Monday=1, ..., Saturday=6
+    israeli_day = (day_of_week + 1) % 7  # Sunday=0, Monday=1, ..., Saturday=6
+    
+    # ימי עבודה בישראל: ראשון(0) עד חמישי(4)
+    if israeli_day <= 4:  # ראשון עד חמישי
+        return from_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif israeli_day == 5:  # שישי - קפוץ לראשון
+        return (from_date + timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+    else:  # שבת - קפוץ לראשון
+        return (from_date + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
 def get_next_task_number(client, project):
     """מחזיר את מספר המשימה הבאה בפרויקט מסוים
     פורמט: 10 ספרות - 7 ספרות פרויקט + 3 ספרות משימה
@@ -313,6 +338,18 @@ def load_events():
 
 def save_events(events):
     with open(EVENTS_FILE, 'w', encoding='utf-8') as f: json.dump(events, f, ensure_ascii=False, indent=4)
+
+def load_time_tracking():
+    """טעינת מדידות זמן"""
+    if not os.path.exists(TIME_TRACKING_FILE) or os.stat(TIME_TRACKING_FILE).st_size == 0:
+        return {'entries': [], 'active_sessions': {}}
+    with open(TIME_TRACKING_FILE, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def save_time_tracking(data):
+    """שמירת מדידות זמן"""
+    with open(TIME_TRACKING_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 def load_equipment_bank():
     if not os.path.exists(EQUIPMENT_BANK_FILE) or os.stat(EQUIPMENT_BANK_FILE).st_size == 0: 
@@ -786,10 +823,38 @@ def login():
         return redirect(url_for('home'))
     
     if request.method == 'POST':
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-2",
+                "hypothesisId": "L1",
+                "location": "app.py:login",
+                "message": "login POST received",
+                "data": {"has_username": bool(request.form.get('username')), "has_password": bool(request.form.get('password'))},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         u = load_users(); uid, pwd = request.form.get('username'), request.form.get('password')
+        email_match_user = None
+        if uid:
+            normalized_uid = uid.strip().lower()
+            for user_id, info in u.items():
+                if info.get('email', '').strip().lower() == normalized_uid:
+                    email_match_user = user_id
+                    break
+        resolved_user_id = uid if uid in u else email_match_user
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-2",
+                "hypothesisId": "L2",
+                "location": "app.py:login",
+                "message": "login identifier checked",
+                "data": {"is_email_identifier": bool(uid and '@' in uid), "user_found_direct": bool(uid in u), "user_found_by_email": bool(email_match_user), "resolved_user_id": bool(resolved_user_id)},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         # בדיקת סיסמה - תומך גם בסיסמאות מוצפנות וגם בטקסט פשוט (להתאימות לאחור)
-        if uid in u:
-            stored_password = u[uid].get('password', '')
+        if resolved_user_id and resolved_user_id in u:
+            stored_password = u[resolved_user_id].get('password', '')
             # בדיקה אם הסיסמה מוצפנת (תומך ב-pbkdf2 ו-scrypt)
             if stored_password.startswith('pbkdf2:sha256:') or stored_password.startswith('scrypt:'):
                 password_valid = check_password_hash(stored_password, pwd)
@@ -798,174 +863,43 @@ def login():
                 password_valid = (stored_password == pwd)
             
             if password_valid:
-                user = User(uid)
+                with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "pre-fix-2",
+                        "hypothesisId": "L2",
+                        "location": "app.py:login",
+                        "message": "password valid, logging in",
+                        "data": {"user_found": True},
+                        "timestamp": int(time.time() * 1000)
+                    }, ensure_ascii=False) + "\n")
+                user = User(resolved_user_id)
                 login_user(user, remember=True)
-                update_user_activity(uid)
+                update_user_activity(resolved_user_id)
+                wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                if wants_json:
+                    return jsonify({'status': 'success'}), 200
                 return redirect(url_for('home'))
         
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-2",
+                "hypothesisId": "L3",
+                "location": "app.py:login",
+                "message": "login failed",
+                "data": {"user_found": bool(resolved_user_id and resolved_user_id in u), "password_valid": False},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
+        wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if wants_json:
+            return jsonify({'status': 'error', 'error': 'שם משתמש או סיסמה שגויים'}), 401
         from flask import flash
         flash('שם משתמש או סיסמה שגויים', 'error')
     return render_template('login.html')
 
-# Google OAuth Routes
-@app.route('/auth/google')
-@csrf.exempt  # פטור מ-CSRF כי זה redirect
-def google_login():
-    """מתחיל את תהליך ההתחברות עם Google"""
-    try:
-        from google_auth import get_authorization_url
-        from flask import session
-        
-        redirect_uri = url_for('google_callback', _external=True)
-        # ודאתמשנו ב-127.0.0.1 אם צריך
-        if 'localhost' in redirect_uri:
-            redirect_uri = redirect_uri.replace('localhost', '127.0.0.1')
-        
-        authorization_url, state = get_authorization_url(redirect_uri, force_account_selection=True)
-        
-        # שמירת state ב-session למניעת CSRF
-        session['oauth_state'] = state
-        
-        return redirect(authorization_url)
-    except Exception as e:
-        from flask import flash
-        print(f"Error initiating Google login: {e}")
-        import traceback
-        traceback.print_exc()
-        flash('שגיאה בהתחברות עם Google. אנא נסה שוב.', 'error')
-        return redirect(url_for('login'))
-
-@app.route('/auth/google/callback')
-@csrf.exempt  # פטור מ-CSRF כי זה callback מ-Google
-def google_callback():
-    """מטפל ב-callback מ-Google OAuth - רק משתמשים קיימים"""
-    print("\n" + "="*80)
-    print("[DEBUG] ========== Google Callback Started ==========")
-    print(f"[DEBUG] Request URL: {request.url}")
-    print(f"[DEBUG] Request args: {dict(request.args)}")
-    print("="*80 + "\n")
-    
-    try:
-        from google_auth import get_user_info_from_token, save_credentials_to_user
-        from flask import session, flash
-        from flask_login import login_user
-        
-        # בדיקת state (CSRF protection)
-        state = request.args.get('state')
-        session_state = session.get('oauth_state')
-        print(f"[DEBUG] State check - Received: {state}, Session: {session_state}")
-        if not state or state != session_state:
-            print(f"[ERROR] State mismatch! Received: {state}, Expected: {session_state}")
-            flash('שגיאת אבטחה. אנא נסה שוב.', 'error')
-            return redirect(url_for('login'))
-        
-        # מחיקת state מה-session
-        session.pop('oauth_state', None)
-        print("[DEBUG] OAuth state removed from session")
-        
-        # קבלת authorization code
-        code = request.args.get('code')
-        print(f"[DEBUG] Authorization code received: {'Yes' if code else 'No'}")
-        if not code:
-            error = request.args.get('error')
-            print(f"[ERROR] No code received. Error from Google: {error}")
-            flash(f'ההתחברות נדחתה: {error}', 'error')
-            return redirect(url_for('login'))
-        
-        # קבלת פרטי המשתמש מ-Google
-        redirect_uri = url_for('google_callback', _external=True)
-        if 'localhost' in redirect_uri:
-            redirect_uri = redirect_uri.replace('localhost', '127.0.0.1')
-        print(f"[DEBUG] Using redirect_uri: {redirect_uri}")
-        print("[DEBUG] Calling get_user_info_from_token...")
-        
-        user_info = get_user_info_from_token(code, redirect_uri)
-        print(f"[DEBUG] User info received: {user_info}")
-        email = user_info.get('email')
-        print(f"[DEBUG] Email extracted: {email}")
-        
-        if not email:
-            print("[ERROR] No email received from Google user_info")
-            print(f"[DEBUG] User info keys: {list(user_info.keys())}")
-            flash('לא ניתן לקבל פרטי משתמש מ-Google.', 'error')
-            return redirect(url_for('login'))
-        
-        # חיפוש משתמש קיים לפי email - רק משתמשים קיימים יכולים להתחבר
-        print("[DEBUG] Loading users from database...")
-        users = load_users()
-        print(f"[DEBUG] Total users in database: {len(users)}")
-        user_id = None
-        
-        # חיפוש משתמש קיים לפי email (case-insensitive)
-        email_lower = email.lower() if email else ''
-        print(f"[DEBUG] Looking for user with email: {email} (lowercase: {email_lower})")
-        print(f"[DEBUG] All users in database:")
-        for uid, user_data in users.items():
-            user_email = user_data.get('email', '')
-            print(f"  - User ID: {uid}, Name: {user_data.get('name')}, Email: {user_email if user_email else '(none)'}")
-            if user_email:
-                user_email_lower = user_email.lower()
-                print(f"    Comparing: '{user_email_lower}' == '{email_lower}' ? {user_email_lower == email_lower}")
-                if user_email_lower == email_lower:
-                    user_id = uid
-                    print(f"[DEBUG] ✓ Found matching user: {user_id}")
-                    break
-        
-        # אם לא נמצא - שגיאה (לא יוצרים משתמש חדש)
-        if not user_id:
-            print(f"[ERROR] ✗ No user found with email: {email}")
-            print(f"[DEBUG] Available emails in database:")
-            for uid, user_data in users.items():
-                user_email = user_data.get('email', '')
-                if user_email:
-                    print(f"  - {user_email} (user: {uid})")
-            flash(f'המייל {email} לא רשום במערכת. אנא פנה למנהל המערכת.', 'error')
-            return redirect(url_for('login'))
-        
-        print(f"[DEBUG] Proceeding with user: {user_id}")
-        
-        # שמירת Google credentials למשתמש
-        print("[DEBUG] Saving Google credentials...")
-        save_success = save_credentials_to_user(
-            user_id,
-            user_info['credentials'],
-            user_email=email,
-            user_google_id=user_info.get('google_id'),
-            users_file=USERS_FILE
-        )
-        print(f"[DEBUG] Save credentials result: {save_success}")
-        
-        # עדכון שם המשתמש אם השתנה
-        if user_info.get('name') and users[user_id].get('name') != user_info.get('name'):
-            print(f"[DEBUG] Updating user name from '{users[user_id].get('name')}' to '{user_info.get('name')}'")
-            users[user_id]['name'] = user_info.get('name')
-            save_users(users)
-        
-        # התחברות המשתמש
-        print(f"[DEBUG] Logging in user: {user_id}")
-        user = User(user_id)
-        login_user(user, remember=True)
-        update_user_activity(user_id)
-        
-        print(f"[DEBUG] ✓ Login successful for user: {user_id}")
-        print("="*80 + "\n")
-        
-        flash(f'ברוך הבא, {users[user_id]["name"]}!', 'success')
-        return redirect(url_for('home'))
-        
-    except Exception as e:
-        from flask import flash
-        print("\n" + "="*80)
-        print(f"[ERROR] Exception in Google callback!")
-        print(f"[ERROR] Type: {type(e).__name__}")
-        print(f"[ERROR] Message: {str(e)}")
-        print("="*80)
-        import traceback
-        print("Full traceback:")
-        traceback.print_exc()
-        print("="*80 + "\n")
-        flash('שגיאה בהתחברות עם Google. אנא נסה שוב.', 'error')
-        return redirect(url_for('login'))
 
 def send_password_reset_email(user_email, reset_token):
     """שליחת מייל לאיפוס סיסמה"""
@@ -1159,7 +1093,71 @@ def home():
         display = [c for c in all_c if can_user_access_client(current_user.id, user_role, c)]
     # מיון לפי סדר אלפביתי לפי שם הלקוח
     display = sorted(display, key=lambda x: x.get('name', '').lower())
-    return render_template('index.html', clients=display)
+    users = load_users()
+    sidebar_users = {uid: {'name': info.get('name', '')} for uid, info in users.items() if uid != 'admin'}
+    return render_template('index.html', clients=display, sidebar_users=sidebar_users)
+
+@app.route('/api/current_user')
+@login_required
+def api_current_user():
+    """API endpoint להחזרת המשתמש הנוכחי"""
+    try:
+        users = load_users()
+        user_data = users.get(current_user.id, {})
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': current_user.id,
+                'name': user_data.get('name', current_user.id),
+                'email': user_data.get('email', ''),
+                'role': get_user_role(current_user.id)
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/sidebar_users')
+@login_required
+def api_sidebar_users():
+    """API endpoint להחזרת משתמשים לסיידבר"""
+    try:
+        users = load_users()
+        sidebar_users = {uid: {'name': info.get('name', '')} for uid, info in users.items() if uid != 'admin'}
+        # Return as list for React
+        users_list = [
+            {'id': uid, 'name': info.get('name', '')}
+            for uid, info in users.items() if uid != 'admin'
+        ]
+        return jsonify({
+            'success': True,
+            'users': users_list,
+            'users_dict': sidebar_users
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/clients')
+@login_required
+def api_clients():
+    """API endpoint להחזרת לקוחות"""
+    try:
+        user_role = get_user_role(current_user.id)
+        all_c = load_data()
+        all_c = filter_active_clients(all_c)
+        if is_manager_or_admin(current_user.id, user_role):
+            display = all_c
+        else:
+            display = [c for c in all_c if can_user_access_client(current_user.id, user_role, c)]
+        display = sorted(display, key=lambda x: x.get('name', '').lower())
+        return jsonify({
+            'success': True,
+            'clients': [{'id': c['id'], 'name': c.get('name', '')} for c in display]
+        })
+    except Exception as e:
+        print(f"Error in api_clients: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/get_client_projects/<client_id>')
 @login_required
@@ -1175,18 +1173,148 @@ def get_client_projects(client_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/tasks/calendar')
+@login_required
+def get_tasks_for_calendar():
+    """API endpoint להחזרת משימות עם deadline ללוח שנה"""
+    try:
+        data = load_data()
+        users = load_users()
+        user_role = get_user_role(current_user.id)
+        
+        tasks = []
+        for client in data:
+            # בדיקת הרשאות
+            if not is_manager_or_admin(current_user.id, user_role):
+                if not can_user_access_client(current_user.id, user_role, client):
+                    continue
+            
+            client_name = client.get('name', '')
+            for project in client.get('projects', []):
+                project_title = project.get('title', '')
+                for task in project.get('tasks', []):
+                    deadline = task.get('deadline', '')
+                    if not deadline:
+                        continue
+                    
+                    # המרת תאריך לפורמט ISO
+                    try:
+                        if 'T' in deadline:
+                            deadline_date = deadline.split('T')[0]
+                        else:
+                            deadline_date = deadline
+                        
+                        # קבלת שם המשתמש האחראי
+                        assignee_id = task.get('assignee', '')
+                        assignee_name = users.get(assignee_id, {}).get('name', assignee_id) if assignee_id else 'ללא אחראי'
+                        
+                        task_status = task.get('status', 'לביצוע')
+                        task_title = task.get('title', 'ללא כותרת')
+                        
+                        tasks.append({
+                            'id': task.get('id', ''),
+                            'title': task_title,
+                            'start': deadline_date,
+                            'client_name': client_name,
+                            'project_title': project_title,
+                            'assignee_name': assignee_name,
+                            'assignee_id': assignee_id,
+                            'status': task_status,
+                            'client_id': client.get('id', ''),
+                            'project_id': project.get('id', ''),
+                            'task_id': task.get('id', '')
+                        })
+                    except Exception as e:
+                        print(f"Error parsing deadline for task: {e}")
+                        continue
+        
+        return jsonify({'success': True, 'tasks': tasks})
+    except Exception as e:
+        print(f"Error in get_tasks_for_calendar: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/quick_update_tasks')
+@login_required
+def api_quick_update_tasks():
+    """API endpoint להחזרת כל המשימות לעדכון מהיר"""
+    try:
+        data = load_data()
+        users = load_users()
+        user_role = get_user_role(current_user.id)
+        
+        tasks = []
+        for client in data:
+            # בדיקת הרשאות
+            if not is_manager_or_admin(current_user.id, user_role):
+                if not can_user_access_client(current_user.id, user_role, client):
+                    continue
+            
+            client_name = client.get('name', '')
+            for project in client.get('projects', []):
+                project_title = project.get('title', '')
+                for task in project.get('tasks', []):
+                    # רק משימות שלא הושלמו
+                    task_status = task.get('status', 'ממתין')
+                    if task_status not in ['ממתין', 'בביצוע']:
+                        continue
+                    
+                    # קבלת שם המשתמש האחראי
+                    assignee_id = task.get('assignee', '') or task.get('assigned_to', '')
+                    assignee_name = users.get(assignee_id, {}).get('name', assignee_id) if assignee_id else 'ללא אחראי'
+                    
+                    tasks.append({
+                        'client_id': client.get('id', ''),
+                        'client_name': client_name,
+                        'project_id': project.get('id', ''),
+                        'project_title': project_title,
+                        'task': {
+                            'id': task.get('id', ''),
+                            'desc': task.get('desc', '') or task.get('title', 'ללא כותרת'),
+                            'status': task_status,
+                            'notes': task.get('notes', '') or task.get('note', ''),
+                            'assigned_to_name': assignee_name
+                        }
+                    })
+        
+        return jsonify({'success': True, 'tasks': tasks})
+    except Exception as e:
+        print(f"Error in api_quick_update_tasks: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/quick_add_task', methods=['POST'])
 @login_required
+@csrf.exempt
 def quick_add_task():
     """Route להוספת משימה מהירה מהדשבורד"""
     try:
-        client_id = request.form.get('client_id')
-        project_id = request.form.get('project_id')
-        task_title = request.form.get('task_title')
-        task_status = request.form.get('task_status', 'לביצוע')
-        task_note = request.form.get('task_note', '')
+        # תמיכה גם ב-JSON וגם ב-form data
+        if request.is_json:
+            data_json = request.get_json()
+            client_id = data_json.get('client_id')
+            project_id = data_json.get('project_id')
+            task_title = data_json.get('task_title')
+            task_status = data_json.get('task_status', 'לביצוע')
+            task_note = data_json.get('task_note', '')
+            task_deadline = data_json.get('task_deadline', '')
+            is_daily_task = data_json.get('is_daily_task', False)
+        else:
+            client_id = request.form.get('client_id')
+            project_id = request.form.get('project_id')
+            task_title = request.form.get('task_title')
+            task_status = request.form.get('task_status', 'לביצוע')
+            task_note = request.form.get('task_note', '')
+            task_deadline = request.form.get('task_deadline', '')
+            is_daily_task = request.form.get('is_daily_task', 'false').lower() == 'true'
         
         if not client_id or not project_id or not task_title:
+            wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            if wants_json:
+                return jsonify({'success': False, 'error': 'חסרים פרמטרים נדרשים'}), 400
             return redirect(url_for('home'))
         
         data = load_data()
@@ -1203,14 +1331,51 @@ def quick_add_task():
                             'created_at': datetime.now().isoformat(),
                             'done': False
                         }
+                        # הוסף deadline אם קיים
+                        if task_deadline:
+                            try:
+                                # המרת תאריך לפורמט ISO
+                                deadline = datetime.strptime(task_deadline, '%Y-%m-%d').isoformat()
+                                task['deadline'] = deadline
+                            except Exception as e:
+                                print(f"Error parsing deadline: {e}")
+                        
+                        # משימה יומית - קבע ליום העבודה הקרוב
+                        if is_daily_task:
+                            task['is_daily_task'] = True
+                            # מצא את יום העבודה הקרוב (א'-ה')
+                            next_workday = get_next_workday()
+                            task['deadline'] = next_workday.isoformat()
+                        
                         task_number = get_next_task_number(c, p)
                         task['task_number'] = task_number
                         p.setdefault('tasks', []).append(task)
                         save_data(data)
+                        
+                        # בדיקה אם זה AJAX request
+                        wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                        if wants_json:
+                            return jsonify({
+                                'success': True,
+                                'message': 'המשימה נוספה בהצלחה',
+                                'task': task
+                            })
                         return redirect(url_for('client_page', client_id=client_id))
         
+        wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if wants_json:
+            return jsonify({'success': False, 'error': 'לקוח או פרויקט לא נמצאו'}), 404
         return redirect(url_for('home'))
     except Exception as e:
+        print(f"Error in quick_add_task: {e}")
+        import traceback
+        traceback.print_exc()
+        wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if wants_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
         return redirect(url_for('home'))
 
 @app.route('/quick_add_charge', methods=['POST'])
@@ -1247,6 +1412,72 @@ def quick_add_charge():
         return redirect(url_for('home'))
     except Exception as e:
         return redirect(url_for('home'))
+
+@app.route('/api/all_clients')
+@login_required
+def api_all_clients():
+    """API endpoint להחזרת לקוחות"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/all_clients', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        all_clients_data = load_data()
+        all_clients_data = filter_active_clients(all_clients_data)
+        users = load_users()
+        filter_user = request.args.get('user')
+        
+        # ארגון לקוחות לפי משתמשים
+        clients_by_user = {}
+        for uid in users.keys():
+            clients_by_user[uid] = []
+        
+        for c in all_clients_data:
+            assigned = normalize_assigned_user(c.get('assigned_user', []))
+            for assigned_uid in assigned:
+                assigned_uid_lower = assigned_uid.lower() if isinstance(assigned_uid, str) else str(assigned_uid).lower()
+                for uid in users.keys():
+                    uid_lower = uid.lower() if isinstance(uid, str) else str(uid).lower()
+                    if assigned_uid == uid or assigned_uid_lower == uid_lower:
+                        if c not in clients_by_user[uid]:
+                            clients_by_user[uid].append(c)
+                        break
+        
+        if filter_user:
+            filter_user_lower = filter_user.lower()
+            filtered_clients = []
+            for uid, client_list in clients_by_user.items():
+                uid_lower = uid.lower() if isinstance(uid, str) else str(uid).lower()
+                if uid == filter_user or uid_lower == filter_user_lower:
+                    filtered_clients = client_list
+                    break
+            filtered_clients.sort(key=lambda x: x.get('name', '').lower())
+            clients = filtered_clients
+        else:
+            clients = all_clients_data
+            clients.sort(key=lambda x: x.get('name', '').lower())
+        
+        # Convert to simple format
+        clients_list = [{'id': c['id'], 'name': c.get('name', '')} for c in clients]
+        clients_by_user_dict = {
+            uid: [{'id': c['id'], 'name': c.get('name', '')} for c in client_list]
+            for uid, client_list in clients_by_user.items()
+        }
+        users_dict = {uid: {'name': info.get('name', '')} for uid, info in users.items()}
+        
+        return jsonify({
+            'success': True,
+            'clients': clients_list,
+            'clients_by_user': clients_by_user_dict,
+            'users': users_dict,
+            'filter_user': filter_user,
+            'user_role': user_role
+        })
+    except Exception as e:
+        print(f"Error in api_all_clients: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/all_clients')
 @login_required
@@ -1388,6 +1619,43 @@ def calculate_dependent_deadlines_for_project(project):
                 new_deadline = max_deadline + timedelta(days=estimated_days)
                 task['deadline'] = new_deadline.isoformat().split('T')[0]
 
+@app.route('/api/client/<client_id>')
+@login_required
+def api_client(client_id):
+    """API endpoint להחזרת פרטי לקוח"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/client/', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        data = load_data()
+        client = next((c for c in data if c['id'] == client_id), None)
+        if not client:
+            return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
+        
+        # בדיקת הרשאות גישה ללקוח
+        if not can_user_access_client(current_user.id, user_role, client):
+            return jsonify({'success': False, 'error': 'גישה חסומה ללקוח זה'}), 403
+        
+        # טעינת היסטוריית אינטראקציות
+        activity_logs = load_activity_logs()
+        client_activities = [log for log in activity_logs if log.get('client_id') == client_id]
+        client_activities.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        # Add activities to client
+        client_copy = client.copy()
+        client_copy['activities'] = client_activities
+        
+        return jsonify({
+            'success': True,
+            'client': client_copy
+        })
+    except Exception as e:
+        print(f"Error in api_client: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/client/<client_id>')
 @login_required
 def client_page(client_id):
@@ -1445,8 +1713,12 @@ def client_page(client_id):
 
 @app.route('/upload_logo/<client_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def upload_logo(client_id):
-    """Route להעלאת לוגו - טופס רגיל כמו מסמכים"""
+    """Route להעלאת לוגו - תמיכה ב-AJAX וטופס רגיל"""
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+              request.headers.get('Accept', '').find('application/json') != -1
+    
     try:
         print(f"\n{'='*50}")
         print(f"=== Logo upload started for client {client_id} ===")
@@ -1454,9 +1726,12 @@ def upload_logo(client_id):
         print(f"Request content type: {request.content_type}")
         print(f"Request files keys: {list(request.files.keys())}")
         print(f"Request form keys: {list(request.form.keys())}")
+        print(f"Is AJAX: {is_ajax}")
         
         if 'logo' not in request.files:
             print("ERROR: 'logo' not in request.files")
+            if is_ajax:
+                return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
             return redirect(request.referrer or url_for('client_page', client_id=client_id))
         
         file = request.files['logo']
@@ -1466,6 +1741,8 @@ def upload_logo(client_id):
         
         if not file or not file.filename:
             print("ERROR: No file or filename")
+            if is_ajax:
+                return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
             return redirect(request.referrer or url_for('client_page', client_id=client_id))
         
         # בדיקה שהקובץ הוא תמונה
@@ -1473,12 +1750,16 @@ def upload_logo(client_id):
         filename_parts = file.filename.rsplit('.', 1)
         if len(filename_parts) < 2:
             print(f"ERROR: No extension in filename: {file.filename}")
+            if is_ajax:
+                return jsonify({'success': False, 'error': 'סוג קובץ לא תקין'}), 400
             return redirect(request.referrer or url_for('client_page', client_id=client_id))
         
         ext = filename_parts[1].lower()
         print(f"File extension: {ext}")
         if ext not in allowed_extensions:
             print(f"ERROR: Extension not allowed: {ext}")
+            if is_ajax:
+                return jsonify({'success': False, 'error': f'סוג קובץ {ext} לא נתמך. השתמש ב: png, jpg, jpeg, gif, webp'}), 400
             return redirect(request.referrer or url_for('client_page', client_id=client_id))
         
         # יצירת שם קובץ בטוח
@@ -1500,6 +1781,8 @@ def upload_logo(client_id):
         # בדיקה שהקובץ נשמר
         if not os.path.exists(filepath):
             print(f"ERROR: File not found after save: {filepath}")
+            if is_ajax:
+                return jsonify({'success': False, 'error': 'שגיאה בשמירת הקובץ'}), 500
             return redirect(request.referrer or url_for('client_page', client_id=client_id))
         
         print(f"File exists: {os.path.exists(filepath)}")
@@ -1517,8 +1800,18 @@ def upload_logo(client_id):
         
         if not client_found:
             print(f"ERROR: Client not found: {client_id}")
+            if is_ajax:
+                return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
         
         save_data(data)
+        
+        # Return JSON for AJAX, redirect for form
+        if is_ajax:
+            return jsonify({
+                'success': True,
+                'message': 'הלוגו הועלה בהצלחה',
+                'logo_url': filename
+            })
         
         # Redirect עם cache busting
         base_url = url_for('client_page', client_id=client_id)
@@ -1530,12 +1823,25 @@ def upload_logo(client_id):
         import traceback
         print(f"EXCEPTION in upload_logo: {str(e)}")
         print(traceback.format_exc())
+        if is_ajax:
+            return jsonify({'success': False, 'error': str(e)}), 500
         return redirect(request.referrer or url_for('client_page', client_id=client_id))
 
 @app.route('/add_project/<client_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def add_project(client_id):
     try:
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix",
+                "hypothesisId": "H2",
+                "location": "app.py:add_project",
+                "message": "enter add_project",
+                "data": {"client_id": client_id, "is_json": request.is_json},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         data = load_data()
         project_id = str(uuid.uuid4())
         
@@ -1544,6 +1850,16 @@ def add_project(client_id):
             project_title = request.json.get('title')
         else:
             project_title = request.form.get('title')
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix",
+                "hypothesisId": "H2",
+                "location": "app.py:add_project",
+                "message": "parsed request",
+                "data": {"client_id": client_id, "has_title": bool(project_title)},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         
         if not project_title:
             wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
@@ -1590,6 +1906,16 @@ def add_project(client_id):
                             request.headers.get('X-Requested-With') == 'XMLHttpRequest'
                 
                 if wants_json:
+                    with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+                        f.write(json.dumps({
+                            "sessionId": "debug-session",
+                            "runId": "pre-fix",
+                            "hypothesisId": "H3",
+                            "location": "app.py:add_project",
+                            "message": "returning json success",
+                            "data": {"client_id": client_id, "project_id": project_id},
+                            "timestamp": int(time.time() * 1000)
+                        }, ensure_ascii=False) + "\n")
                     return jsonify({
                         'status': 'success',
                         'data': {
@@ -1614,6 +1940,16 @@ def add_project(client_id):
         print(f"Error in add_project: {e}")
         import traceback
         traceback.print_exc()
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix",
+                "hypothesisId": "H2",
+                "location": "app.py:add_project",
+                "message": "exception",
+                "data": {"client_id": client_id, "error": str(e)},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if wants_json:
@@ -1622,6 +1958,7 @@ def add_project(client_id):
 
 @app.route('/add_task/<client_id>/<project_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def add_task(client_id, project_id):
     try:
         data = load_data()
@@ -1645,6 +1982,8 @@ def add_task(client_id, project_id):
         estimated_hours = req_data.get('estimated_hours') if request.is_json else request.form.get('estimated_hours')
         assignee = req_data.get('assignee', '') if request.is_json else request.form.get('assignee', '')
         dependencies = req_data.get('dependencies', []) if request.is_json else request.form.getlist('dependencies') or []
+        is_daily_task = (req_data.get('is_daily_task', False) if request.is_json 
+                         else request.form.get('is_daily_task', 'false').lower() == 'true')
         
         deadline_str = req_data.get('deadline') if request.is_json else request.form.get('deadline')
         if deadline_str:
@@ -1672,6 +2011,13 @@ def add_task(client_id, project_id):
                 task['estimated_hours'] = float(estimated_hours)
             except:
                 pass
+        
+        # משימה יומית - קבע ליום העבודה הקרוב
+        if is_daily_task:
+            task['is_daily_task'] = True
+            next_workday = get_next_workday()
+            task['deadline'] = next_workday.isoformat()
+        
         if status == 'הושלם':
             task['completed_at'] = datetime.now().isoformat()
             task['actual_hours'] = task.get('estimated_hours', 0)
@@ -1706,14 +2052,17 @@ def add_task(client_id, project_id):
 
 @app.route('/update_task_status/<client_id>/<project_id>/<task_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def update_task_status(client_id, project_id, task_id):
     try:
         data = load_data()
         # Support both form and JSON
         if request.is_json:
             new_status = request.json.get('status', 'לביצוע')
+            new_deadline = request.json.get('deadline', None)
         else:
             new_status = request.form.get('status', 'לביצוע')
+            new_deadline = request.form.get('deadline', None)
         
         for c in data:
             if c['id'] == client_id:
@@ -1740,6 +2089,18 @@ def update_task_status(client_id, project_id, task_id):
                                 t['status'] = new_status
                                 t['done'] = (new_status == 'הושלם')
                                 
+                                # עדכון deadline אם הועבר
+                                if new_deadline:
+                                    try:
+                                        # המרת תאריך לפורמט ISO
+                                        if 'T' in new_deadline:
+                                            deadline_date = new_deadline.split('T')[0]
+                                        else:
+                                            deadline_date = new_deadline
+                                        t['deadline'] = deadline_date
+                                    except Exception as e:
+                                        print(f"Error parsing deadline: {e}")
+                                
                                 # עדכון תאריכים
                                 if 'created_at' not in t and t.get('created_date'):
                                     # המרת created_date ל-created_at אם לא קיים
@@ -1764,9 +2125,19 @@ def update_task_status(client_id, project_id, task_id):
                                 
                                 if new_status == 'הושלם' and old_status != 'הושלם':
                                     t['completed_at'] = datetime.now().isoformat()
+                                    
+                                    # משימה יומית - העבר ליום העבודה הבא
+                                    if t.get('is_daily_task'):
+                                        # מצא את יום העבודה הבא (מחר או ראשון אם היום חמישי)
+                                        tomorrow = datetime.now() + timedelta(days=1)
+                                        next_workday = get_next_workday(tomorrow)
+                                        t['deadline'] = next_workday.isoformat()
+                                        t['status'] = 'לביצוע'  # החזר למצב לביצוע
+                                        t['done'] = False
+                                        del t['completed_at']  # הסר את תאריך ההשלמה
                                 
-                                # אם עבר למצב הושלם, הוסף חיוב של מחיאות כפיים
-                                if new_status == 'הושלם' and old_status != 'הושלם':
+                                # אם עבר למצב הושלם, הוסף חיוב של מחיאות כפיים (רק למשימות לא יומיות)
+                                if new_status == 'הושלם' and old_status != 'הושלם' and not t.get('is_daily_task'):
                                     if 'extra_charges' not in c:
                                         c['extra_charges'] = []
                                     charge_number = get_next_charge_number(c)
@@ -2134,6 +2505,8 @@ def add_activity(client_id):
         logs.append(new_log)
         save_activity_logs(logs)
         
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': True, 'activity': new_log})
         return redirect(request.referrer or url_for('client_page', client_id=client_id))
     except Exception as e:
         return f"שגיאה בהוספת פעילות: {str(e)}", 500
@@ -2146,6 +2519,9 @@ def delete_activity(activity_id):
         logs = load_activity_logs()
         logs = [log for log in logs if log.get('id') != activity_id]
         save_activity_logs(logs)
+        
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': True})
         return redirect(request.referrer or url_for('client_page', client_id=request.form.get('client_id', '')))
     except Exception as e:
         return f"שגיאה במחיקת פעילות: {str(e)}", 500
@@ -2324,6 +2700,90 @@ def serve_document(client_id, filename):
 def serve_logo(filename):
     """Route לשרת לוגואים"""
     return send_from_directory(LOGOS_FOLDER, filename)
+
+@app.route('/api/finance')
+@login_required
+def api_finance():
+    """API endpoint להחזרת נתוני כספים"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/finance', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        clients = load_data()
+        clients = filter_active_clients(clients)
+        current_month = datetime.now().strftime('%m')
+        current_year = datetime.now().strftime('%Y')
+        
+        selected_month = request.args.get('month', '')
+        
+        total_open_charges = 0
+        total_monthly_revenue = 0
+        
+        clients_data = []
+        for c in clients:
+            extra_charges = c.get('extra_charges', [])
+            for ch in extra_charges:
+                if 'completed' not in ch:
+                    ch['completed'] = False
+                if 'our_cost' not in ch:
+                    ch['our_cost'] = 0
+            
+            calculated_extra = sum(ch.get('amount', 0) for ch in extra_charges)
+            calculated_retainer = c.get('retainer', 0)
+            calculated_total = calculated_retainer + calculated_extra
+            calculated_open_charges = sum(
+                ch.get('amount', 0) for ch in extra_charges 
+                if not ch.get('completed', False)
+            )
+            total_open_charges += calculated_open_charges
+            
+            monthly_revenue = 0
+            for ch in extra_charges:
+                charge_date = ch.get('date', '')
+                if charge_date:
+                    date_parts = charge_date.split('/')
+                    if len(date_parts) >= 3:
+                        month = date_parts[1].zfill(2)
+                        year_str = date_parts[2]
+                        if len(year_str) == 2:
+                            year = '20' + year_str
+                        else:
+                            year = year_str
+                        
+                        filter_month = selected_month if selected_month else current_month
+                        filter_year = current_year
+                        
+                        if month == filter_month and year == filter_year:
+                            monthly_revenue += ch.get('amount', 0)
+            
+            total_monthly_revenue += monthly_revenue
+            
+            clients_data.append({
+                'id': c['id'],
+                'name': c.get('name', ''),
+                'retainer': calculated_retainer,
+                'extra_charges': extra_charges,
+                'calculated_extra': calculated_extra,
+                'calculated_retainer': calculated_retainer,
+                'calculated_total': calculated_total,
+                'calculated_open_charges': calculated_open_charges,
+                'calculated_monthly_revenue': monthly_revenue,
+            })
+        
+        return jsonify({
+            'success': True,
+            'clients': clients_data,
+            'total_open_charges': total_open_charges,
+            'total_monthly_revenue': total_monthly_revenue,
+            'current_month': current_month,
+            'current_year': current_year,
+        })
+    except Exception as e:
+        print(f"Error in api_finance: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/finance')
 @login_required
@@ -2638,6 +3098,7 @@ def archive_client(client_id):
 
 @app.route('/toggle_client_active/<client_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def toggle_client_active(client_id):
     """מעדכן את סטטוס הפעיל/לא פעיל של לקוח"""
     try:
@@ -2666,6 +3127,29 @@ def toggle_client_active(client_id):
                 return jsonify({'success': True})
         
         return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/archive')
+@login_required
+def api_archive():
+    """API endpoint להחזרת לקוחות מאוישים"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/archive', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        if not is_manager_or_admin(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        all_clients = load_data()
+        archived_clients = filter_archived_clients(all_clients)
+        archived_clients.sort(key=lambda x: x.get('archived_at', ''), reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'clients': archived_clients
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -2832,6 +3316,23 @@ def export_open_charges():
         return f"שגיאה בייצוא החיובים הפתוחים: {str(e)}", 500
 
 # --- Suppliers Routes ---
+@app.route('/api/suppliers')
+@login_required
+def api_suppliers():
+    """API endpoint להחזרת ספקים"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/suppliers', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        suppliers_list = load_suppliers()
+        return jsonify({
+            'success': True,
+            'suppliers': suppliers_list
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/suppliers')
 @login_required
 def suppliers():
@@ -2860,8 +3361,13 @@ def add_supplier():
         }
         suppliers_list.append(supplier)
         save_suppliers(suppliers_list)
+        
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': True, 'supplier': supplier})
         return redirect(url_for('suppliers'))
     except Exception as e:
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': False, 'error': str(e)}), 500
         return f"שגיאה בהוספת הספק: {str(e)}", 500
 
 @app.route('/edit_supplier/<supplier_id>', methods=['POST'])
@@ -3128,6 +3634,34 @@ def import_suppliers_excel():
         return jsonify({'success': False, 'error': f'שגיאה: {str(e)}'}), 500
 
 # --- Quotes Routes ---
+@app.route('/api/quotes')
+@login_required
+def api_quotes():
+    """API endpoint להחזרת הצעות מחיר"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/quotes', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        quotes_list = load_quotes()
+        clients = load_data()
+        clients_dict = {c['id']: c['name'] for c in clients}
+        
+        # Add client names to quotes
+        for quote in quotes_list:
+            client_id = quote.get('client_id', '')
+            quote['client_name'] = clients_dict.get(client_id, '')
+            # Calculate total
+            items = quote.get('items', [])
+            quote['total'] = sum(item.get('quantity', 0) * item.get('price', 0) for item in items)
+        
+        return jsonify({
+            'success': True,
+            'quotes': quotes_list
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/quotes')
 @login_required
 def quotes():
@@ -3171,8 +3705,13 @@ def add_quote():
         }
         quotes_list.append(quote)
         save_quotes(quotes_list)
+        
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': True, 'quote': quote})
         return redirect(url_for('quotes'))
     except Exception as e:
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': False, 'error': str(e)}), 500
         return f"שגיאה ביצירת הצעת מחיר: {str(e)}", 500
 
 @app.route('/edit_quote/<quote_id>', methods=['POST'])
@@ -3506,6 +4045,56 @@ def mark_message_read(message_id):
         return f"שגיאה: {str(e)}", 500
 
 # --- Events Routes ---
+@app.route('/api/events')
+@login_required
+def api_events():
+    """API endpoint להחזרת אירועים"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/events', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        events_list = load_events()
+        clients = load_data()
+        events_list = filter_active_events(events_list)
+        
+        today = datetime.now().date()
+        open_events = []
+        for event in events_list:
+            event_date_str = event.get('date', '')
+            if event_date_str:
+                try:
+                    if '/' in event_date_str:
+                        parts = event_date_str.split('/')
+                        if len(parts) == 3:
+                            event_date = datetime.strptime(event_date_str, '%d/%m/%Y').date()
+                        else:
+                            event_date = datetime.strptime(event_date_str, '%d/%m/%y').date()
+                    else:
+                        event_date = datetime.strptime(event_date_str, '%Y-%m-%d').date()
+                    
+                    if event_date >= today:
+                        open_events.append(event)
+                except:
+                    open_events.append(event)
+            else:
+                open_events.append(event)
+        
+        # Add client names
+        for event in open_events:
+            client_id = event.get('client_id', '')
+            event['client_name'] = next((c.get('name', '') for c in clients if c.get('id') == client_id), '')
+        
+        return jsonify({
+            'success': True,
+            'events': open_events
+        })
+    except Exception as e:
+        print(f"Error in api_events: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/events')
 @login_required
 def events():
@@ -3630,6 +4219,16 @@ def event_page(event_id):
 def add_event():
     """יצירת אירוע חדש"""
     try:
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-5",
+                "hypothesisId": "E1",
+                "location": "app.py:add_event",
+                "message": "add_event received",
+                "data": {"has_title": bool(request.form.get('title') or request.form.get('name')), "has_client": bool(request.form.get('client_id')), "has_date": bool(request.form.get('date')), "type": request.form.get('type') or request.form.get('event_type')},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         events_list = load_events()
         event_type = request.form.get('event_type', '')
         
@@ -3638,10 +4237,12 @@ def add_event():
         
         event = {
             'id': str(uuid.uuid4()),
-            'name': request.form.get('name', ''),
+            'title': request.form.get('title', '') or request.form.get('name', ''),
+            'name': request.form.get('title', '') or request.form.get('name', ''),
             'client_id': request.form.get('client_id', ''),
             'date': request.form.get('date', ''),
             'location': request.form.get('location', ''),
+            'type': request.form.get('type', '') or event_type,
             'event_type': event_type,
             'checklist': [{'task': task, 'completed': False} for task in checklist_template],
             'suppliers': [],
@@ -3655,8 +4256,36 @@ def add_event():
         
         events_list.append(event)
         save_events(events_list)
+        wants_json = request.is_json or request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if wants_json:
+            with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "pre-fix-5",
+                    "hypothesisId": "E2",
+                    "location": "app.py:add_event",
+                    "message": "add_event success",
+                    "data": {"event_id": event.get('id')},
+                    "timestamp": int(time.time() * 1000)
+                }, ensure_ascii=False) + "\n")
+            return jsonify({'success': True, 'event': event})
         return redirect(url_for('event_page', event_id=event['id']))
     except Exception as e:
+        wants_json = request.is_json or request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-5",
+                "hypothesisId": "E3",
+                "location": "app.py:add_event",
+                "message": "add_event exception",
+                "data": {"error": str(e)},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
+        if wants_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
         return f"שגיאה ביצירת האירוע: {str(e)}", 500
 
 @app.route('/update_event/<event_id>', methods=['POST'])
@@ -4215,6 +4844,7 @@ def edit_event_charge(event_id):
 
 @app.route('/toggle_event_active/<event_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def toggle_event_active(event_id):
     """מעדכן את סטטוס הפעיל/לא פעיל של אירוע"""
     try:
@@ -4225,6 +4855,16 @@ def toggle_event_active(event_id):
         
         data = request.get_json()
         is_active = data.get('active', True)
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-5",
+                "hypothesisId": "A1",
+                "location": "app.py:toggle_event_active",
+                "message": "toggle_event_active request",
+                "data": {"event_id": event_id, "active": is_active},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         
         events_list = load_events()
         for event in events_list:
@@ -4240,10 +4880,30 @@ def toggle_event_active(event_id):
                     event['archived_at'] = datetime.now().isoformat()
                 
                 save_events(events_list)
+                with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "pre-fix-5",
+                        "hypothesisId": "A2",
+                        "location": "app.py:toggle_event_active",
+                        "message": "toggle_event_active success",
+                        "data": {"event_id": event_id, "active": is_active},
+                        "timestamp": int(time.time() * 1000)
+                    }, ensure_ascii=False) + "\n")
                 return jsonify({'success': True})
         
         return jsonify({'success': False, 'error': 'אירוע לא נמצא'}), 404
     except Exception as e:
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-5",
+                "hypothesisId": "A3",
+                "location": "app.py:toggle_event_active",
+                "message": "toggle_event_active exception",
+                "data": {"error": str(e)},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def load_permissions():
@@ -4350,6 +5010,60 @@ def check_permission(route_path, user_role):
     return False
 
 
+@app.route('/api/admin/users')
+@login_required
+def api_admin_users():
+    """API endpoint להחזרת נתוני ניהול משתמשים"""
+    try:
+        if current_user.id != 'admin':
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        users = load_users()
+        clients = load_data()
+        permissions = load_permissions()
+        
+        all_pages = [
+            {'route': '/', 'name': 'דשבורד ראשי'},
+            {'route': '/all_clients', 'name': 'לוח לקוחות'},
+            {'route': '/client/', 'name': 'תיק לקוח'},
+            {'route': '/finance', 'name': 'כספים'},
+            {'route': '/events', 'name': 'אירועים'},
+            {'route': '/suppliers', 'name': 'ספקים'},
+            {'route': '/quotes', 'name': 'הצעות מחיר'},
+            {'route': '/forms', 'name': 'טפסים'},
+            {'route': '/admin/dashboard', 'name': 'דוח מנהלים'},
+            {'route': '/admin/users', 'name': 'ניהול צוות'},
+        ]
+        
+        users_list = [
+            {
+                'id': uid,
+                'name': info.get('name', ''),
+                'email': info.get('email', ''),
+                'role': info.get('role', 'עובד'),
+            }
+            for uid, info in users.items()
+        ]
+        
+        clients_list = [
+            {
+                'id': c['id'],
+                'name': c.get('name', ''),
+                'assigned_user': c.get('assigned_user', []),
+            }
+            for c in clients
+        ]
+        
+        return jsonify({
+            'success': True,
+            'users': users_list,
+            'clients': clients_list,
+            'permissions': permissions,
+            'pages': all_pages,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/admin/users', methods=['GET', 'POST'])
 @login_required
 @csrf.exempt  # פטור זמני מ-CSRF עד שנוסיף tokens לכל הטפסים
@@ -4382,12 +5096,16 @@ def manage_users():
             if user_id in users and user_id != 'admin':
                 users[user_id]['password'] = generate_password_hash(new_password)
                 save_users(users)
+                if request.is_json or request.headers.get('Accept') == 'application/json':
+                    return jsonify({'success': True, 'message': 'סיסמה אופסה בהצלחה'})
         elif action == 'update_role':
             user_id = request.form.get('user_id')
             new_role = request.form.get('role')
             if user_id in users:
                 users[user_id]['role'] = new_role
                 save_users(users)
+                if request.is_json or request.headers.get('Accept') == 'application/json':
+                    return jsonify({'success': True, 'message': 'תפקיד עודכן בהצלחה'})
         elif action == 'update_email':
             user_id = request.form.get('user_id')
             new_email = request.form.get('email', '').strip()
@@ -4398,6 +5116,8 @@ def manage_users():
                     # אם ריק, מחק את השדה
                     users[user_id].pop('email', None)
                 save_users(users)
+                if request.is_json or request.headers.get('Accept') == 'application/json':
+                    return jsonify({'success': True, 'message': 'מייל עודכן בהצלחה'})
                 flash(f'מייל עודכן בהצלחה', 'success')
         elif action == 'update_email_password':
             user_id = request.form.get('user_id')
@@ -4411,12 +5131,16 @@ def manage_users():
                     # אם ריק, מחק את השדה
                     users[user_id].pop('email_password', None)
                 save_users(users)
+                if request.is_json or request.headers.get('Accept') == 'application/json':
+                    return jsonify({'success': True, 'message': 'סיסמת מייל עודכנה בהצלחה'})
                 flash(f'סיסמת מייל עודכנה בהצלחה', 'success')
         elif action == 'update_permission':
             route = request.form.get('route')
             required_role = request.form.get('required_role')
             permissions[route] = required_role
             save_permissions(permissions)
+            if request.is_json or request.headers.get('Accept') == 'application/json':
+                return jsonify({'success': True, 'message': 'הרשאה עודכנה בהצלחה'})
         elif action == 'delete_user':
             user_id = request.form.get('user_id')
             # לא למחוק את admin
@@ -4481,6 +5205,31 @@ def manage_users():
     return render_template('manage_users.html', users=users, clients=clients, permissions=permissions, all_pages=all_pages)
 
 # --- Forms Routes ---
+@app.route('/api/forms')
+@login_required
+def api_forms():
+    """API endpoint להחזרת טפסים"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/forms', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        forms_list = load_forms()
+        clients = load_data()
+        clients_dict = {c['id']: c['name'] for c in clients}
+        
+        # Add client names to forms
+        for form in forms_list:
+            client_id = form.get('client_id', '')
+            form['client_name'] = clients_dict.get(client_id, '')
+        
+        return jsonify({
+            'success': True,
+            'forms': forms_list
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/forms')
 @login_required
 def forms():
@@ -4517,12 +5266,12 @@ def add_form():
         forms_list.append(new_form)
         save_forms(forms_list)
         
-        if request.is_json:
-            return jsonify({'status': 'success', 'form': new_form})
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': True, 'form': new_form})
         return redirect(url_for('forms'))
     except Exception as e:
-        if request.is_json:
-            return jsonify({'status': 'error', 'error': str(e)}), 500
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': False, 'error': str(e)}), 500
         return f"שגיאה ביצירת הטופס: {str(e)}", 500
 
 @app.route('/edit_form/<form_id>', methods=['POST'])
@@ -5222,6 +5971,130 @@ def admin_stats():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/dashboard')
+@login_required
+def api_admin_dashboard():
+    """API endpoint להחזרת נתוני דשבורד מנהלים"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/admin/dashboard', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        data = load_data()
+        users = load_users()
+        events_list = load_events()
+        
+        # חישוב סטטיסטיקות משימות לפי עובד
+        task_stats = []
+        for uid, user_info in users.items():
+            if uid == 'admin':
+                continue
+            
+            total_tasks = 0
+            completed_tasks = 0
+            pending_tasks = 0
+            
+            for client in data:
+                if not can_user_access_client(uid, user_info.get('role', 'עובד'), client):
+                    continue
+                
+                for project in client.get('projects', []):
+                    for task in project.get('tasks', []):
+                        if task.get('assignee') == uid:
+                            total_tasks += 1
+                            status = task.get('status', '')
+                            if status == 'הושלם':
+                                completed_tasks += 1
+                            else:
+                                pending_tasks += 1
+            
+            task_stats.append({
+                'user_id': uid,
+                'user_name': user_info.get('name', uid),
+                'total_tasks': total_tasks,
+                'completed_tasks': completed_tasks,
+                'pending_tasks': pending_tasks,
+                'overloaded': pending_tasks > 10  # עומס יתר אם יש יותר מ-10 משימות ממתינות
+            })
+        
+        # חישוב הכנסות חודשיות
+        current_month = datetime.now().strftime('%m')
+        current_year = datetime.now().strftime('%Y')
+        monthly_revenue = 0
+        for client in data:
+            for charge in client.get('extra_charges', []):
+                charge_date = charge.get('date', '')
+                if charge_date:
+                    date_parts = charge_date.split('/')
+                    if len(date_parts) >= 3:
+                        month = date_parts[1].zfill(2)
+                        year_str = date_parts[2]
+                        if len(year_str) == 2:
+                            year = '20' + year_str
+                        else:
+                            year = year_str
+                        if month == current_month and year == current_year:
+                            monthly_revenue += charge.get('amount', 0)
+        
+        # חישוב לקוחות ופרויקטים פעילים
+        active_clients = filter_active_clients(data)
+        total_clients = len(active_clients)
+        active_projects = sum(len(c.get('projects', [])) for c in active_clients)
+        
+        # אירועי לוח שנה
+        calendar_events = []
+        for client in active_clients:
+            for project in client.get('projects', []):
+                for task in project.get('tasks', []):
+                    deadline = task.get('deadline', '')
+                    if deadline:
+                        try:
+                            if '/' in deadline:
+                                parts = deadline.split('/')
+                                if len(parts) == 3:
+                                    event_date = datetime.strptime(deadline, '%d/%m/%Y').strftime('%Y-%m-%d')
+                                else:
+                                    event_date = datetime.strptime(deadline, '%d/%m/%y').strftime('%Y-%m-%d')
+                            else:
+                                event_date = deadline
+                            
+                            calendar_events.append({
+                                'title': task.get('title', 'ללא כותרת'),
+                                'start': event_date,
+                                'color': get_task_status_color(task.get('status', '')),
+                                'extendedProps': {
+                                    'client_name': client.get('name', ''),
+                                    'project_title': project.get('title', ''),
+                                }
+                            })
+                        except:
+                            pass
+        
+        return jsonify({
+            'success': True,
+            'task_stats': task_stats,
+            'calendar_events': calendar_events,
+            'monthly_revenue': monthly_revenue,
+            'total_clients': total_clients,
+            'active_projects': active_projects,
+        })
+    except Exception as e:
+        print(f"Error in api_admin_dashboard: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def get_task_status_color(status: str) -> str:
+    """מחזיר צבע לפי סטטוס משימה"""
+    colors = {
+        'לביצוע': '#bfc9f2',
+        'הועבר לסטודיו': '#2b585e',
+        'הועבר לדיגיטל': '#043841',
+        'נשלח ללקוח': '#b8e994',
+        'הושלם': '#14a675',
+    }
+    return colors.get(status, '#0073ea')
+
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
@@ -5235,8 +6108,348 @@ def admin_dashboard():
     
     return render_template('admin_dashboard.html', sidebar_users=sidebar_users)
 
-@app.route('/logout')
-def logout(): logout_user(); return redirect(url_for('login'))
+# ========== Time Tracking API Endpoints ==========
+
+@app.route('/api/time_tracking/start', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_time_tracking_start():
+    """התחלת מדידת זמן עבור משימה"""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        client_id = data.get('client_id')
+        project_id = data.get('project_id')
+        task_id = data.get('task_id')
+        user_id = current_user.id
+        
+        if not all([client_id, project_id, task_id]):
+            return jsonify({'success': False, 'error': 'חסרים פרמטרים נדרשים'}), 400
+        
+        time_data = load_time_tracking()
+        
+        # בדיקה אם יש מדידה פעילה למשתמש זה
+        if user_id in time_data.get('active_sessions', {}):
+            active_session = time_data['active_sessions'][user_id]
+            return jsonify({
+                'success': False,
+                'error': 'יש מדידה פעילה אחרת',
+                'active_session': active_session
+            }), 400
+        
+        # יצירת מדידה חדשה
+        session_id = str(uuid.uuid4())
+        start_time = datetime.now().isoformat()
+        
+        session = {
+            'id': session_id,
+            'user_id': user_id,
+            'client_id': client_id,
+            'project_id': project_id,
+            'task_id': task_id,
+            'start_time': start_time,
+        }
+        
+        time_data.setdefault('active_sessions', {})[user_id] = session
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'session': session
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_start: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/stop', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_time_tracking_stop():
+    """עצירת מדידת זמן"""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        user_id = current_user.id
+        note = data.get('note', '')
+        
+        time_data = load_time_tracking()
+        
+        if user_id not in time_data.get('active_sessions', {}):
+            return jsonify({'success': False, 'error': 'אין מדידה פעילה'}), 400
+        
+        session = time_data['active_sessions'][user_id]
+        start_time = datetime.fromisoformat(session['start_time'])
+        end_time = datetime.now()
+        duration_seconds = (end_time - start_time).total_seconds()
+        duration_hours = round(duration_seconds / 3600, 2)
+        
+        # יצירת רשומה במדידות
+        entry = {
+            'id': session['id'],
+            'user_id': user_id,
+            'client_id': session['client_id'],
+            'project_id': session['project_id'],
+            'task_id': session['task_id'],
+            'start_time': session['start_time'],
+            'end_time': end_time.isoformat(),
+            'duration_hours': duration_hours,
+            'note': note,
+            'date': start_time.date().isoformat(),
+        }
+        
+        time_data.setdefault('entries', []).append(entry)
+        del time_data['active_sessions'][user_id]
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'entry': entry
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_stop: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/active', methods=['GET'])
+@login_required
+@csrf.exempt
+def api_time_tracking_active():
+    """קבלת מדידה פעילה של המשתמש הנוכחי"""
+    try:
+        user_id = current_user.id
+        time_data = load_time_tracking()
+        
+        active_session = time_data.get('active_sessions', {}).get(user_id)
+        
+        if active_session:
+            start_time = datetime.fromisoformat(active_session['start_time'])
+            elapsed_seconds = (datetime.now() - start_time).total_seconds()
+            active_session['elapsed_seconds'] = int(elapsed_seconds)
+        
+        return jsonify({
+            'success': True,
+            'active_session': active_session
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_active: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/entries', methods=['GET'])
+@login_required
+@csrf.exempt
+def api_time_tracking_entries():
+    """קבלת כל מדידות הזמן"""
+    try:
+        user_id = request.args.get('user_id')  # אופציונלי - אם לא מוגדר, מחזיר את כל המדידות
+        client_id = request.args.get('client_id')  # אופציונלי
+        task_id = request.args.get('task_id')  # אופציונלי
+        month = request.args.get('month')  # בפורמט YYYY-MM
+        
+        time_data = load_time_tracking()
+        entries = time_data.get('entries', [])
+        
+        # סינון לפי משתמש
+        if user_id:
+            entries = [e for e in entries if e.get('user_id') == user_id]
+        
+        # סינון לפי לקוח
+        if client_id:
+            entries = [e for e in entries if e.get('client_id') == client_id]
+        
+        # סינון לפי משימה
+        if task_id:
+            entries = [e for e in entries if e.get('task_id') == task_id]
+        
+        # סינון לפי חודש
+        if month:
+            entries = [e for e in entries if e.get('date', '').startswith(month)]
+        
+        # מיון לפי תאריך (החדש ביותר ראשון)
+        entries.sort(key=lambda x: x.get('start_time', ''), reverse=True)
+        
+        # הוספת שמות לקוחות, פרויקטים ומשימות
+        clients = load_data()
+        users = load_users()
+        clients_dict = {c['id']: c for c in clients}
+        
+        for entry in entries:
+            client = clients_dict.get(entry['client_id'], {})
+            entry['client_name'] = client.get('name', 'לא ידוע')
+            
+            # מציאת פרויקט ומשימה
+            project = None
+            task = None
+            for p in client.get('projects', []):
+                if p.get('id') == entry['project_id']:
+                    project = p
+                    for t in p.get('tasks', []):
+                        if t.get('id') == entry['task_id']:
+                            task = t
+                            break
+                    break
+            
+            entry['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
+            entry['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+            entry['user_name'] = users.get(entry['user_id'], {}).get('name', 'לא ידוע')
+        
+        return jsonify({
+            'success': True,
+            'entries': entries
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_entries: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/report', methods=['GET'])
+@login_required
+@csrf.exempt
+def api_time_tracking_report():
+    """דוח חודשי של מדידות זמן"""
+    try:
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-3",
+                "hypothesisId": "R1",
+                "location": "app.py:api_time_tracking_report",
+                "message": "report request",
+                "data": {"month": request.args.get('month'), "user_id": request.args.get('user_id'), "client_id": request.args.get('client_id')},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
+        month = request.args.get('month')  # בפורמט YYYY-MM
+        user_id = request.args.get('user_id')  # אופציונלי
+        client_id = request.args.get('client_id')  # אופציונלי
+        
+        if not month:
+            # אם לא הוגדר חודש, משתמש בחודש הנוכחי
+            month = datetime.now().strftime('%Y-%m')
+        
+        time_data = load_time_tracking()
+        entries = time_data.get('entries', [])
+        
+        # סינון לפי חודש
+        entries = [e for e in entries if e.get('date', '').startswith(month)]
+        
+        # סינון לפי משתמש
+        if user_id:
+            entries = [e for e in entries if e.get('user_id') == user_id]
+        
+        # סינון לפי לקוח
+        if client_id:
+            entries = [e for e in entries if e.get('client_id') == client_id]
+        
+        # חישוב סיכומים
+        total_hours = sum(e.get('duration_hours', 0) for e in entries)
+        
+        # סיכום לפי לקוח
+        by_client = {}
+        for entry in entries:
+            cid = entry['client_id']
+            if cid not in by_client:
+                by_client[cid] = {'hours': 0, 'entries': []}
+            by_client[cid]['hours'] += entry.get('duration_hours', 0)
+            by_client[cid]['entries'].append(entry)
+        
+        # סיכום לפי משתמש
+        by_user = {}
+        for entry in entries:
+            uid = entry['user_id']
+            if uid not in by_user:
+                by_user[uid] = {'hours': 0, 'entries': []}
+            by_user[uid]['hours'] += entry.get('duration_hours', 0)
+            by_user[uid]['entries'].append(entry)
+        
+        # הוספת שמות
+        clients = load_data()
+        users = load_users()
+        clients_dict = {c['id']: c for c in clients}
+        
+        for cid, data in by_client.items():
+            client = clients_dict.get(cid, {})
+            data['client_name'] = client.get('name', 'לא ידוע')
+        
+        for uid, data in by_user.items():
+            data['user_name'] = users.get(uid, {}).get('name', 'לא ידוע')
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-3",
+                "hypothesisId": "R2",
+                "location": "app.py:api_time_tracking_report",
+                "message": "report success",
+                "data": {"entries_count": len(entries), "total_hours": total_hours},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
+        return jsonify({
+            'success': True,
+            'month': month,
+            'total_hours': total_hours,
+            'total_entries': len(entries),
+            'by_client': by_client,
+            'by_user': by_user,
+            'entries': entries
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_report: {e}")
+        import traceback
+        traceback.print_exc()
+        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
+            f.write(json.dumps({
+                "sessionId": "debug-session",
+                "runId": "pre-fix-3",
+                "hypothesisId": "R3",
+                "location": "app.py:api_time_tracking_report",
+                "message": "report exception",
+                "data": {"error": str(e)},
+                "timestamp": int(time.time() * 1000)
+            }, ensure_ascii=False) + "\n")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/logout', methods=['GET', 'POST'])
+@csrf.exempt
+def logout():
+    logout_user()
+    wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    if wants_json:
+        return jsonify({'success': True})
+    return redirect(url_for('login'))
+
+# ============================================
+# React Frontend Serving (Production)
+# ============================================
+REACT_BUILD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'dist')
+
+@app.route('/assets/<path:filename>')
+def serve_react_assets(filename):
+    """Serve React static assets (JS, CSS, etc.)"""
+    return send_from_directory(os.path.join(REACT_BUILD_DIR, 'assets'), filename)
+
+# React SPA catch-all routes - serve index.html for client-side routing
+REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers', 
+                '/quotes', '/forms', '/admin', '/archive', '/my_tasks', '/time_tracking']
+
+@app.route('/app')
+@app.route('/app/<path:path>')
+@login_required
+def serve_react_app(path=''):
+    """Serve React SPA for /app routes"""
+    react_index = os.path.join(REACT_BUILD_DIR, 'index.html')
+    if os.path.exists(react_index):
+        return send_from_directory(REACT_BUILD_DIR, 'index.html')
+    return "React build not found. Run 'npm run build' first.", 404
+
+# Redirect old routes to React app
+@app.route('/dashboard')
+@login_required  
+def dashboard_redirect():
+    return redirect('/app/dashboard')
+
 if __name__ == '__main__':
     # Railway deployment configuration
     port = int(os.environ.get('PORT', 5000))

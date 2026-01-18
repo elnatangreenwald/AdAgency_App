@@ -159,6 +159,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <a href="/event/{{ event.id }}" class="btn">פתח אירוע</a>
+                    <button class="btn btn-success" onclick="restoreEvent('{{ event.id }}', this)">החזר לפעיל</button>
                 </div>
             </div>
             {% endfor %}
@@ -177,6 +178,37 @@
     </div>
     
     {% include '_chat_widget.html' %}
+    <script>
+        async function restoreEvent(eventId, btn) {
+            btn.disabled = true;
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-5',hypothesisId:'A1',location:'events_archive.html:restoreEvent',message:'restore clicked',data:{eventId},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion agent log
+            try {
+                const response = await fetch(`/toggle_event_active/${eventId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active: true })
+                });
+                const data = await response.json();
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-5',hypothesisId:'A2',location:'events_archive.html:restoreEvent',message:'restore response',data:{status:response.status,success:data.success},timestamp:Date.now()})}).catch(()=>{});
+                // #endregion agent log
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('שגיאה בעדכון הסטטוס: ' + (data.error || 'שגיאה לא ידועה'));
+                }
+            } catch (error) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-5',hypothesisId:'A3',location:'events_archive.html:restoreEvent',message:'restore error',data:{},timestamp:Date.now()})}).catch(()=>{});
+                // #endregion agent log
+                alert('שגיאה בעדכון הסטטוס');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
 
