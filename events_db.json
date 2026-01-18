@@ -114,8 +114,7 @@
                 "arrived": false
             }
         ],
-        "archived": true,
-        "archived_at": "2025-12-25T10:50:04.267731"
+        "archived": false
     },
     {
         "id": "dff79807-48f0-40b0-ab95-6ac378f980a1",
@@ -251,6 +250,65 @@
         "reminders": [],
         "notes": "",
         "created_date": "30/12/25",
+        "status": "active"
+    },
+    {
+        "id": "69958575-cd24-4e50-8964-bd675467faf9",
+        "title": "חתונה",
+        "name": "חתונה",
+        "client_id": "0756012e-1d82-469d-ae50-9ecdce25fac1",
+        "date": "2026-01-28",
+        "location": "",
+        "type": "כנס",
+        "event_type": "כנס",
+        "checklist": [
+            {
+                "task": "הזמנת קייטרינג",
+                "completed": false
+            },
+            {
+                "task": "עיצוב רול-אפים",
+                "completed": false
+            },
+            {
+                "task": "שליחת Save the date",
+                "completed": false
+            },
+            {
+                "task": "הזמנת הגברה ותאורה",
+                "completed": false
+            },
+            {
+                "task": "הזמנת מקרן ומסך",
+                "completed": false
+            },
+            {
+                "task": "הזמנת מקומות ישיבה",
+                "completed": false
+            },
+            {
+                "task": "אישור מיקום",
+                "completed": false
+            },
+            {
+                "task": "הזמנת צלמים/וידאו",
+                "completed": false
+            },
+            {
+                "task": "הכנת מצגות",
+                "completed": false
+            },
+            {
+                "task": "הזמנת מתנות למשתתפים",
+                "completed": false
+            }
+        ],
+        "suppliers": [],
+        "equipment": [],
+        "charges": [],
+        "reminders": [],
+        "notes": "",
+        "created_date": "15/01/26",
         "status": "active"
     }
 ]

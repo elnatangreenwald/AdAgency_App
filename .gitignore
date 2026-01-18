@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
 dist
 dist-ssr
@@ -29,3 +30,63 @@ dist-ssr
 .env.production.local
 .env.development.local
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+.venv/
+
+# Database files with sensitive data
+users_db.json
+agency_db.json
+events_db.json
+forms_db.json
+messages_db.json
+permissions_db.json
+suppliers_db.json
+time_tracking.json
+user_activity.json
+checklist_templates.json
+equipment_bank.json
+*.backup
+
+# Uploaded files (may contain private client data)
+static/logos/*
+!static/logos/.gitkeep
+static/chat_files/*
+!static/chat_files/.gitkeep
+static/forms_uploads/*
+!static/forms_uploads/.gitkeep
+static/client_docs/*
+!static/client_docs/.gitkeep
+static/documents/*
+!static/documents/.gitkeep
+static/supplier_files/*
+!static/supplier_files/.gitkeep
+uploads/*
+!uploads/.gitkeep
+
+# Excel exports
+static/*.xlsx
+
+# React build (will be built on Railway)
+static/dist/
+
+# Keep the Vatkin logo (branding)
+!static/Vatkin_Logo.jpg

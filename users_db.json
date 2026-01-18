@@ -14,12 +14,6 @@
         "name": "נריה ותקין",
         "role": "מנהל"
     },
-    "elnatan": {
-        "password": "scrypt:32768:8:1$TsWbKwVCGrlnVPIw$a6af982eb2b36d65f4695557f11d5ad805798c612f9a2689f8fcda63b38b9f3bd8903556162f0925012fe498b3a7b7f9768eb7489d55bb506b1c151620728cb9",
-        "name": "אלנתן גרינולד",
-        "email": "ELNATAN@VATKIN.CO.IL",
-        "role": "עובד"
-    },
     "אלנתן": {
         "password": "scrypt:32768:8:1$0b2fe5PCOTBUZYg0$216d9ceca8b1250f1e5d10a6fd2c159f5044bc74637645b782ba6fa7ff44ee51240090cafb214a0853fa90666acae1902a65588c780080a60a42d1258380eb8e",
         "name": "אלנתן גרינולד",

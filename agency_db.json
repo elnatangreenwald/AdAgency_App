@@ -445,121 +445,6 @@
         ],
         "projects": [
             {
-                "id": "a696db18-205e-41af-a9ef-0a1916c321ce",
-                "title": "הקמת אתר",
-                "tasks": [
-                    {
-                        "id": "1fa94dfd-e5b6-4330-b01b-fdfa5d3ac86c",
-                        "title": "בדיקת חשמל",
-                        "status": "לביצוע",
-                        "note": "",
-                        "created_date": "28/12/25",
-                        "created_at": "2025-10-25T00:00:00",
-                        "done": false,
-                        "priority": "high",
-                        "assignee": "admin",
-                        "dependencies": [],
-                        "deadline": "2025-12-10",
-                        "task_number": "0180008003"
-                    },
-                    {
-                        "id": "65e9502e-c8ba-4af8-b168-8a7871974445",
-                        "title": "בדיקת חשמל נוספת",
-                        "status": "לביצוע",
-                        "note": "",
-                        "created_date": "28/12/25",
-                        "created_at": "2025-10-30T00:00:00",
-                        "done": false,
-                        "priority": "high",
-                        "assignee": "admin",
-                        "dependencies": [],
-                        "deadline": "2026-01-27",
-                        "task_number": "0180008004"
-                    }
-                ],
-                "project_number": "0180008",
-                "archived_tasks": [
-                    {
-                        "id": "c9a33525-1f0c-4757-ab12-b41e70579842",
-                        "title": "איפיון ראשוני",
-                        "status": "לביצוע",
-                        "note": "",
-                        "created_date": "24/12/25",
-                        "done": false,
-                        "task_number": "0180008001",
-                        "archived_date": "24/12/25 11:23"
-                    },
-                    {
-                        "id": "c40e449d-28e7-4177-a9f3-f68942e6c301",
-                        "title": "איפיון ראשוני",
-                        "status": "הושלם",
-                        "note": "גכגכדגכ",
-                        "created_date": "24/12/25",
-                        "done": true,
-                        "task_number": "0180008001",
-                        "manager_note": "תתקדמו דחוף!",
-                        "manager_note_date": "2025-12-24T18:44:35.331184",
-                        "created_at": "2025-12-24T00:00:00",
-                        "completed_at": "2025-12-24T21:08:22.090155",
-                        "archived_date": "28/12/25 13:40"
-                    },
-                    {
-                        "id": "4cc1ae66-4861-49a4-9424-fc6df364512f",
-                        "title": "איפיון שני",
-                        "status": "לביצוע",
-                        "note": "הערה ג",
-                        "created_date": "24/12/25",
-                        "done": false,
-                        "task_number": "0180008002",
-                        "manager_note": "מתקדם?",
-                        "manager_note_date": "2025-12-25T13:01:36.821156",
-                        "archived_date": "28/12/25 13:40"
-                    }
-                ]
-            },
-            {
-                "id": "72908c53-972d-4d21-802f-4c172c46fc4f",
-                "title": "ניהול רשתות",
-                "tasks": [
-                    {
-                        "id": "de166a90-2fb3-40a1-be6a-51e16aea158c",
-                        "title": "חיבור טכני לאינסטגרם",
-                        "status": "הועבר לסטודיו",
-                        "note": "כן",
-                        "created_date": "28/12/25",
-                        "created_at": "2025-12-28T15:37:24.396045",
-                        "done": false,
-                        "priority": "medium",
-                        "assignee": "admin",
-                        "dependencies": [],
-                        "task_number": "0180009001"
-                    },
-                    {
-                        "id": "82269cfa-3b47-4e65-bcf0-38d0e39dec83",
-                        "title": "בדיקת עירנות",
-                        "status": "הועבר לסטודיו",
-                        "note": "כן",
-                        "created_date": "2025-12-28",
-                        "created_at": "2025-12-28T15:45:35.658044",
-                        "done": false,
-                        "task_number": "0180009002"
-                    },
-                    {
-                        "id": "6a5c7dbf-73e9-4aa7-bef8-dba6710b3369",
-                        "title": "ניהול תיק שני",
-                        "status": "הועבר לסטודיו",
-                        "note": "",
-                        "created_date": "2026-01-07",
-                        "created_at": "2026-01-07T15:22:40.522373",
-                        "done": false,
-                        "task_number": "0180009003"
-                    }
-                ],
-                "project_number": "0180009",
-                "is_shared": false,
-                "created_by": "admin"
-            },
-            {
                 "id": "62e96ccb-89ee-4b22-9323-baeca90d5629",
                 "title": "טפסים",
                 "tasks": [
@@ -661,9 +546,100 @@
                         "archived_date": "31/12/25 14:23"
                     }
                 ]
+            },
+            {
+                "id": "48388703-3e29-4c6f-befd-53abeaf0851d",
+                "title": "בדיקה",
+                "tasks": [
+                    {
+                        "id": "556861fe-53d9-4b8c-b86a-b22f5d09256c",
+                        "title": "בדיקת תאריך",
+                        "status": "הועבר לדיגיטל",
+                        "note": "",
+                        "created_date": "14/01/26",
+                        "created_at": "2026-01-14T14:02:50.937710",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "task_number": "0180001001",
+                        "deadline": "2026-01-22"
+                    },
+                    {
+                        "id": "911bbe75-87a1-4576-a6c3-7fec7457f738",
+                        "title": "ניהול תיק שני",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "2026-01-14",
+                        "created_at": "2026-01-14T14:12:57.921080",
+                        "done": false,
+                        "deadline": "2026-01-31",
+                        "task_number": "0180001002"
+                    },
+                    {
+                        "id": "7b620bad-7aa8-414b-86cb-495f2c696509",
+                        "title": "בדיקה 6",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "15/01/26",
+                        "created_at": "2026-01-15T09:52:44.289457",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "task_number": "0180001003"
+                    }
+                ],
+                "project_number": "0180001",
+                "is_shared": true,
+                "created_by": "admin"
+            },
+            {
+                "id": "c3e99f48-134f-4ff9-882d-5705374628f0",
+                "title": "בדיקה",
+                "tasks": [],
+                "project_number": "0180002",
+                "is_shared": false,
+                "created_by": "admin"
+            },
+            {
+                "id": "037a7c03-cf46-44f6-a274-b6da4414c663",
+                "title": "חלון",
+                "tasks": [
+                    {
+                        "id": "41187200-061e-42e4-be73-80367439e96c",
+                        "title": "מעבר רשתות יומי",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "2026-01-18",
+                        "created_at": "2026-01-18T11:58:19.210587",
+                        "done": false,
+                        "is_daily_task": true,
+                        "deadline": "2026-01-19T00:00:00",
+                        "task_number": "0180003001"
+                    },
+                    {
+                        "id": "1de77f2a-bd71-4bd3-983a-8fa406185fb1",
+                        "title": "בדיקה 3",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "18/01/26",
+                        "created_at": "2026-01-18T12:10:46.546531",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "task_number": "0180003002"
+                    }
+                ],
+                "project_number": "0180003",
+                "is_shared": false,
+                "created_by": "admin"
             }
         ],
-        "assigned_user": "shachar",
+        "assigned_user": [
+            "shachar"
+        ],
         "files": [],
         "contacts": [],
         "documents": [],
@@ -681,6 +657,123 @@
                 "tasks": [],
                 "project_number": "0180007",
                 "archived_date": "24/12/25 11:23"
+            },
+            {
+                "id": "72908c53-972d-4d21-802f-4c172c46fc4f",
+                "title": "ניהול רשתות",
+                "tasks": [
+                    {
+                        "id": "de166a90-2fb3-40a1-be6a-51e16aea158c",
+                        "title": "חיבור טכני לאינסטגרם",
+                        "status": "הועבר לסטודיו",
+                        "note": "כן",
+                        "created_date": "28/12/25",
+                        "created_at": "2025-12-28T15:37:24.396045",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "task_number": "0180009001"
+                    },
+                    {
+                        "id": "82269cfa-3b47-4e65-bcf0-38d0e39dec83",
+                        "title": "בדיקת עירנות",
+                        "status": "הועבר לסטודיו",
+                        "note": "כן",
+                        "created_date": "2025-12-28",
+                        "created_at": "2025-12-28T15:45:35.658044",
+                        "done": false,
+                        "task_number": "0180009002"
+                    },
+                    {
+                        "id": "6a5c7dbf-73e9-4aa7-bef8-dba6710b3369",
+                        "title": "ניהול תיק שני",
+                        "status": "הועבר לסטודיו",
+                        "note": "",
+                        "created_date": "2026-01-07",
+                        "created_at": "2026-01-07T15:22:40.522373",
+                        "done": false,
+                        "task_number": "0180009003"
+                    }
+                ],
+                "project_number": "0180009",
+                "is_shared": false,
+                "created_by": "admin",
+                "archived_date": "14/01/26 14:02"
+            },
+            {
+                "id": "a696db18-205e-41af-a9ef-0a1916c321ce",
+                "title": "הקמת אתר",
+                "tasks": [
+                    {
+                        "id": "1fa94dfd-e5b6-4330-b01b-fdfa5d3ac86c",
+                        "title": "בדיקת חשמל",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "28/12/25",
+                        "created_at": "2025-10-25T00:00:00",
+                        "done": false,
+                        "priority": "high",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "deadline": "2026-01-16",
+                        "task_number": "0180008003"
+                    },
+                    {
+                        "id": "65e9502e-c8ba-4af8-b168-8a7871974445",
+                        "title": "בדיקת חשמל נוספת",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "28/12/25",
+                        "created_at": "2025-10-30T00:00:00",
+                        "done": false,
+                        "priority": "high",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "deadline": "2026-01-15",
+                        "task_number": "0180008004"
+                    }
+                ],
+                "project_number": "0180008",
+                "archived_tasks": [
+                    {
+                        "id": "c9a33525-1f0c-4757-ab12-b41e70579842",
+                        "title": "איפיון ראשוני",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "24/12/25",
+                        "done": false,
+                        "task_number": "0180008001",
+                        "archived_date": "24/12/25 11:23"
+                    },
+                    {
+                        "id": "c40e449d-28e7-4177-a9f3-f68942e6c301",
+                        "title": "איפיון ראשוני",
+                        "status": "הושלם",
+                        "note": "גכגכדגכ",
+                        "created_date": "24/12/25",
+                        "done": true,
+                        "task_number": "0180008001",
+                        "manager_note": "תתקדמו דחוף!",
+                        "manager_note_date": "2025-12-24T18:44:35.331184",
+                        "created_at": "2025-12-24T00:00:00",
+                        "completed_at": "2025-12-24T21:08:22.090155",
+                        "archived_date": "28/12/25 13:40"
+                    },
+                    {
+                        "id": "4cc1ae66-4861-49a4-9424-fc6df364512f",
+                        "title": "איפיון שני",
+                        "status": "לביצוע",
+                        "note": "הערה ג",
+                        "created_date": "24/12/25",
+                        "done": false,
+                        "task_number": "0180008002",
+                        "manager_note": "מתקדם?",
+                        "manager_note_date": "2025-12-25T13:01:36.821156",
+                        "archived_date": "28/12/25 13:40"
+                    }
+                ],
+                "archived_date": "14/01/26 14:02"
             }
         ]
     },
@@ -762,7 +855,8 @@
         "calculated_total": 0,
         "calculated_open_charges": 0,
         "calculated_monthly_revenue": 0,
-        "client_number": 23
+        "client_number": 23,
+        "logo_url": "logo_a51fc73d-d10f-4f8d-81ed-c63f33737be2.png"
     },
     {
         "id": "6dd079fc-2382-42d8-b6cd-57cc819e2f1c",
@@ -817,7 +911,30 @@
         "name": "דרך עמי",
         "retainer": 0,
         "extra_charges": [],
-        "projects": [],
+        "projects": [
+            {
+                "id": "ed9ef0fc-c909-43cc-b843-ca46d2ea88f9",
+                "title": "בדיקה",
+                "tasks": [
+                    {
+                        "id": "5ca50262-aaa5-4694-8df3-b84122f67e91",
+                        "title": "עעע",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "18/01/26",
+                        "created_at": "2026-01-18T12:13:21.154133",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "task_number": "0270001001"
+                    }
+                ],
+                "project_number": "0270001",
+                "is_shared": false,
+                "created_by": "admin"
+            }
+        ],
         "assigned_user": "shachar",
         "files": [],
         "contacts": [],
@@ -921,7 +1038,29 @@
         "name": "איגוד החוות",
         "retainer": 0,
         "extra_charges": [],
-        "projects": [],
+        "projects": [
+            {
+                "id": "1a6f1e43-3461-4edd-b50b-37a8fdf0b2d9",
+                "title": "בגג",
+                "tasks": [
+                    {
+                        "id": "2db2ded1-82f7-43e9-9f74-dd1eedd4100a",
+                        "title": "רשתות",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "2026-01-18",
+                        "created_at": "2026-01-18T12:11:27.803799",
+                        "done": false,
+                        "is_daily_task": true,
+                        "deadline": "2026-01-19T00:00:00",
+                        "task_number": "0330001001"
+                    }
+                ],
+                "project_number": "0330001",
+                "is_shared": false,
+                "created_by": "admin"
+            }
+        ],
         "assigned_user": "admin",
         "files": [],
         "contacts": [],
@@ -1182,7 +1321,44 @@
         "assigned_user": [
             "shachar"
         ],
-        "projects": [],
+        "projects": [
+            {
+                "id": "f28e2323-087d-453a-925e-1ee0918b7404",
+                "title": "בדיקה",
+                "tasks": [
+                    {
+                        "id": "da93403a-4b3c-4f2e-bfc4-faeaa4a21619",
+                        "title": "חלון לים התיכון",
+                        "status": "הועבר לסטודיו",
+                        "note": "גכגכדגכ",
+                        "created_date": "15/01/26",
+                        "created_at": "2026-01-15T13:10:54.522380",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "task_number": "0490001001"
+                    },
+                    {
+                        "id": "5f02488e-bbbb-4ace-a22a-b4781bb3f092",
+                        "title": "חלון נוסך",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "15/01/26",
+                        "created_at": "2026-01-15T13:11:24.169089",
+                        "done": false,
+                        "priority": "medium",
+                        "assignee": "admin",
+                        "dependencies": [],
+                        "deadline": "2026-01-27T00:00:00",
+                        "task_number": "0490001002"
+                    }
+                ],
+                "project_number": "0490001",
+                "is_shared": false,
+                "created_by": "admin"
+            }
+        ],
         "extra_charges": [],
         "retainer": 0,
         "documents": [],
