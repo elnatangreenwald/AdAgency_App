@@ -1087,10 +1087,13 @@ def home():
     return render_template('index.html', clients=display, sidebar_users=sidebar_users)
 
 @app.route('/api/current_user')
-@login_required
 def api_current_user():
     """API endpoint להחזרת המשתמש הנוכחי"""
     try:
+        # Check if user is authenticated without redirecting
+        if not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
         users = load_users()
         user_data = users.get(current_user.id, {})
         return jsonify({
@@ -6425,9 +6428,8 @@ REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers
 
 @app.route('/app')
 @app.route('/app/<path:path>')
-@login_required
 def serve_react_app(path=''):
-    """Serve React SPA for /app routes"""
+    """Serve React SPA for /app routes - React handles its own auth"""
     react_index = os.path.join(REACT_BUILD_DIR, 'index.html')
     if os.path.exists(react_index):
         return send_from_directory(REACT_BUILD_DIR, 'index.html')
