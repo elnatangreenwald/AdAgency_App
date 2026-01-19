@@ -6205,6 +6205,32 @@ def api_time_tracking_stop():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/time_tracking/cancel', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_time_tracking_cancel():
+    """ביטול מדידת זמן פעילה (ללא שמירה בהיסטוריה)"""
+    try:
+        user_id = current_user.id
+        time_data = load_time_tracking()
+        
+        if user_id not in time_data.get('active_sessions', {}):
+            return jsonify({'success': False, 'error': 'אין מדידה פעילה'}), 400
+        
+        # מחיקת המדידה הפעילה ללא שמירה
+        del time_data['active_sessions'][user_id]
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'message': 'המדידה בוטלה'
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_cancel: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/time_tracking/active', methods=['GET'])
 @login_required
 @csrf.exempt

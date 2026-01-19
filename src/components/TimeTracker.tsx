@@ -111,6 +111,12 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
           setActiveSession(session);
           if (session.elapsed_seconds) {
             setElapsedSeconds(session.elapsed_seconds);
+            // אם יש מדידה פעילה שעברה שעה, הצג תזכורת
+            if (session.elapsed_seconds >= 3600 && !reminderShownRef.current) {
+              setShowReminder(true);
+              setReminderShown(true);
+              reminderShownRef.current = true;
+            }
           }
         } else {
           setActiveSession(null);
@@ -239,6 +245,45 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
     await handleStop();
   };
 
+  const handleCancel = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.post('/api/time_tracking/cancel');
+      if (response.data.success) {
+        setActiveSession(null);
+        setElapsedSeconds(0);
+        setShowReminder(false);
+        setReminderShown(false);
+        reminderShownRef.current = false;
+        toast({
+          title: 'מדידה בוטלה',
+          description: 'המדידה הפעילה בוטלה ללא שמירה',
+          variant: 'success',
+        });
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: response.data.error || 'שגיאה בביטול המדידה',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error canceling time tracking:', error);
+      toast({
+        title: 'שגיאה',
+        description: error.response?.data?.error || 'שגיאה בביטול המדידה',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelFromReminder = async () => {
+    setShowReminder(false);
+    await handleCancel();
+  };
+
   const isActive = activeSession && activeSession.task_id === taskId;
 
   if (compact) {
@@ -297,7 +342,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
                 זמן מצטבר
               </div>
             </div>
-            <DialogFooter className="flex-row-reverse gap-2">
+            <DialogFooter className="flex-row-reverse gap-2 flex-wrap">
               <Button
                 variant="default"
                 onClick={handleContinue}
@@ -311,7 +356,15 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
                 disabled={loading}
               >
                 <Square className="w-4 h-4 ml-2" />
-                עצור מדידה
+                עצור ושמור
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancelFromReminder}
+                disabled={loading}
+                className="text-gray-600"
+              >
+                בטל (ללא שמירה)
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -417,7 +470,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
               זמן מצטבר
             </div>
           </div>
-          <DialogFooter className="flex-row-reverse gap-2">
+          <DialogFooter className="flex-row-reverse gap-2 flex-wrap">
             <Button
               variant="default"
               onClick={handleContinue}
@@ -431,7 +484,15 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
               disabled={loading}
             >
               <Square className="w-4 h-4 ml-2" />
-              עצור מדידה
+              עצור ושמור
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleCancelFromReminder}
+              disabled={loading}
+              className="text-gray-600"
+            >
+              בטל (ללא שמירה)
             </Button>
           </DialogFooter>
         </DialogContent>
