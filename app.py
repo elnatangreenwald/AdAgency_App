@@ -899,7 +899,8 @@ def login():
             return jsonify({'status': 'error', 'error': 'שם משתמש או סיסמה שגויים'}), 401
         from flask import flash
         flash('שם משתמש או סיסמה שגויים', 'error')
-    return render_template('login.html')
+    # Redirect to React login
+    return redirect('/app/login')
 
 
 def send_password_reset_email(user_email, reset_token):
@@ -1083,9 +1084,6 @@ def reset_password(token):
 def home():
     # Redirect to React app
     return redirect('/app')
-    users = load_users()
-    sidebar_users = {uid: {'name': info.get('name', '')} for uid, info in users.items() if uid != 'admin'}
-    return render_template('index.html', clients=display, sidebar_users=sidebar_users)
 
 @app.route('/api/current_user')
 def api_current_user():
@@ -1519,7 +1517,8 @@ def all_clients():
         clients = all_clients_data
         clients.sort(key=lambda x: x.get('name', '').lower())
     
-    return render_template('all_clients.html', clients=clients, clients_by_user=clients_by_user, users=users, filter_user=filter_user, user_role=user_role)
+    # Redirect to React
+    return redirect('/app/clients')
 
 @app.route('/project/<client_id>/<project_id>/gantt')
 @login_required
@@ -1575,7 +1574,8 @@ def project_gantt(client_id, project_id):
             'progress': 100 if task.get('status') == 'הושלם' else 0
         })
     
-    return render_template('project_gantt.html', client=client, project=project, tasks=tasks_data, users=users, user_role=user_role, current_user_id=current_user.id)
+    # Redirect to React client page
+    return redirect(f'/app/client/{client_id}')
 
 def calculate_dependent_deadlines_for_project(project):
     """מחשב תאריכי יעד אוטומטיים למשימות בפרויקט על בסיס תלויות"""
@@ -1702,7 +1702,8 @@ def client_page(client_id):
     # Cache busting עבור לוגו - הוספת timestamp
     logo_cache_bust = int(datetime.now().timestamp())
     
-    return render_template('client_page.html', client=client_copy, assigned_name=assigned_name, logo_cache_bust=logo_cache_bust, current_user_id=current_user.id, user_role=user_role, activity_logs=client_activities)
+    # Redirect to React client page
+    return redirect(f'/app/client/{client_id}')
 
 @app.route('/upload_logo/<client_id>', methods=['POST'])
 @login_required
@@ -2841,11 +2842,8 @@ def finance():
     # מיון לפי סה"כ בסדר יורד (הגבוה ביותר ראשון)
     clients.sort(key=lambda x: x.get('calculated_total', 0), reverse=True)
     
-    return render_template('finance.html', 
-                         clients=clients, 
-                         total_open_charges=total_open_charges,
-                         total_monthly_revenue=total_monthly_revenue,
-                         current_month=current_month)
+    # Redirect to React finance page
+    return redirect('/app/finance')
 
 @app.route('/update_finance/<client_id>', methods=['POST'])
 @login_required
@@ -3163,7 +3161,8 @@ def archive():
     archived_clients = filter_archived_clients(all_clients)
     archived_clients.sort(key=lambda x: x.get('archived_at', ''), reverse=True)  # מיון לפי תאריך ארכיון (החדש ביותר ראשון)
     
-    return render_template('archive.html', clients=archived_clients)
+    # Redirect to React archive page
+    return redirect('/app/archive')
 
 @app.route('/events_archive')
 @login_required
@@ -3189,7 +3188,8 @@ def events_archive():
         client_id = event.get('client_id', '')
         event['client_name'] = next((c.get('name', '') for c in clients if c.get('id') == client_id), 'לא צוין')
     
-    return render_template('events_archive.html', events=archived_events)
+    # Redirect to React archive page
+    return redirect('/app/archive')
 
 @app.route('/export_open_charges')
 @login_required
@@ -3335,7 +3335,8 @@ def suppliers():
     suppliers_list = load_suppliers()
     users = load_users()
     sidebar_users = {uid: {'name': info.get('name', '')} for uid, info in users.items() if uid != 'admin'}
-    return render_template('suppliers.html', suppliers=suppliers_list, sidebar_users=sidebar_users)
+    # Redirect to React suppliers page
+    return redirect('/app/suppliers')
 
 @app.route('/add_supplier', methods=['POST'])
 @login_required
@@ -3413,7 +3414,8 @@ def supplier_page(supplier_id):
     if 'notes_list' not in supplier:
         supplier['notes_list'] = []
     
-    return render_template('supplier_page.html', supplier=supplier)
+    # Redirect to React suppliers page
+    return redirect('/app/suppliers')
 
 @app.route('/upload_supplier_file/<supplier_id>', methods=['POST'])
 @login_required
@@ -3663,7 +3665,8 @@ def quotes():
         return "גישה חסומה - אין לך הרשאה לגשת לדף זה", 403
     quotes_list = load_quotes()
     clients = load_data()
-    return render_template('quotes.html', quotes=quotes_list, clients=clients)
+    # Redirect to React quotes page
+    return redirect('/app/quotes')
 
 @app.route('/add_quote', methods=['POST'])
 @login_required
@@ -3998,7 +4001,8 @@ def messages():
     user_messages = [m for m in messages_list if m.get('to_user') == current_user.id or m.get('from_user') == current_user.id]
     # מיון לפי תאריך - החדשים למעלה
     user_messages.sort(key=lambda x: x.get('created_date', ''), reverse=True)
-    return render_template('messages.html', messages=user_messages, users=users, clients=clients)
+    # Redirect to React app
+    return redirect('/app')
 
 @app.route('/send_message', methods=['POST'])
 @login_required
@@ -4138,7 +4142,8 @@ def events():
         event['client_name'] = next((c.get('name', '') for c in clients if c.get('id') == client_id), 'לא צוין')
     
     user_role = get_user_role(current_user.id)
-    return render_template('events.html', events=open_events, clients=clients, sidebar_users=sidebar_users, user_role=user_role)
+    # Redirect to React events page
+    return redirect('/app/events')
 
 @app.route('/event/<event_id>')
 @login_required
@@ -4197,15 +4202,8 @@ def event_page(event_id):
     total_expenses = sum(ch.get('our_cost', 0) for ch in event.get('charges', []))
     profit_margin = total_budget - total_expenses
     
-    return render_template('event_page.html', 
-                         event=event, 
-                         clients=clients,
-                         suppliers_list=suppliers_list,
-                         equipment_bank=equipment_bank,
-                         sidebar_users=sidebar_users,
-                         total_budget=total_budget,
-                         total_expenses=total_expenses,
-                         profit_margin=profit_margin)
+    # Redirect to React events page
+    return redirect('/app/events')
 
 @app.route('/add_event', methods=['POST'])
 @login_required
@@ -5195,7 +5193,8 @@ def manage_users():
         {'route': '/admin/users', 'name': 'ניהול צוות'}
     ]
     
-    return render_template('manage_users.html', users=users, clients=clients, permissions=permissions, all_pages=all_pages)
+    # Redirect to React manage users page
+    return redirect('/app/admin/users')
 
 # --- Forms Routes ---
 @app.route('/api/forms')
@@ -5234,7 +5233,8 @@ def forms():
     clients = load_data()
     # Map client IDs to client names
     clients_dict = {c['id']: c['name'] for c in clients}
-    return render_template('forms.html', forms=forms_list, clients=clients, clients_dict=clients_dict)
+    # Redirect to React forms page
+    return redirect('/app/forms')
 
 @app.route('/add_form', methods=['POST'])
 @login_required
@@ -6099,7 +6099,8 @@ def admin_dashboard():
     users = load_users()
     sidebar_users = {uid: {'name': info.get('name', '')} for uid, info in users.items() if uid != 'admin'}
     
-    return render_template('admin_dashboard.html', sidebar_users=sidebar_users)
+    # Redirect to React admin dashboard
+    return redirect('/app/admin')
 
 # ========== Time Tracking API Endpoints ==========
 
