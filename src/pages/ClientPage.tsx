@@ -1001,19 +1001,7 @@ export function ClientPage() {
       <Card className="relative">
         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-[#3d817a] to-[#2d6159] rounded-t-lg" />
         <CardContent className="p-6 pt-8">
-          <div className="flex justify-between items-start">
-            {isAdminOrManager && (
-              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-                <Label htmlFor="client-active" className="text-sm font-medium text-[#043841] whitespace-nowrap">
-                  לקוח פעיל
-                </Label>
-                <Switch
-                  id="client-active"
-                  checked={!client.archived}
-                  onCheckedChange={handleToggleClientActive}
-                />
-              </div>
-            )}
+          <div className="flex items-start gap-4">
             <div className="flex items-center gap-5 flex-1">
               <div
                 className="w-32 h-32 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#0073ea] hover:scale-105 transition-all relative overflow-hidden group"
@@ -1060,6 +1048,19 @@ export function ClientPage() {
                 </div>
               </div>
             </div>
+            {isAdminOrManager && (
+              <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm flex-shrink-0">
+                <Switch
+                  id="client-active"
+                  checked={!client.archived}
+                  onCheckedChange={handleToggleClientActive}
+                  className="data-[state=checked]:bg-[#3d817a]"
+                />
+                <Label htmlFor="client-active" className="text-sm font-medium text-[#043841] whitespace-nowrap cursor-pointer">
+                  לקוח פעיל
+                </Label>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -222,10 +222,14 @@ export default function ChatWidget() {
       {/* Chat Button */}
       <button
         onClick={openChat}
-        className="fixed bottom-5 left-5 w-14 h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 z-50 border-3 border-[#3d817a] flex items-center justify-center"
+        className="fixed bottom-5 left-5 w-[60px] h-[60px] bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 z-50 border-[3px] border-[#3d817a] flex items-center justify-center p-2 overflow-hidden"
         title="צ'אט פנימי"
       >
-        <span className="text-2xl">💬</span>
+        <img 
+          src="/static/Vatkin_Logo.jpg" 
+          alt="Chat" 
+          className="w-full h-full object-contain rounded-full"
+        />
         {totalUnread > 0 && (
           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 border-2 border-white">
             {totalUnread > 99 ? '99+' : totalUnread}
