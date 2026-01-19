@@ -33,4 +33,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 5000
 
 # Start command
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000"]
+CMD gunicorn app:app --bind 0.0.0.0:$PORT
