@@ -52,12 +52,16 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
     };
   }, [clientId, projectId, taskId]);
 
+  // Ref לשמירת מצב התזכורת בתוך ה-interval (למניעת stale closure)
+  const reminderShownRef = useRef(false);
+  
+  // סנכרון ה-ref עם ה-state
+  useEffect(() => {
+    reminderShownRef.current = reminderShown;
+  }, [reminderShown]);
+
   useEffect(() => {
     if (activeSession && activeSession.task_id === taskId) {
-      // איפוס תזכורת כשמתחילה מדידה חדשה
-      setReminderShown(false);
-      setShowReminder(false);
-      
       // עדכון זמן כל שנייה
       intervalRef.current = setInterval(() => {
         if (activeSession.start_time) {
@@ -67,7 +71,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
           setElapsedSeconds(elapsed);
           
           // בדיקה אם עברה שעה (3600 שניות) והתזכורת עדיין לא הוצגה
-          if (elapsed >= 3600 && !reminderShown) {
+          if (elapsed >= 3600 && !reminderShownRef.current) {
             setShowReminder(true);
             setReminderShown(true);
           }
@@ -95,7 +99,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
         clearTimeout(reminderTimeoutRef.current);
       }
     };
-  }, [activeSession, taskId, reminderShown]);
+  }, [activeSession, taskId]);
 
   const checkActiveSession = async () => {
     try {
@@ -129,10 +133,13 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
       });
 
       if (response.data.success) {
-        setActiveSession(response.data.session);
-        setElapsedSeconds(0);
+        // איפוס תזכורת כשמתחילה מדידה חדשה
         setReminderShown(false);
         setShowReminder(false);
+        reminderShownRef.current = false;
+        
+        setActiveSession(response.data.session);
+        setElapsedSeconds(0);
         toast({
           title: 'מדידת זמן התחילה',
           description: 'המדידה פעילה כעת',
