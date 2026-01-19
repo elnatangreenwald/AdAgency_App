@@ -238,33 +238,34 @@ export function Finance() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-[#292f4c] mb-8">
+    <div className="space-y-6 sm:space-y-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] mb-6 sm:mb-8">
         ריכוז כספי לקוחות
       </h1>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <Card className="bg-gradient-to-br from-[#d66b74] to-[#c55a65] text-white border-0">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold mb-5">כמה חייבים לנו?</h2>
-            <div className="text-5xl font-bold mb-5">
+          <CardContent className="p-5 sm:p-8">
+            <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-5">כמה חייבים לנו?</h2>
+            <div className="text-3xl sm:text-5xl font-bold mb-3 sm:mb-5">
               ₪{data.total_open_charges.toLocaleString()}
             </div>
             <Button
               onClick={handleExportOpenCharges}
-              className="bg-white text-[#d66b74] hover:bg-gray-100 font-bold"
+              className="bg-white text-[#d66b74] hover:bg-gray-100 font-bold text-sm sm:text-base"
             >
               <Download className="w-4 h-4 ml-2" />
-              הורד פירוט לאקסל
+              <span className="hidden sm:inline">הורד פירוט לאקסל</span>
+              <span className="sm:hidden">הורדה</span>
             </Button>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-[#28a745] to-[#218838] text-white border-0">
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-bold mb-5">כמה הרווחנו החודש?</h2>
-            <div className="text-5xl font-bold">
+          <CardContent className="p-5 sm:p-8">
+            <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-5">כמה הרווחנו החודש?</h2>
+            <div className="text-3xl sm:text-5xl font-bold">
               ₪{data.total_monthly_revenue.toLocaleString()}
             </div>
           </CardContent>
@@ -273,9 +274,9 @@ export function Finance() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-5">
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="relative flex-1 min-w-[250px]">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+            <div className="relative flex-1 min-w-0 sm:min-w-[250px]">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 type="text"
@@ -285,21 +286,23 @@ export function Finance() {
                 className="pr-10"
               />
             </div>
-            <Label className="text-gray-600 font-bold whitespace-nowrap">
-              סינון לפי חודש:
-            </Label>
-            <Select value={monthFilter} onValueChange={setMonthFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Label className="text-gray-600 font-bold whitespace-nowrap text-sm sm:text-base">
+                חודש:
+              </Label>
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="w-[140px] sm:w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>

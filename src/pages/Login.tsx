@@ -94,17 +94,17 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#a8be37] rtl" dir="rtl">
-      <Card className="w-full max-w-md rounded-[25px] shadow-[0_15px_35px_rgba(0,0,0,0.2)]">
-        <CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-[#a8be37] rtl p-4" dir="rtl">
+      <Card className="w-full max-w-md rounded-[20px] sm:rounded-[25px] shadow-[0_15px_35px_rgba(0,0,0,0.2)]">
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col items-center gap-3">
             <img
               src="/static/Vatkin_Logo.jpg"
               alt="Vatkin Logo"
-              className="w-28 h-auto"
+              className="w-24 sm:w-28 h-auto"
             />
-            <CardTitle className="text-2xl text-center">מערכת ניהול</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-xl sm:text-2xl text-center">מערכת ניהול</CardTitle>
+            <CardDescription className="text-center text-sm sm:text-base">
               התחבר לחשבון שלך
             </CardDescription>
           </div>

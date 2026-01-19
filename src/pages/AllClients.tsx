@@ -135,12 +135,12 @@ export function AllClients() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#292f4c] m-0">לוח לקוחות המשרד</h1>
-        <div className="flex gap-4 items-center">
-          <div className="relative w-[300px]">
+      <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] m-0">לוח לקוחות המשרד</h1>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+          <div className="relative w-full sm:w-[300px]">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="text"
@@ -153,7 +153,7 @@ export function AllClients() {
           {isAdminOrManager && (
             <Button
               onClick={() => setAddClientOpen(true)}
-              className="bg-black hover:bg-gray-800 whitespace-nowrap"
+              className="bg-black hover:bg-gray-800 whitespace-nowrap w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 ml-2" />
               לקוח חדש
@@ -167,15 +167,15 @@ export function AllClients() {
         // Filtered by user
         filteredClients.length > 0 ? (
           <div>
-            <div className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2.5 mb-5 text-2xl font-bold">
+            <div className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2 sm:pb-2.5 mb-4 sm:mb-5 text-xl sm:text-2xl font-bold">
               {users[filterUser]?.name || filterUser}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
               {filteredClients.map((client) => (
                 <Link
                   key={client.id}
                   to={`/client/${client.id}`}
-                  className="bg-white p-6 rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group"
+                  className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group text-sm sm:text-base"
                 >
                   <div className="absolute right-0 top-0 w-1 h-full bg-gradient-to-b from-[#3d817a] to-[#2d6159] transform scale-y-0 group-hover:scale-y-100 transition-transform" />
                   {client.name}
@@ -185,7 +185,7 @@ export function AllClients() {
           </div>
         ) : (
           <Card>
-            <CardContent className="p-8 text-center text-gray-500">
+            <CardContent className="p-6 sm:p-8 text-center text-gray-500">
               אין לקוחות להצגה
             </CardContent>
           </Card>
@@ -193,18 +193,18 @@ export function AllClients() {
       ) : (
         // All users view
         Object.keys(filteredClientsByUser).length > 0 ? (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {Object.entries(filteredClientsByUser).map(([userId, userClients]) => (
               <div key={userId}>
-                <div className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2.5 mb-5 text-2xl font-bold">
+                <div className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2 sm:pb-2.5 mb-4 sm:mb-5 text-xl sm:text-2xl font-bold">
                   {users[userId]?.name || userId}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
                   {userClients.map((client) => (
                     <Link
                       key={client.id}
                       to={`/client/${client.id}`}
-                      className="bg-white p-6 rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group"
+                      className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group text-sm sm:text-base"
                     >
                       <div className="absolute right-0 top-0 w-1 h-full bg-gradient-to-b from-[#3d817a] to-[#2d6159] transform scale-y-0 group-hover:scale-y-100 transition-transform" />
                       {client.name}
@@ -216,7 +216,7 @@ export function AllClients() {
           </div>
         ) : (
           <Card>
-            <CardContent className="p-8 text-center text-gray-500">
+            <CardContent className="p-6 sm:p-8 text-center text-gray-500">
               אין לקוחות להצגה
             </CardContent>
           </Card>

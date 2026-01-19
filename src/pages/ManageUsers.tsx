@@ -419,17 +419,17 @@ export function ManageUsers() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-[#292f4c]">ניהול צוות והקצאות</h1>
+    <div className="space-y-6 sm:space-y-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">ניהול צוות והקצאות</h1>
 
       {/* Add User */}
       <Card>
-        <CardHeader>
-          <CardTitle>+ הוספת עובד חדש</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">+ הוספת עובד חדש</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0">
           <form onSubmit={handleAddUser} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label>שם מלא:</Label>
                 <Input

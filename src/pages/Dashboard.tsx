@@ -442,44 +442,44 @@ export function Dashboard() {
   );
 
   return (
-    <div className="space-y-10">
-      <h1 className="text-3xl font-bold text-[#292f4c]">
+    <div className="space-y-6 sm:space-y-10">
+      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">
         שלום, משתמש
       </h1>
 
       {/* Quick Actions */}
-      <div className="space-y-5">
-        <h2 className="text-2xl font-bold text-[#292f4c]">פעולות מהירות</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl">
+      <div className="space-y-4 sm:space-y-5">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">פעולות מהירות</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 max-w-4xl">
           <Card
-            className="bg-[#2b585e] text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1"
+            className="bg-[#2b585e] text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95"
             onClick={() => setAddTaskOpen(true)}
           >
-            <CardContent className="p-10 text-center">
-              <FileText className="w-12 h-12 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">פתיחת משימה</h3>
-              <p className="text-sm opacity-90">הוסף משימה חדשה ללקוח</p>
+            <CardContent className="p-6 sm:p-10 text-center">
+              <FileText className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">פתיחת משימה</h3>
+              <p className="text-xs sm:text-sm opacity-90">הוסף משימה חדשה ללקוח</p>
             </CardContent>
           </Card>
 
           <Card
-            className="bg-[#14a675] text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1"
+            className="bg-[#14a675] text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95"
             onClick={() => setAddChargeOpen(true)}
           >
-            <CardContent className="p-10 text-center">
-              <CreditCard className="w-12 h-12 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">הוספת חיוב</h3>
-              <p className="text-sm opacity-90">הוסף חיוב חדש ללקוח</p>
+            <CardContent className="p-6 sm:p-10 text-center">
+              <CreditCard className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">הוספת חיוב</h3>
+              <p className="text-xs sm:text-sm opacity-90">הוסף חיוב חדש ללקוח</p>
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Calendar */}
-      <div className="space-y-5">
-        <h2 className="text-2xl font-bold text-[#292f4c]">לוח שנה - משימות</h2>
+      <div className="space-y-4 sm:space-y-5">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">לוח שנה - משימות</h2>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-2 sm:p-6 overflow-x-auto">
             <FullCalendar
               ref={calendarRef}
               plugins={[dayGridPlugin, listWeekPlugin]}
@@ -526,10 +526,10 @@ export function Dashboard() {
       </div>
 
       {/* Clients Grid */}
-      <div className="space-y-5">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold">הלקוחות שלך:</h3>
-          <div className="relative w-[300px]">
+      <div className="space-y-4 sm:space-y-5">
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+          <h3 className="text-lg sm:text-xl font-bold">הלקוחות שלך:</h3>
+          <div className="relative w-full sm:w-[300px]">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               type="text"
@@ -540,12 +540,12 @@ export function Dashboard() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
           {filteredClients.map((client) => (
             <Link
               key={client.id}
               to={`/client/${client.id}`}
-              className="bg-white p-6 rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group"
+              className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group text-sm sm:text-base"
             >
               <div className="absolute right-0 top-0 w-1 h-full bg-gradient-to-b from-[#3d817a] to-[#2d6159] transform scale-y-0 group-hover:scale-y-100 transition-transform" />
               {client.name}

@@ -169,10 +169,10 @@ export function Events() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#292f4c]">אירועים</h1>
-        <Button onClick={() => setAddEventOpen(true)}>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">אירועים</h1>
+        <Button onClick={() => setAddEventOpen(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           אירוע חדש
         </Button>
@@ -180,24 +180,24 @@ export function Events() {
 
       {events.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-gray-500">
+          <CardContent className="p-6 sm:p-8 text-center text-gray-500">
             אין אירועים להצגה
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {events.map((event) => (
             <Card
               key={event.id}
               className="border-r-4 border-r-[#3d817a] hover:shadow-md transition-all"
             >
-              <CardContent className="p-5">
-                <div className="flex justify-between items-start mb-4">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3 sm:mb-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-[#292f4c] mb-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-[#292f4c] mb-2">
                       {event.title}
                     </h3>
-                    <div className="flex gap-4 flex-wrap text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {event.date}
@@ -222,7 +222,7 @@ export function Events() {
                     </div>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-bold ${getTypeColor(
+                    className={`px-3 py-1 rounded-full text-xs sm:text-sm font-bold self-start ${getTypeColor(
                       event.type
                     )}`}
                   >
