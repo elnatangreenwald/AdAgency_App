@@ -28,5 +28,5 @@ COPY --from=build-stage /app/static/dist ./static/dist
 # הגדרת משתנה סביבה לפורט (Railway מספקת אותו אוטומטית)
 ENV PORT=8080
 
-# שימוש בפורמט Shell כדי לאפשר הרחבת משתני סביבה ($PORT)
-CMD gunicorn app:app --bind 0.0.0.0:$PORT
+# שימוש ב-sh -c לוודא הרחבת משתני סביבה
+CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:${PORT}"]
