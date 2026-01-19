@@ -48,8 +48,8 @@ export function TimeTrackingReports() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [users, setUsers] = useState<Record<string, { name: string }>>({});
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
   const { toast } = useToast();
@@ -75,9 +75,6 @@ export function TimeTrackingReports() {
         setUsers(usersMap);
       }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-3',hypothesisId:'R4',location:'TimeTrackingReports.tsx:fetchUsers',message:'fetch users failed',data:{},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       console.error('Error fetching users:', error);
     }
   };
@@ -89,9 +86,6 @@ export function TimeTrackingReports() {
         setClients(response.data.clients || []);
       }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-3',hypothesisId:'R4',location:'TimeTrackingReports.tsx:fetchClients',message:'fetch clients failed',data:{},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       console.error('Error fetching clients:', error);
     }
   };
@@ -100,20 +94,14 @@ export function TimeTrackingReports() {
     setLoading(true);
     try {
       const params: Record<string, string> = { month: selectedMonth };
-      if (selectedUserId) params.user_id = selectedUserId;
-      if (selectedClientId) params.client_id = selectedClientId;
+      if (selectedUserId && selectedUserId !== 'all') params.user_id = selectedUserId;
+      if (selectedClientId && selectedClientId !== 'all') params.client_id = selectedClientId;
 
       const queryString = new URLSearchParams(params).toString();
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-3',hypothesisId:'R1',location:'TimeTrackingReports.tsx:fetchReport',message:'report request',data:{queryString},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       const response = await apiClient.get(`/api/time_tracking/report?${queryString}`);
 
       if (response.data.success) {
         setReportData(response.data);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-3',hypothesisId:'R2',location:'TimeTrackingReports.tsx:fetchReport',message:'report success',data:{entriesCount:response.data.entries?.length || 0},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion agent log
       } else {
         toast({
           title: 'שגיאה',
@@ -122,9 +110,6 @@ export function TimeTrackingReports() {
         });
       }
     } catch (error: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-3',hypothesisId:'R3',location:'TimeTrackingReports.tsx:fetchReport',message:'report error',data:{status:error?.response?.status || null},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       console.error('Error fetching report:', error);
       toast({
         title: 'שגיאה',
@@ -209,10 +194,10 @@ export function TimeTrackingReports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#292f4c]">דוחות מדידת זמן</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">דוחות מדידת זמן</h1>
         {reportData && (
-          <Button onClick={exportToExcel} className="bg-[#00c875] hover:bg-[#00b368]">
+          <Button onClick={exportToExcel} className="bg-[#00c875] hover:bg-[#00b368] w-full md:w-auto">
             <Download className="w-4 h-4 ml-2" />
             ייצא ל-Excel
           </Button>
@@ -242,7 +227,7 @@ export function TimeTrackingReports() {
                   <SelectValue placeholder="כל העובדים" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">כל העובדים</SelectItem>
+                  <SelectItem value="all">כל העובדים</SelectItem>
                   {Object.entries(users).map(([id, info]) => (
                     <SelectItem key={id} value={id}>
                       {info.name}
@@ -258,7 +243,7 @@ export function TimeTrackingReports() {
                   <SelectValue placeholder="כל הלקוחות" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">כל הלקוחות</SelectItem>
+                  <SelectItem value="all">כל הלקוחות</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
@@ -278,36 +263,36 @@ export function TimeTrackingReports() {
       ) : reportData ? (
         <div className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center gap-3">
-                  <Clock className="w-8 h-8 text-[#0073ea]" />
+                  <Clock className="w-6 h-6 md:w-8 md:h-8 text-[#0073ea]" />
                   <div>
-                    <div className="text-sm text-gray-600">סה"כ שעות</div>
-                    <div className="text-2xl font-bold">{reportData.total_hours}</div>
+                    <div className="text-xs md:text-sm text-gray-600">סה"כ שעות</div>
+                    <div className="text-xl md:text-2xl font-bold">{reportData.total_hours}</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center gap-3">
-                  <Calendar className="w-8 h-8 text-[#00c875]" />
+                  <Calendar className="w-6 h-6 md:w-8 md:h-8 text-[#00c875]" />
                   <div>
-                    <div className="text-sm text-gray-600">סה"כ רשומות</div>
-                    <div className="text-2xl font-bold">{reportData.total_entries}</div>
+                    <div className="text-xs md:text-sm text-gray-600">סה"כ רשומות</div>
+                    <div className="text-xl md:text-2xl font-bold">{reportData.total_entries}</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-6">
+            <Card className="sm:col-span-2 md:col-span-1">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center gap-3">
-                  <User className="w-8 h-8 text-[#f59e0b]" />
+                  <User className="w-6 h-6 md:w-8 md:h-8 text-[#f59e0b]" />
                   <div>
-                    <div className="text-sm text-gray-600">מספר עובדים</div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-xs md:text-sm text-gray-600">מספר עובדים</div>
+                    <div className="text-xl md:text-2xl font-bold">
                       {Object.keys(reportData.by_user).length}
                     </div>
                   </div>
@@ -379,36 +364,36 @@ export function TimeTrackingReports() {
             <CardHeader>
               <CardTitle>פירוט מלא</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+            <CardContent className="p-2 md:p-6">
+              <div className="overflow-x-auto -mx-2 md:mx-0">
+                <table className="w-full border-collapse min-w-[800px]">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="border p-2 text-right">תאריך</th>
-                      <th className="border p-2 text-right">עובד</th>
-                      <th className="border p-2 text-right">לקוח</th>
-                      <th className="border p-2 text-right">פרויקט</th>
-                      <th className="border p-2 text-right">משימה</th>
-                      <th className="border p-2 text-right">שעת התחלה</th>
-                      <th className="border p-2 text-right">שעת סיום</th>
-                      <th className="border p-2 text-right">משך זמן</th>
-                      <th className="border p-2 text-right">הערה</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">תאריך</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">עובד</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">לקוח</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">פרויקט</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">משימה</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">שעת התחלה</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">שעת סיום</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">משך זמן</th>
+                      <th className="border p-2 text-right text-xs md:text-sm whitespace-nowrap">הערה</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reportData.entries.map((entry) => (
                       <tr key={entry.id} className="hover:bg-gray-50">
-                        <td className="border p-2">{formatDate(entry.date)}</td>
-                        <td className="border p-2">{entry.user_name}</td>
-                        <td className="border p-2">{entry.client_name}</td>
-                        <td className="border p-2">{entry.project_title}</td>
-                        <td className="border p-2">{entry.task_title}</td>
-                        <td className="border p-2">{formatTime(entry.start_time)}</td>
-                        <td className="border p-2">{formatTime(entry.end_time)}</td>
-                        <td className="border p-2 font-semibold">
+                        <td className="border p-2 text-xs md:text-sm whitespace-nowrap">{formatDate(entry.date)}</td>
+                        <td className="border p-2 text-xs md:text-sm">{entry.user_name}</td>
+                        <td className="border p-2 text-xs md:text-sm">{entry.client_name}</td>
+                        <td className="border p-2 text-xs md:text-sm">{entry.project_title}</td>
+                        <td className="border p-2 text-xs md:text-sm">{entry.task_title}</td>
+                        <td className="border p-2 text-xs md:text-sm whitespace-nowrap">{formatTime(entry.start_time)}</td>
+                        <td className="border p-2 text-xs md:text-sm whitespace-nowrap">{formatTime(entry.end_time)}</td>
+                        <td className="border p-2 text-xs md:text-sm font-semibold whitespace-nowrap">
                           {entry.duration_hours} שעות
                         </td>
-                        <td className="border p-2 text-sm text-gray-600">
+                        <td className="border p-2 text-xs md:text-sm text-gray-600 max-w-[150px] truncate">
                           {entry.note || '-'}
                         </td>
                       </tr>

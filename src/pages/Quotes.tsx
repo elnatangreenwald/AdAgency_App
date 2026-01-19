@@ -166,9 +166,9 @@ export function Quotes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#292f4c]">הצעות מחיר</h1>
-        <Button onClick={() => setAddQuoteOpen(true)}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">הצעות מחיר</h1>
+        <Button onClick={() => setAddQuoteOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           הצעה חדשה
         </Button>
@@ -184,10 +184,10 @@ export function Quotes() {
         <div className="space-y-4">
           {quotes.map((quote) => (
             <Card key={quote.id} className="hover:shadow-md transition-all">
-              <CardContent className="p-5">
-                <div className="flex justify-between items-start mb-3">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-3 mb-3">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-[#292f4c] mb-1">
+                    <h3 className="text-lg md:text-xl font-bold text-[#292f4c] mb-1">
                       {quote.title}
                     </h3>
                     {quote.client_name && (
@@ -195,12 +195,12 @@ export function Quotes() {
                         לקוח: {quote.client_name}
                       </div>
                     )}
-                    <div className="text-lg font-bold text-[#0073ea]">
+                    <div className="text-base md:text-lg font-bold text-[#0073ea]">
                       סה"כ: ₪{quote.total.toLocaleString()}
                     </div>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-bold ${getStatusColor(
+                    className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${getStatusColor(
                       quote.status
                     )}`}
                   >
@@ -208,7 +208,7 @@ export function Quotes() {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-full md:w-auto">
                     <FileText className="w-3 h-3 ml-1" />
                     צפה
                   </Button>

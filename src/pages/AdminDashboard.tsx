@@ -89,50 +89,50 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-[#292f4c]">דוח מנהלים</h1>
+    <div className="space-y-6 md:space-y-8">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">דוח מנהלים</h1>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">לקוחות פעילים</CardTitle>
+          <CardHeader className="p-3 md:p-6 pb-2">
+            <CardTitle className="text-sm md:text-lg">לקוחות פעילים</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-[#0073ea]">
+          <CardContent className="p-3 md:p-6 pt-0">
+            <div className="text-2xl md:text-3xl font-bold text-[#0073ea]">
               {data.total_clients}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">פרויקטים פעילים</CardTitle>
+          <CardHeader className="p-3 md:p-6 pb-2">
+            <CardTitle className="text-sm md:text-lg">פרויקטים פעילים</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-[#3d817a]">
+          <CardContent className="p-3 md:p-6 pt-0">
+            <div className="text-2xl md:text-3xl font-bold text-[#3d817a]">
               {data.active_projects}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">הכנסות חודשיות</CardTitle>
+          <CardHeader className="p-3 md:p-6 pb-2">
+            <CardTitle className="text-sm md:text-lg">הכנסות חודשיות</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-[#28a745]">
+          <CardContent className="p-3 md:p-6 pt-0">
+            <div className="text-2xl md:text-3xl font-bold text-[#28a745]">
               ₪{data.monthly_revenue.toLocaleString()}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">סה"כ משימות</CardTitle>
+          <CardHeader className="p-3 md:p-6 pb-2">
+            <CardTitle className="text-sm md:text-lg">סה"כ משימות</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-[#292f4c]">
+          <CardContent className="p-3 md:p-6 pt-0">
+            <div className="text-2xl md:text-3xl font-bold text-[#292f4c]">
               {data.task_stats.reduce((sum, stat) => sum + stat.total_tasks, 0)}
             </div>
           </CardContent>
@@ -141,21 +141,21 @@ export function AdminDashboard() {
 
       {/* Task Statistics by User */}
       <Card>
-        <CardHeader>
-          <CardTitle>פילוח משימות לפי עובד</CardTitle>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-base md:text-lg">פילוח משימות לפי עובד</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="p-3 md:p-6 pt-0">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {data.task_stats.map((stat) => (
               <Card
                 key={stat.user_id}
                 className={stat.overloaded ? 'border-red-300 bg-red-50' : ''}
               >
-                <CardContent className="p-4">
-                  <div className="text-lg font-bold text-[#292f4c] mb-2">
+                <CardContent className="p-3 md:p-4">
+                  <div className="text-sm md:text-lg font-bold text-[#292f4c] mb-2">
                     {stat.user_name}
                   </div>
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-xs md:text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">סה"כ:</span>
                       <span className="font-bold">{stat.total_tasks}</span>
@@ -187,11 +187,13 @@ export function AdminDashboard() {
 
       {/* Calendar */}
       <Card>
-        <CardHeader>
-          <CardTitle>לוח שנה - משימות</CardTitle>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-base md:text-lg">לוח שנה - משימות</CardTitle>
         </CardHeader>
-        <CardContent>
-          <FullCalendar {...calendarOptions} />
+        <CardContent className="p-2 md:p-6 pt-0 overflow-x-auto">
+          <div className="min-w-[300px]">
+            <FullCalendar {...calendarOptions} />
+          </div>
         </CardContent>
       </Card>
     </div>

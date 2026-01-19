@@ -64,9 +64,9 @@ export function Archive() {
   return (
     <div className="space-y-6">
       <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
-        <CardContent className="p-6">
-          <h1 className="text-3xl font-bold text-gray-600 mb-2">ארכיון לקוחות</h1>
-          <p className="text-gray-500 text-sm">
+        <CardContent className="p-4 md:p-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-600 mb-2">ארכיון לקוחות</h1>
+          <p className="text-gray-500 text-xs md:text-sm">
             לקוחות שהועברו לארכיון - לא מוצגים בדפים הרגילים
           </p>
         </CardContent>
@@ -74,23 +74,23 @@ export function Archive() {
 
       {clients.length === 0 ? (
         <Card>
-          <CardContent className="p-16 text-center">
-            <ArchiveIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h2 className="text-xl font-semibold text-gray-600 mb-2">
+          <CardContent className="p-8 md:p-16 text-center">
+            <ArchiveIcon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300" />
+            <h2 className="text-lg md:text-xl font-semibold text-gray-600 mb-2">
               אין לקוחות מאוישים
             </h2>
-            <p className="text-gray-500">
+            <p className="text-sm md:text-base text-gray-500">
               הארכיון ריק - כל הלקוחות פעילים
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
           {clients.map((client) => (
             <Link
               key={client.id}
               to={`/client/${client.id}`}
-              className="bg-white p-6 rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 border border-gray-200 hover:border-gray-400 relative overflow-hidden group opacity-80 hover:opacity-100"
+              className="bg-white p-4 md:p-6 rounded-xl md:rounded-2xl text-center font-bold text-sm md:text-base text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 border border-gray-200 hover:border-gray-400 relative overflow-hidden group opacity-80 hover:opacity-100"
             >
               <div className="absolute right-0 top-0 w-1 h-full bg-gray-400 transform scale-y-0 group-hover:scale-y-100 transition-transform" />
               <div>{client.name}</div>

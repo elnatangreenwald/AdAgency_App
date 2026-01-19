@@ -136,7 +136,7 @@ export function QuickUpdate() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-bold text-[#292f4c] mb-6">
+      <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c] mb-4 md:mb-6">
         עדכון משימות מהיר (כל הלקוחות)
       </h1>
 
@@ -153,25 +153,25 @@ export function QuickUpdate() {
               key={`${item.client_id}-${item.project_id}-${item.task.id}`}
               className="border border-gray-200"
             >
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <form
                   onSubmit={(e) =>
                     handleSubmit(e, item.client_id, item.project_id, item.task.id)
                   }
-                  className="grid grid-cols-1 md:grid-cols-4 gap-5 items-center"
+                  className="flex flex-col gap-3 md:grid md:grid-cols-4 md:gap-5 md:items-center"
                 >
                   {/* Task Info */}
                   <div className="md:col-span-1">
-                    <div className="text-sm text-[#0073ea] mb-1">
+                    <div className="text-xs md:text-sm text-[#0073ea] mb-1">
                       {item.client_name} • {item.project_title}
                     </div>
-                    <div className="font-bold text-gray-800">
+                    <div className="font-bold text-sm md:text-base text-gray-800">
                       {item.task.desc}
                     </div>
                   </div>
 
                   {/* Assigned To */}
-                  <div className="text-gray-700">
+                  <div className="text-sm md:text-base text-gray-700">
                     👤 {item.task.assigned_to_name}
                   </div>
 
@@ -193,7 +193,7 @@ export function QuickUpdate() {
                     >
                       <SelectTrigger
                         className={cn(
-                          'text-white font-bold border-none cursor-pointer',
+                          'text-white font-bold border-none cursor-pointer text-sm',
                           statusColors[item.task.status]
                         )}
                       >
@@ -208,7 +208,7 @@ export function QuickUpdate() {
                   </div>
 
                   {/* Notes and Save */}
-                  <div className="flex gap-2.5 items-center">
+                  <div className="flex flex-col sm:flex-row gap-2 md:gap-2.5 items-stretch sm:items-center">
                     <TimeTracker
                       clientId={item.client_id}
                       projectId={item.project_id}
@@ -220,11 +220,11 @@ export function QuickUpdate() {
                       name="notes"
                       defaultValue={item.task.notes}
                       placeholder="הוסף הערה..."
-                      className="flex-1"
+                      className="flex-1 text-sm"
                     />
                     <Button
                       type="submit"
-                      className="bg-[#0073ea] hover:bg-[#005bb5]"
+                      className="bg-[#0073ea] hover:bg-[#005bb5] w-full sm:w-auto"
                       disabled={
                         updating[
                           `${item.client_id}-${item.project_id}-${item.task.id}`

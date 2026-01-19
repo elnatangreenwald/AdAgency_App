@@ -123,9 +123,9 @@ export function Forms() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#292f4c]">טפסים</h1>
-        <Button onClick={() => setAddFormOpen(true)}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">טפסים</h1>
+        <Button onClick={() => setAddFormOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           טופס חדש
         </Button>
@@ -138,11 +138,11 @@ export function Forms() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
           {forms.map((form) => (
             <Card key={form.id} className="hover:shadow-md transition-all">
-              <CardContent className="p-5">
-                <h3 className="text-xl font-bold text-[#292f4c] mb-3">
+              <CardContent className="p-4 md:p-5">
+                <h3 className="text-lg md:text-xl font-bold text-[#292f4c] mb-3">
                   {form.title}
                 </h3>
                 {form.client_name && (
@@ -153,9 +153,9 @@ export function Forms() {
                 <div className="text-sm text-gray-500 mb-4">
                   {form.fields?.length || 0} שדות
                 </div>
-                <div className="bg-blue-50 p-3 rounded-lg border-2 border-dashed border-blue-300 mb-3">
+                <div className="bg-blue-50 p-2 md:p-3 rounded-lg border-2 border-dashed border-blue-300 mb-3">
                   <div className="text-xs text-gray-600 mb-1">קישור ציבורי:</div>
-                  <div className="text-sm font-mono text-blue-700 break-all">
+                  <div className="text-xs md:text-sm font-mono text-blue-700 break-all">
                     {`${window.location.origin}/public_form/${form.token}`}
                   </div>
                 </div>

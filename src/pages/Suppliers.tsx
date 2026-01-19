@@ -125,9 +125,9 @@ export function Suppliers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#292f4c]">ספקים</h1>
-        <Button onClick={() => setAddSupplierOpen(true)}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">ספקים</h1>
+        <Button onClick={() => setAddSupplierOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           ספק חדש
         </Button>
@@ -140,11 +140,11 @@ export function Suppliers() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
           {suppliers.map((supplier) => (
             <Card key={supplier.id} className="hover:shadow-md transition-all">
-              <CardContent className="p-5">
-                <h3 className="text-xl font-bold text-[#292f4c] mb-3">
+              <CardContent className="p-4 md:p-5">
+                <h3 className="text-lg md:text-xl font-bold text-[#292f4c] mb-3">
                   {supplier.name}
                 </h3>
                 {supplier.category && (
