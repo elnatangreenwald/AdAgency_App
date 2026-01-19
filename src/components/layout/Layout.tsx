@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api';
+import ChatWidget from '@/components/ChatWidget';
 
 export function Layout() {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ export function Layout() {
           <Outlet />
         </div>
       </main>
+      <ChatWidget />
     </div>
   );
 }
