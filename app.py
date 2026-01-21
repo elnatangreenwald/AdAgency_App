@@ -840,7 +840,7 @@ def login():
         if uid:
             normalized_uid = uid.strip().lower()
             for user_id, info in u.items():
-                if info.get('email', '').strip().lower() == normalized_uid:
+                if (info.get('email') or '').strip().lower() == normalized_uid:
                     email_match_user = user_id
                     break
         resolved_user_id = uid if uid in u else email_match_user
