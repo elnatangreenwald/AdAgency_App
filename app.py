@@ -1086,8 +1086,14 @@ def home():
     return redirect('/app')
 
 @app.route('/api/current_user')
+@limiter.exempt  # פטור מ-rate limiting כי זה נקרא הרבה פעמים
 def api_current_user():
     """API endpoint להחזרת המשתמש הנוכחי"""
+    # #region agent log
+    with open(r'c:\Users\Asus\Desktop\AdAgency_App\.cursor\debug.log', 'a', encoding='utf-8') as f:
+        import json as _j
+        f.write(_j.dumps({"sessionId":"debug-session","runId":"auth-debug","hypothesisId":"H5","location":"app.py:api_current_user","message":"current_user check","data":{"is_authenticated":current_user.is_authenticated,"user_id":getattr(current_user,'id',None)},"timestamp":int(time.time()*1000)})+"\n")
+    # #endregion agent log
     try:
         # Check if user is authenticated without redirecting
         if not current_user.is_authenticated:

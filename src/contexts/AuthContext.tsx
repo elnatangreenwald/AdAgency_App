@@ -28,13 +28,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAuth = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'auth-debug',hypothesisId:'H2',location:'AuthContext.tsx:checkAuth',message:'checkAuth START',data:{},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion agent log
     try {
       // Try to get current user from Flask session
       const response = await apiClient.get('/api/current_user');
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'auth-debug',hypothesisId:'H4',location:'AuthContext.tsx:checkAuth',message:'checkAuth API response',data:{status:response.status,success:response.data?.success,hasUser:!!response.data?.user},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion agent log
       if (response.data.success && response.data.user) {
         setUser(response.data.user);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'auth-debug',hypothesisId:'H4',location:'AuthContext.tsx:checkAuth',message:'checkAuth ERROR',data:{status:error?.response?.status,message:error?.message},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion agent log
       // User is not authenticated
       setUser(null);
     } finally {

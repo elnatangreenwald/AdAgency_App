@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -10,6 +10,10 @@ export function Layout() {
   const { user, loading } = useAuth();
   const [sidebarUsers, setSidebarUsers] = useState<Record<string, { name: string }>>({});
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'auth-debug',hypothesisId:'H3',location:'Layout.tsx:render',message:'Layout render state',data:{user:user?.id||null,loading,hasUser:!!user},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion agent log
 
   useEffect(() => {
     // Fetch sidebar users
@@ -47,6 +51,15 @@ export function Layout() {
         <div className="text-lg">טוען...</div>
       </div>
     );
+  }
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'auth-debug',hypothesisId:'H3-fix',location:'Layout.tsx:auth-check',message:'Checking if user exists after loading',data:{hasUser:!!user,userId:user?.id||null},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion agent log
+
+  // If not authenticated, redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
   return (
