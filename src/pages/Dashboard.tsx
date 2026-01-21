@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import listWeekPlugin from '@fullcalendar/list';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,13 +19,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, CreditCard, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { EventInput, EventClickArg } from '@fullcalendar/core';
 import { TimeTracker } from '@/components/TimeTracker';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { CalendarWidget } from '@/components/dashboard/CalendarWidget';
+import { ClientsGrid } from '@/components/dashboard/ClientsGrid';
 
 interface Client {
   id: string;
@@ -53,49 +51,10 @@ interface CalendarTask {
   task_id: string;
 }
 
-const statusColors: Record<string, string> = {
-  'לביצוע': '#bfc9f2',
-  'הועבר לסטודיו': '#2b585e',
-  'הועבר לדיגיטל': '#043841',
-  'נשלח ללקוח': '#b8e994',
-  'הושלם': '#14a675',
-};
-
-// פונקציה ליצירת צבע קבוע לכל לקוח לפי ה-ID שלו
-const getClientColor = (clientId: string): string => {
-  // רשימת צבעים יפים ונוחים לעין
-  const colors = [
-    '#3b82f6', // כחול
-    '#10b981', // ירוק
-    '#f59e0b', // כתום
-    '#ef4444', // אדום
-    '#8b5cf6', // סגול
-    '#ec4899', // ורוד
-    '#06b6d4', // ציאן
-    '#84cc16', // ליים
-    '#f97316', // כתום כהה
-    '#6366f1', // אינדיגו
-    '#14b8a6', // טורקיז
-    '#a855f7', // סגול כהה
-    '#22c55e', // ירוק בהיר
-    '#eab308', // צהוב
-    '#f43f5e', // ורוד כהה
-  ];
-  
-  // יצירת hash מה-ID של הלקוח
-  let hash = 0;
-  for (let i = 0; i < clientId.length; i++) {
-    hash = clientId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  // החזרת צבע לפי ה-hash
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export function Dashboard() {
   const [clients, setClients] = useState<Client[]>([]);
   const [calendarTasks, setCalendarTasks] = useState<CalendarTask[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [addTaskOpen, setAddTaskOpen] = useState(false);
   const [addChargeOpen, setAddChargeOpen] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
@@ -105,7 +64,6 @@ export function Dashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
-  const calendarRef = useRef<FullCalendar>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -356,14 +314,6 @@ export function Dashboard() {
     }
   };
 
-  const handleTaskClick = (info: EventClickArg) => {
-    const task = calendarTasks.find(t => t.task_id === info.event.id);
-    if (task) {
-      setSelectedTask(task);
-      setTaskModalOpen(true);
-    }
-  };
-
   const handleUpdateTask = async (status: string, deadline: string) => {
     if (!selectedTask) return;
 
@@ -403,19 +353,10 @@ export function Dashboard() {
     }
   };
 
-  const calendarEvents: EventInput[] = calendarTasks.map(task => ({
-    id: task.task_id,
-    title: task.title,
-    start: task.start,
-    color: getClientColor(task.client_id), // צבע קבוע לפי לקוח
-    backgroundColor: getClientColor(task.client_id),
-    borderColor: getClientColor(task.client_id),
-    extendedProps: task,
-  }));
-
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleCalendarTaskClick = (task: CalendarTask) => {
+    setSelectedTask(task);
+    setTaskModalOpen(true);
+  };
 
   return (
     <div className="space-y-6 sm:space-y-10">
@@ -424,111 +365,19 @@ export function Dashboard() {
       </h1>
 
       {/* Quick Actions */}
-      <div className="space-y-4 sm:space-y-5">
-        <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">פעולות מהירות</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 max-w-4xl">
-          <Card
-            className="bg-[#2b585e] text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95"
-            onClick={() => setAddTaskOpen(true)}
-          >
-            <CardContent className="p-6 sm:p-10 text-center">
-              <FileText className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4" />
-              <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">פתיחת משימה</h3>
-              <p className="text-xs sm:text-sm opacity-90">הוסף משימה חדשה ללקוח</p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="bg-[#14a675] text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95"
-            onClick={() => setAddChargeOpen(true)}
-          >
-            <CardContent className="p-6 sm:p-10 text-center">
-              <CreditCard className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4" />
-              <h3 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">הוספת חיוב</h3>
-              <p className="text-xs sm:text-sm opacity-90">הוסף חיוב חדש ללקוח</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <QuickActions
+        onAddTask={() => setAddTaskOpen(true)}
+        onAddCharge={() => setAddChargeOpen(true)}
+      />
 
       {/* Calendar */}
-      <div className="space-y-4 sm:space-y-5">
-        <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">לוח שנה - משימות</h2>
-        <Card>
-          <CardContent className="p-2 sm:p-6 overflow-x-auto">
-            <FullCalendar
-              ref={calendarRef}
-              plugins={[dayGridPlugin, listWeekPlugin]}
-              initialView="dayGridMonth"
-              locale="he"
-              direction="rtl"
-              headerToolbar={{
-                right: 'prev,next today',
-                center: 'title',
-                left: 'dayGridMonth,listWeek',
-              }}
-              validRange={{
-                start: '2020-01-01',
-              }}
-              events={calendarEvents}
-              eventClick={handleTaskClick}
-              height="auto"
-              dayMaxEventRows={3}
-              buttonText={{
-                today: 'היום',
-                month: 'חודש',
-                week: 'שבוע',
-                day: 'יום',
-                list: 'רשימה',
-              }}
-              firstDay={0}
-              views={{
-                listWeek: {
-                  titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-                  listDayFormat: { weekday: 'long', day: 'numeric', month: 'long' },
-                  listDaySideFormat: false,
-                  duration: { days: 7 },
-                },
-              }}
-              eventDisplay="block"
-              eventTimeFormat={{
-                hour: '2-digit',
-                minute: '2-digit',
-                meridiem: false,
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <CalendarWidget
+        tasks={calendarTasks}
+        onTaskClick={handleCalendarTaskClick}
+      />
 
       {/* Clients Grid */}
-      <div className="space-y-4 sm:space-y-5">
-        <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
-          <h3 className="text-lg sm:text-xl font-bold">הלקוחות שלך:</h3>
-          <div className="relative w-full sm:w-[300px]">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="חפש לקוח..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
-          {filteredClients.map((client) => (
-            <Link
-              key={client.id}
-              to={`/client/${client.id}`}
-              className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group text-sm sm:text-base"
-            >
-              <div className="absolute right-0 top-0 w-1 h-full bg-gradient-to-b from-[#3d817a] to-[#2d6159] transform scale-y-0 group-hover:scale-y-100 transition-transform" />
-              {client.name}
-            </Link>
-          ))}
-        </div>
-      </div>
+      <ClientsGrid clients={clients} />
 
       {/* Add Task Modal */}
       <Dialog open={addTaskOpen} onOpenChange={(open) => {

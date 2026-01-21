@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,10 @@ import { Label } from '@/components/ui/label';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { SearchBar } from '@/components/shared/SearchBar';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 interface Client {
   id: string;
@@ -127,11 +129,7 @@ export function AllClients() {
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-lg text-gray-600">טוען לקוחות...</div>
-      </div>
-    );
+    return <LoadingSpinner text="טוען לקוחות..." />;
   }
 
   return (
@@ -140,16 +138,12 @@ export function AllClients() {
       <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] m-0">לוח לקוחות המשרד</h1>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
-          <div className="relative w-full sm:w-[300px]">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="חפש לקוח..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="חפש לקוח..."
+            className="w-full sm:w-[300px]"
+          />
           {isAdminOrManager && (
             <Button
               onClick={() => setAddClientOpen(true)}
@@ -184,11 +178,11 @@ export function AllClients() {
             </div>
           </div>
         ) : (
-          <Card>
-            <CardContent className="p-6 sm:p-8 text-center text-gray-500">
-              אין לקוחות להצגה
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Users}
+            title="אין לקוחות להצגה"
+            description={searchTerm ? 'נסה לחפש במילים אחרות' : undefined}
+          />
         )
       ) : (
         // All users view
@@ -215,11 +209,11 @@ export function AllClients() {
             ))}
           </div>
         ) : (
-          <Card>
-            <CardContent className="p-6 sm:p-8 text-center text-gray-500">
-              אין לקוחות להצגה
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Users}
+            title="אין לקוחות להצגה"
+            description={searchTerm ? 'נסה לחפש במילים אחרות' : undefined}
+          />
         )
       )}
 

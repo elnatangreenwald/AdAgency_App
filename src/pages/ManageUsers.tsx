@@ -23,6 +23,7 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Trash2, RotateCcw, Save } from 'lucide-react';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 interface User {
   id: string;
@@ -411,11 +412,7 @@ export function ManageUsers() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-lg text-gray-600">טוען נתונים...</div>
-      </div>
-    );
+    return <LoadingSpinner text="טוען נתונים..." />;
   }
 
   return (
