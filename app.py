@@ -117,46 +117,49 @@ limiter = Limiter(
     storage_uri="memory://"  # ניתן לשנות ל-Redis בפרודקשן
 )
 
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        # יצירת סיסמה מוצפנת למנהל ברירת מחדל
-        u = {'admin': {'password': generate_password_hash('1234'), 'name': 'מנהל המשרד', 'role': 'אדמין'}}
-        with open(USERS_FILE, 'w', encoding='utf-8') as f: json.dump(u, f, ensure_ascii=False, indent=4)
-        return u
-    users = {}
-    with open(USERS_FILE, 'r', encoding='utf-8') as f: 
-        users = json.load(f)
-    # וידוא שלכל משתמש יש role (ברירת מחדל: עובד)
-    needs_update = False
-    for uid, user_info in users.items():
-        if 'role' not in user_info:
-            user_info['role'] = 'עובד' if uid != 'admin' else 'אדמין'
-            needs_update = True
-    if needs_update:
-        save_users(users)
-    return users
-
-def save_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f: 
-        json.dump(users, f, ensure_ascii=False, indent=4)
-
-def load_data():
-    if not os.path.exists(DATA_FILE) or os.stat(DATA_FILE).st_size == 0: return []
-    with open(DATA_FILE, 'r', encoding='utf-8') as f: 
-        data = json.load(f)
-        # אם זה רשימה ריקה, החזר
-        if not data:
-            return data
-        # וידוא שלכל לקוח יש client_number
+# Only define JSON-based functions if NOT using database
+if not USE_DATABASE:
+    def load_users():
+        if not os.path.exists(USERS_FILE):
+            # יצירת סיסמה מוצפנת למנהל ברירת מחדל
+            u = {'admin': {'password': generate_password_hash('1234'), 'name': 'מנהל המשרד', 'role': 'אדמין'}}
+            with open(USERS_FILE, 'w', encoding='utf-8') as f: json.dump(u, f, ensure_ascii=False, indent=4)
+            return u
+        users = {}
+        with open(USERS_FILE, 'r', encoding='utf-8') as f: 
+            users = json.load(f)
+        # וידוא שלכל משתמש יש role (ברירת מחדל: עובד)
         needs_update = False
-        for client in data:
-            if 'client_number' not in client:
+        for uid, user_info in users.items():
+            if 'role' not in user_info:
+                user_info['role'] = 'עובד' if uid != 'admin' else 'אדמין'
                 needs_update = True
-                break
-        # אם צריך עדכון, עדכן את כל הלקוחות
         if needs_update:
-            assign_client_numbers(data)
-        return data
+            save_users(users)
+        return users
+
+    def save_users(users):
+        with open(USERS_FILE, 'w', encoding='utf-8') as f: 
+            json.dump(users, f, ensure_ascii=False, indent=4)
+
+if not USE_DATABASE:
+    def load_data():
+        if not os.path.exists(DATA_FILE) or os.stat(DATA_FILE).st_size == 0: return []
+        with open(DATA_FILE, 'r', encoding='utf-8') as f: 
+            data = json.load(f)
+            # אם זה רשימה ריקה, החזר
+            if not data:
+                return data
+            # וידוא שלכל לקוח יש client_number
+            needs_update = False
+            for client in data:
+                if 'client_number' not in client:
+                    needs_update = True
+                    break
+            # אם צריך עדכון, עדכן את כל הלקוחות
+            if needs_update:
+                assign_client_numbers(data)
+            return data
 
 def assign_client_numbers(clients):
     """מקצה מספרים ייחודיים ללקוחות שאין להם"""
@@ -309,36 +312,37 @@ def get_next_charge_number(client):
     charge_number = f"{client_num:03d}{next_seq:04d}"
     return charge_number
 
-def save_data(data):
-    with open(DATA_FILE, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, indent=4)
+if not USE_DATABASE:
+    def save_data(data):
+        with open(DATA_FILE, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, indent=4)
 
-def load_suppliers():
-    if not os.path.exists(SUPPLIERS_FILE) or os.stat(SUPPLIERS_FILE).st_size == 0: return []
-    with open(SUPPLIERS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+    def load_suppliers():
+        if not os.path.exists(SUPPLIERS_FILE) or os.stat(SUPPLIERS_FILE).st_size == 0: return []
+        with open(SUPPLIERS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
 
-def save_suppliers(suppliers):
-    with open(SUPPLIERS_FILE, 'w', encoding='utf-8') as f: json.dump(suppliers, f, ensure_ascii=False, indent=4)
+    def save_suppliers(suppliers):
+        with open(SUPPLIERS_FILE, 'w', encoding='utf-8') as f: json.dump(suppliers, f, ensure_ascii=False, indent=4)
 
-def load_quotes():
-    if not os.path.exists(QUOTES_FILE) or os.stat(QUOTES_FILE).st_size == 0: return []
-    with open(QUOTES_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+    def load_quotes():
+        if not os.path.exists(QUOTES_FILE) or os.stat(QUOTES_FILE).st_size == 0: return []
+        with open(QUOTES_FILE, 'r', encoding='utf-8') as f: return json.load(f)
 
-def save_quotes(quotes):
-    with open(QUOTES_FILE, 'w', encoding='utf-8') as f: json.dump(quotes, f, ensure_ascii=False, indent=4)
+    def save_quotes(quotes):
+        with open(QUOTES_FILE, 'w', encoding='utf-8') as f: json.dump(quotes, f, ensure_ascii=False, indent=4)
 
-def load_messages():    
-    if not os.path.exists(MESSAGES_FILE) or os.stat(MESSAGES_FILE).st_size == 0: return []
-    with open(MESSAGES_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+    def load_messages():    
+        if not os.path.exists(MESSAGES_FILE) or os.stat(MESSAGES_FILE).st_size == 0: return []
+        with open(MESSAGES_FILE, 'r', encoding='utf-8') as f: return json.load(f)
 
-def save_messages(messages):
-    with open(MESSAGES_FILE, 'w', encoding='utf-8') as f: json.dump(messages, f, ensure_ascii=False, indent=4)
+    def save_messages(messages):
+        with open(MESSAGES_FILE, 'w', encoding='utf-8') as f: json.dump(messages, f, ensure_ascii=False, indent=4)
 
-def load_events():
-    if not os.path.exists(EVENTS_FILE) or os.stat(EVENTS_FILE).st_size == 0: return []
-    with open(EVENTS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+    def load_events():
+        if not os.path.exists(EVENTS_FILE) or os.stat(EVENTS_FILE).st_size == 0: return []
+        with open(EVENTS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
 
-def save_events(events):
-    with open(EVENTS_FILE, 'w', encoding='utf-8') as f: json.dump(events, f, ensure_ascii=False, indent=4)
+    def save_events(events):
+        with open(EVENTS_FILE, 'w', encoding='utf-8') as f: json.dump(events, f, ensure_ascii=False, indent=4)
 
 def load_time_tracking():
     """טעינת מדידות זמן"""
@@ -352,83 +356,84 @@ def save_time_tracking(data):
     with open(TIME_TRACKING_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-def load_equipment_bank():
-    if not os.path.exists(EQUIPMENT_BANK_FILE) or os.stat(EQUIPMENT_BANK_FILE).st_size == 0: 
-        # יצירת מאגר ציוד בסיסי
-        default_equipment = [
-            'מקרן', 'הגברה', 'מיקרופון', 'מסך/פליפ-צ\'ארט', 'שולחן', 'כסאות', 
-            'מתנות לאורחים', 'רול-אפים', 'באנרים', 'פלטה/במה', 'תאורה', 'שולחן עגול'
-        ]
-        save_equipment_bank(default_equipment)
-        return default_equipment
-    with open(EQUIPMENT_BANK_FILE, 'r', encoding='utf-8') as f: return json.load(f)
-
-def save_equipment_bank(equipment):
-    with open(EQUIPMENT_BANK_FILE, 'w', encoding='utf-8') as f: json.dump(equipment, f, ensure_ascii=False, indent=4)
-
-def load_checklist_templates():
-    """טעינת תבניות צ'ק-ליסט מקובץ JSON"""
-    if not os.path.exists(CHECKLIST_TEMPLATES_FILE) or os.stat(CHECKLIST_TEMPLATES_FILE).st_size == 0:
-        # יצירת תבניות ברירת מחדל
-        default_templates = {
-            'כנס': [
-                'הזמנת קייטרינג',
-                'עיצוב רול-אפים',
-                'שליחת Save the date',
-                'הזמנת הגברה ותאורה',
-                'הזמנת מקרן ומסך',
-                'הזמנת מקומות ישיבה',
-                'אישור מיקום',
-                'הזמנת צלמים/וידאו',
-                'הכנת מצגות',
-                'הזמנת מתנות למשתתפים'
-            ],
-            'חתונה': [
-                'אישור אולם',
-                'הזמנת קייטרינג',
-                'הזמנת הגברה ודי.ג\'יי',
-                'הזמנת צלמים/וידאו',
-                'הזמנת פרחים ועיצוב',
-                'הזמנת בוקונז\'ה/מתנות לאורחים',
-                'הזמנת שולחנות וכסאות',
-                'הזמנת מתנות לחתן וכלה',
-                'אישור תאריכים עם כל הספקים',
-                'שליחת הזמנות'
-            ],
-            'השקה': [
-                'אישור מיקום',
-                'הזמנת קייטרינג/קפה',
-                'עיצוב חומרי שיווק',
-                'הזמנת הגברה',
-                'הזמנת צלמים/וידאו',
-                'שליחת הזמנות',
-                'הכנת מצגת/סרטון',
-                'הזמנת מתנות למשתתפים',
-                'הזמנת פרחים/עיצוב',
-                'אישור תאריכים'
+if not USE_DATABASE:
+    def load_equipment_bank():
+        if not os.path.exists(EQUIPMENT_BANK_FILE) or os.stat(EQUIPMENT_BANK_FILE).st_size == 0: 
+            # יצירת מאגר ציוד בסיסי
+            default_equipment = [
+                'מקרן', 'הגברה', 'מיקרופון', 'מסך/פליפ-צ\'ארט', 'שולחן', 'כסאות', 
+                'מתנות לאורחים', 'רול-אפים', 'באנרים', 'פלטה/במה', 'תאורה', 'שולחן עגול'
             ]
-        }
-        save_checklist_templates(default_templates)
-        return default_templates
-    with open(CHECKLIST_TEMPLATES_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+            save_equipment_bank(default_equipment)
+            return default_equipment
+        with open(EQUIPMENT_BANK_FILE, 'r', encoding='utf-8') as f: return json.load(f)
 
-def save_checklist_templates(templates):
-    """שמירת תבניות צ'ק-ליסט לקובץ JSON"""
-    with open(CHECKLIST_TEMPLATES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(templates, f, ensure_ascii=False, indent=4)
+    def save_equipment_bank(equipment):
+        with open(EQUIPMENT_BANK_FILE, 'w', encoding='utf-8') as f: json.dump(equipment, f, ensure_ascii=False, indent=4)
 
-def load_forms():
-    """טעינת טפסים מקובץ JSON"""
-    if not os.path.exists(FORMS_FILE) or os.stat(FORMS_FILE).st_size == 0:
-        return []
-    with open(FORMS_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    def load_checklist_templates():
+        """טעינת תבניות צ'ק-ליסט מקובץ JSON"""
+        if not os.path.exists(CHECKLIST_TEMPLATES_FILE) or os.stat(CHECKLIST_TEMPLATES_FILE).st_size == 0:
+            # יצירת תבניות ברירת מחדל
+            default_templates = {
+                'כנס': [
+                    'הזמנת קייטרינג',
+                    'עיצוב רול-אפים',
+                    'שליחת Save the date',
+                    'הזמנת הגברה ותאורה',
+                    'הזמנת מקרן ומסך',
+                    'הזמנת מקומות ישיבה',
+                    'אישור מיקום',
+                    'הזמנת צלמים/וידאו',
+                    'הכנת מצגות',
+                    'הזמנת מתנות למשתתפים'
+                ],
+                'חתונה': [
+                    'אישור אולם',
+                    'הזמנת קייטרינג',
+                    'הזמנת הגברה ודי.ג\'יי',
+                    'הזמנת צלמים/וידאו',
+                    'הזמנת פרחים ועיצוב',
+                    'הזמנת בוקונז\'ה/מתנות לאורחים',
+                    'הזמנת שולחנות וכסאות',
+                    'הזמנת מתנות לחתן וכלה',
+                    'אישור תאריכים עם כל הספקים',
+                    'שליחת הזמנות'
+                ],
+                'השקה': [
+                    'אישור מיקום',
+                    'הזמנת קייטרינג/קפה',
+                    'עיצוב חומרי שיווק',
+                    'הזמנת הגברה',
+                    'הזמנת צלמים/וידאו',
+                    'שליחת הזמנות',
+                    'הכנת מצגת/סרטון',
+                    'הזמנת מתנות למשתתפים',
+                    'הזמנת פרחים/עיצוב',
+                    'אישור תאריכים'
+                ]
+            }
+            save_checklist_templates(default_templates)
+            return default_templates
+        with open(CHECKLIST_TEMPLATES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
 
-def save_forms(forms):
-    """שמירת טפסים לקובץ JSON"""
-    with open(FORMS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(forms, f, ensure_ascii=False, indent=4)
+    def save_checklist_templates(templates):
+        """שמירת תבניות צ'ק-ליסט לקובץ JSON"""
+        with open(CHECKLIST_TEMPLATES_FILE, 'w', encoding='utf-8') as f:
+            json.dump(templates, f, ensure_ascii=False, indent=4)
+
+    def load_forms():
+        """טעינת טפסים מקובץ JSON"""
+        if not os.path.exists(FORMS_FILE) or os.stat(FORMS_FILE).st_size == 0:
+            return []
+        with open(FORMS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    def save_forms(forms):
+        """שמירת טפסים לקובץ JSON"""
+        with open(FORMS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(forms, f, ensure_ascii=False, indent=4)
 
 def send_form_email(form_title, client_name, form_submission, uploaded_files, form_token):
     """
