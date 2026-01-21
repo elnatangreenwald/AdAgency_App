@@ -816,7 +816,7 @@ def track_activity():
         update_user_activity(current_user.id)
 
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")  # מקסימום 5 ניסיונות התחברות לדקה
+@limiter.limit("20 per minute")  # מקסימום 20 ניסיונות התחברות לדקה (5 היה מעט מדי)
 @csrf.exempt  # פטור זמני מ-CSRF עד שנוסיף tokens לכל הטפסים
 def login():
     # אם המשתמש כבר מחובר, העבר אותו ישר לדשבורד

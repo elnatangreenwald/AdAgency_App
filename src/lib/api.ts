@@ -22,10 +22,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to login
-      window.location.href = '/login';
-    }
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'auth-debug',hypothesisId:'H2-interceptor',location:'api.ts:interceptor',message:'API error intercepted',data:{status:error?.response?.status,url:error?.config?.url},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion agent log
+    // Don't redirect here - let React AuthContext handle auth flow
+    // The Layout component will redirect to /login if user is not authenticated
     return Promise.reject(error);
   }
 );
@@ -63,10 +64,8 @@ apiForm.interceptors.request.use((config) => {
 apiForm.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to login
-      window.location.href = '/login';
-    }
+    // Don't redirect here - let React AuthContext handle auth flow
+    // The Layout component will redirect to /login if user is not authenticated
     return Promise.reject(error);
   }
 );
