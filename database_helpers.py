@@ -11,8 +11,8 @@ from database import (
     Equipment, ChecklistTemplate, Form, Permission, UserActivity
 )
 
-# Check if we should use database or JSON files
-USE_DATABASE = os.environ.get('USE_DATABASE', 'false').lower() == 'true'
+# This module is only imported when USE_DATABASE=true in app.py
+# So we always use the database here
 
 # Import file paths from app module (safe, no circular import)
 def _get_file_paths():
@@ -31,29 +31,7 @@ def _get_file_paths():
     }
 
 def load_users():
-    """Load users from database or JSON file"""
-    if not USE_DATABASE:
-        # Fallback to JSON (original behavior)
-        files = _get_file_paths()
-        USERS_FILE = files['USERS_FILE']
-        if not os.path.exists(USERS_FILE):
-            u = {'admin': {'password': generate_password_hash('1234'), 'name': 'מנהל המשרד', 'role': 'אדמין'}}
-            with open(USERS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(u, f, ensure_ascii=False, indent=4)
-            return u
-        users = {}
-        with open(USERS_FILE, 'r', encoding='utf-8') as f:
-            users = json.load(f)
-        # Ensure roles exist
-        needs_update = False
-        for uid, user_info in users.items():
-            if 'role' not in user_info:
-                user_info['role'] = 'עובד' if uid != 'admin' else 'אדמין'
-                needs_update = True
-        if needs_update:
-            save_users(users)
-        return users
-    
+    """Load users from database"""
     db = get_db()
     try:
         users = {}
@@ -90,14 +68,7 @@ def load_users():
         db.close()
 
 def save_users(users):
-    """Save users to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        USERS_FILE = files['USERS_FILE']
-        with open(USERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(users, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save users to database"""
     db = get_db()
     try:
         for user_id, user_data in users.items():
@@ -127,20 +98,7 @@ def save_users(users):
         db.close()
 
 def load_data():
-    """Load clients data from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        DATA_FILE = files['DATA_FILE']
-        if not os.path.exists(DATA_FILE) or os.stat(DATA_FILE).st_size == 0:
-            return []
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        if not data:
-            return data
-        # Note: assign_client_numbers logic would need to be imported or duplicated
-        # For now, we'll skip that check in JSON mode to avoid circular import
-        return data
-    
+    """Load clients data from database"""
     db = get_db()
     try:
         clients = []
@@ -202,14 +160,7 @@ def load_data():
         db.close()
 
 def save_data(data):
-    """Save clients data to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        DATA_FILE = files['DATA_FILE']
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save clients data to database"""
     db = get_db()
     try:
         for client_data in data:
@@ -257,15 +208,7 @@ def save_data(data):
         db.close()
 
 def load_suppliers():
-    """Load suppliers from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        SUPPLIERS_FILE = files['SUPPLIERS_FILE']
-        if not os.path.exists(SUPPLIERS_FILE) or os.stat(SUPPLIERS_FILE).st_size == 0:
-            return []
-        with open(SUPPLIERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load suppliers from database"""
     db = get_db()
     try:
         suppliers = []
@@ -277,14 +220,7 @@ def load_suppliers():
         db.close()
 
 def save_suppliers(suppliers):
-    """Save suppliers to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        SUPPLIERS_FILE = files['SUPPLIERS_FILE']
-        with open(SUPPLIERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(suppliers, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save suppliers to database"""
     db = get_db()
     try:
         for supplier_data in suppliers:
@@ -303,15 +239,7 @@ def save_suppliers(suppliers):
         db.close()
 
 def load_quotes():
-    """Load quotes from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        QUOTES_FILE = files['QUOTES_FILE']
-        if not os.path.exists(QUOTES_FILE) or os.stat(QUOTES_FILE).st_size == 0:
-            return []
-        with open(QUOTES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load quotes from database"""
     db = get_db()
     try:
         quotes = []
@@ -323,14 +251,7 @@ def load_quotes():
         db.close()
 
 def save_quotes(quotes):
-    """Save quotes to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        QUOTES_FILE = files['QUOTES_FILE']
-        with open(QUOTES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(quotes, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save quotes to database"""
     db = get_db()
     try:
         for quote_data in quotes:
@@ -349,15 +270,7 @@ def save_quotes(quotes):
         db.close()
 
 def load_messages():
-    """Load messages from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        MESSAGES_FILE = files['MESSAGES_FILE']
-        if not os.path.exists(MESSAGES_FILE) or os.stat(MESSAGES_FILE).st_size == 0:
-            return []
-        with open(MESSAGES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load messages from database"""
     db = get_db()
     try:
         messages = []
@@ -369,14 +282,7 @@ def load_messages():
         db.close()
 
 def save_messages(messages):
-    """Save messages to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        MESSAGES_FILE = files['MESSAGES_FILE']
-        with open(MESSAGES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(messages, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save messages to database"""
     db = get_db()
     try:
         for message_data in messages:
@@ -395,15 +301,7 @@ def save_messages(messages):
         db.close()
 
 def load_events():
-    """Load events from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        EVENTS_FILE = files['EVENTS_FILE']
-        if not os.path.exists(EVENTS_FILE) or os.stat(EVENTS_FILE).st_size == 0:
-            return []
-        with open(EVENTS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load events from database"""
     db = get_db()
     try:
         events = []
@@ -415,14 +313,7 @@ def load_events():
         db.close()
 
 def save_events(events):
-    """Save events to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        EVENTS_FILE = files['EVENTS_FILE']
-        with open(EVENTS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(events, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save events to database"""
     db = get_db()
     try:
         for event_data in events:
@@ -441,20 +332,7 @@ def save_events(events):
         db.close()
 
 def load_equipment_bank():
-    """Load equipment from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        EQUIPMENT_BANK_FILE = files['EQUIPMENT_BANK_FILE']
-        if not os.path.exists(EQUIPMENT_BANK_FILE) or os.stat(EQUIPMENT_BANK_FILE).st_size == 0:
-            default_equipment = [
-                'מקרן', 'הגברה', 'מיקרופון', 'מסך/פליפ-צ\'ארט', 'שולחן', 'כסאות', 
-                'מתנות לאורחים', 'רול-אפים', 'באנרים', 'פלטה/במה', 'תאורה', 'שולחן עגול'
-            ]
-            save_equipment_bank(default_equipment)
-            return default_equipment
-        with open(EQUIPMENT_BANK_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load equipment from database"""
     db = get_db()
     try:
         equipment = []
@@ -478,14 +356,7 @@ def load_equipment_bank():
         db.close()
 
 def save_equipment_bank(equipment):
-    """Save equipment to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        EQUIPMENT_BANK_FILE = files['EQUIPMENT_BANK_FILE']
-        with open(EQUIPMENT_BANK_FILE, 'w', encoding='utf-8') as f:
-            json.dump(equipment, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save equipment to database"""
     db = get_db()
     try:
         # Clear existing equipment
@@ -499,33 +370,7 @@ def save_equipment_bank(equipment):
         db.close()
 
 def load_checklist_templates():
-    """Load checklist templates from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        CHECKLIST_TEMPLATES_FILE = files['CHECKLIST_TEMPLATES_FILE']
-        if not os.path.exists(CHECKLIST_TEMPLATES_FILE) or os.stat(CHECKLIST_TEMPLATES_FILE).st_size == 0:
-            default_templates = {
-                'כנס': [
-                    'הזמנת קייטרינג', 'עיצוב רול-אפים', 'שליחת Save the date',
-                    'הזמנת הגברה ותאורה', 'הזמנת מקרן ומסך', 'הזמנת מקומות ישיבה',
-                    'אישור מיקום', 'הזמנת צלמים/וידאו', 'הכנת מצגות', 'הזמנת מתנות למשתתפים'
-                ],
-                'חתונה': [
-                    'אישור אולם', 'הזמנת קייטרינג', 'הזמנת הגברה ודי.ג\'יי',
-                    'הזמנת צלמים/וידאו', 'הזמנת פרחים ועיצוב', 'הזמנת בוקונז\'ה/מתנות לאורחים',
-                    'הזמנת שולחנות וכסאות', 'הזמנת מתנות לחתן וכלה', 'אישור תאריכים עם כל הספקים', 'שליחת הזמנות'
-                ],
-                'השקה': [
-                    'אישור מיקום', 'הזמנת קייטרינג/קפה', 'עיצוב חומרי שיווק',
-                    'הזמנת הגברה', 'הזמנת צלמים/וידאו', 'שליחת הזמנות',
-                    'הכנת מצגת/סרטון', 'הזמנת מתנות למשתתפים', 'הזמנת פרחים/עיצוב', 'אישור תאריכים'
-                ]
-            }
-            save_checklist_templates(default_templates)
-            return default_templates
-        with open(CHECKLIST_TEMPLATES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load checklist templates from database"""
     db = get_db()
     try:
         templates = {}
@@ -547,14 +392,7 @@ def load_checklist_templates():
         db.close()
 
 def save_checklist_templates(templates):
-    """Save checklist templates to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        CHECKLIST_TEMPLATES_FILE = files['CHECKLIST_TEMPLATES_FILE']
-        with open(CHECKLIST_TEMPLATES_FILE, 'w', encoding='utf-8') as f:
-            json.dump(templates, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save checklist templates to database"""
     db = get_db()
     try:
         for category, items in templates.items():
@@ -569,15 +407,7 @@ def save_checklist_templates(templates):
         db.close()
 
 def load_forms():
-    """Load forms from database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        FORMS_FILE = files['FORMS_FILE']
-        if not os.path.exists(FORMS_FILE) or os.stat(FORMS_FILE).st_size == 0:
-            return []
-        with open(FORMS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
+    """Load forms from database"""
     db = get_db()
     try:
         forms = []
@@ -589,14 +419,7 @@ def load_forms():
         db.close()
 
 def save_forms(forms):
-    """Save forms to database or JSON file"""
-    if not USE_DATABASE:
-        files = _get_file_paths()
-        FORMS_FILE = files['FORMS_FILE']
-        with open(FORMS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(forms, f, ensure_ascii=False, indent=4)
-        return
-    
+    """Save forms to database"""
     db = get_db()
     try:
         for form_data in forms:
