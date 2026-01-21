@@ -674,20 +674,20 @@ export function ManageUsers() {
                       )}
                     </td>
                     <td className="p-3 text-center">
-                      {user.id !== 'admin' && (
-                        <div className="flex gap-2 justify-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setResetPasswordOpen(true);
-                            }}
-                            className="bg-yellow-100 hover:bg-yellow-200"
-                          >
-                            <RotateCcw className="w-3 h-3 ml-1" />
-                            איפוס סיסמה
-                          </Button>
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setResetPasswordOpen(true);
+                          }}
+                          className="bg-yellow-100 hover:bg-yellow-200"
+                        >
+                          <RotateCcw className="w-3 h-3 ml-1" />
+                          איפוס סיסמה
+                        </Button>
+                        {user.id !== 'admin' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -700,8 +700,8 @@ export function ManageUsers() {
                             <Trash2 className="w-3 h-3 ml-1" />
                             מחק
                           </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
