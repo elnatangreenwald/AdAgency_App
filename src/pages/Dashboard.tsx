@@ -184,13 +184,7 @@ export function Dashboard() {
   };
 
   const createNewProject = async () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:createNewProject',message:'enter createNewProject',data:{selectedClientId,hasName:!!newProjectName.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H1'})}).catch(()=>{});
-    // #endregion agent log
     if (!newProjectName.trim() || !selectedClientId) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:createNewProject',message:'blocked by validation',data:{selectedClientId,hasName:!!newProjectName.trim()},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H1'})}).catch(()=>{});
-      // #endregion agent log
       toast({
         title: 'שגיאה',
         description: 'אנא הזן שם לפרויקט ובחר לקוח',
@@ -200,9 +194,6 @@ export function Dashboard() {
     }
 
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:createNewProject',message:'sending add_project',data:{selectedClientId,newProjectName},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H2'})}).catch(()=>{});
-      // #endregion agent log
       const response = await apiClient.post(
         `/add_project/${selectedClientId}`,
         { title: newProjectName },
@@ -216,18 +207,12 @@ export function Dashboard() {
       );
 
       const createdProject = response.data?.data?.project;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:createNewProject',message:'add_project response',data:{status:response.data?.status,hasProject:!!createdProject,projectId:createdProject?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H2'})}).catch(()=>{});
-      // #endregion agent log
       if (response.data?.status === 'success' && createdProject) {
         setProjects((prev) => {
           const exists = prev.some((project) => project.id === createdProject.id);
           return exists ? prev : [...prev, createdProject];
         });
         setSelectedProjectId(createdProject.id);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:createNewProject',message:'project added to state',data:{selectedProjectId:createdProject.id,projectsCount:projects.length+1},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H3'})}).catch(()=>{});
-        // #endregion agent log
         setShowNewProject(false);
         setNewProjectName('');
         toast({
@@ -243,9 +228,6 @@ export function Dashboard() {
         });
       }
     } catch (error: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:createNewProject',message:'add_project error',data:{status:error?.response?.status,err:error?.response?.data?.error || error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H2'})}).catch(()=>{});
-      // #endregion agent log
       toast({
         title: 'שגיאה',
         description: error.response?.data?.error || 'שגיאה ביצירת הפרויקט',
@@ -256,13 +238,7 @@ export function Dashboard() {
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:handleAddTask',message:'enter handleAddTask',data:{selectedClientId,selectedProjectId,hasTitle:!!taskForm.task_title},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H4'})}).catch(()=>{});
-    // #endregion agent log
     if (!selectedClientId || !selectedProjectId || !taskForm.task_title) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:handleAddTask',message:'blocked by validation',data:{selectedClientId,selectedProjectId,hasTitle:!!taskForm.task_title},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H4'})}).catch(()=>{});
-      // #endregion agent log
       toast({
         title: 'שגיאה',
         description: 'אנא מלא את כל השדות הנדרשים',

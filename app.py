@@ -824,16 +824,6 @@ def login():
         return redirect(url_for('home'))
     
     if request.method == 'POST':
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-2",
-                "hypothesisId": "L1",
-                "location": "app.py:login",
-                "message": "login POST received",
-                "data": {"has_username": bool(request.form.get('username')), "has_password": bool(request.form.get('password'))},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         u = load_users(); uid, pwd = request.form.get('username'), request.form.get('password')
         email_match_user = None
         if uid:
@@ -843,16 +833,6 @@ def login():
                     email_match_user = user_id
                     break
         resolved_user_id = uid if uid in u else email_match_user
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-2",
-                "hypothesisId": "L2",
-                "location": "app.py:login",
-                "message": "login identifier checked",
-                "data": {"is_email_identifier": bool(uid and '@' in uid), "user_found_direct": bool(uid in u), "user_found_by_email": bool(email_match_user), "resolved_user_id": bool(resolved_user_id)},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         # בדיקת סיסמה - תומך גם בסיסמאות מוצפנות וגם בטקסט פשוט (להתאימות לאחור)
         if resolved_user_id and resolved_user_id in u:
             stored_password = u[resolved_user_id].get('password', '')
@@ -864,16 +844,6 @@ def login():
                 password_valid = (stored_password == pwd)
             
             if password_valid:
-                with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-                    f.write(json.dumps({
-                        "sessionId": "debug-session",
-                        "runId": "pre-fix-2",
-                        "hypothesisId": "L2",
-                        "location": "app.py:login",
-                        "message": "password valid, logging in",
-                        "data": {"user_found": True},
-                        "timestamp": int(time.time() * 1000)
-                    }, ensure_ascii=False) + "\n")
                 user = User(resolved_user_id)
                 login_user(user, remember=True)
                 update_user_activity(resolved_user_id)
@@ -883,16 +853,6 @@ def login():
                     return jsonify({'status': 'success'}), 200
                 return redirect(url_for('home'))
         
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-2",
-                "hypothesisId": "L3",
-                "location": "app.py:login",
-                "message": "login failed",
-                "data": {"user_found": bool(resolved_user_id and resolved_user_id in u), "password_valid": False},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if wants_json:
@@ -1089,11 +1049,6 @@ def home():
 @limiter.exempt  # פטור מ-rate limiting כי זה נקרא הרבה פעמים
 def api_current_user():
     """API endpoint להחזרת המשתמש הנוכחי"""
-    # #region agent log
-    with open(r'c:\Users\Asus\Desktop\AdAgency_App\.cursor\debug.log', 'a', encoding='utf-8') as f:
-        import json as _j
-        f.write(_j.dumps({"sessionId":"debug-session","runId":"auth-debug","hypothesisId":"H5","location":"app.py:api_current_user","message":"current_user check","data":{"is_authenticated":current_user.is_authenticated,"user_id":getattr(current_user,'id',None)},"timestamp":int(time.time()*1000)})+"\n")
-    # #endregion agent log
     try:
         # Check if user is authenticated without redirecting
         if not current_user.is_authenticated:
@@ -1832,16 +1787,6 @@ def upload_logo(client_id):
 @csrf.exempt
 def add_project(client_id):
     try:
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix",
-                "hypothesisId": "H2",
-                "location": "app.py:add_project",
-                "message": "enter add_project",
-                "data": {"client_id": client_id, "is_json": request.is_json},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         data = load_data()
         project_id = str(uuid.uuid4())
         
@@ -1850,16 +1795,6 @@ def add_project(client_id):
             project_title = request.json.get('title')
         else:
             project_title = request.form.get('title')
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix",
-                "hypothesisId": "H2",
-                "location": "app.py:add_project",
-                "message": "parsed request",
-                "data": {"client_id": client_id, "has_title": bool(project_title)},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         
         if not project_title:
             wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
@@ -1906,16 +1841,6 @@ def add_project(client_id):
                             request.headers.get('X-Requested-With') == 'XMLHttpRequest'
                 
                 if wants_json:
-                    with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-                        f.write(json.dumps({
-                            "sessionId": "debug-session",
-                            "runId": "pre-fix",
-                            "hypothesisId": "H3",
-                            "location": "app.py:add_project",
-                            "message": "returning json success",
-                            "data": {"client_id": client_id, "project_id": project_id},
-                            "timestamp": int(time.time() * 1000)
-                        }, ensure_ascii=False) + "\n")
                     return jsonify({
                         'status': 'success',
                         'data': {
@@ -1940,16 +1865,6 @@ def add_project(client_id):
         print(f"Error in add_project: {e}")
         import traceback
         traceback.print_exc()
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix",
-                "hypothesisId": "H2",
-                "location": "app.py:add_project",
-                "message": "exception",
-                "data": {"client_id": client_id, "error": str(e)},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if wants_json:
@@ -4216,16 +4131,6 @@ def event_page(event_id):
 def add_event():
     """יצירת אירוע חדש"""
     try:
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-5",
-                "hypothesisId": "E1",
-                "location": "app.py:add_event",
-                "message": "add_event received",
-                "data": {"has_title": bool(request.form.get('title') or request.form.get('name')), "has_client": bool(request.form.get('client_id')), "has_date": bool(request.form.get('date')), "type": request.form.get('type') or request.form.get('event_type')},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         events_list = load_events()
         event_type = request.form.get('event_type', '')
         
@@ -4256,31 +4161,11 @@ def add_event():
         wants_json = request.is_json or request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if wants_json:
-            with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-                f.write(json.dumps({
-                    "sessionId": "debug-session",
-                    "runId": "pre-fix-5",
-                    "hypothesisId": "E2",
-                    "location": "app.py:add_event",
-                    "message": "add_event success",
-                    "data": {"event_id": event.get('id')},
-                    "timestamp": int(time.time() * 1000)
-                }, ensure_ascii=False) + "\n")
             return jsonify({'success': True, 'event': event})
         return redirect(url_for('event_page', event_id=event['id']))
     except Exception as e:
         wants_json = request.is_json or request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-5",
-                "hypothesisId": "E3",
-                "location": "app.py:add_event",
-                "message": "add_event exception",
-                "data": {"error": str(e)},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         if wants_json:
             return jsonify({'success': False, 'error': str(e)}), 500
         return f"שגיאה ביצירת האירוע: {str(e)}", 500
@@ -4852,16 +4737,6 @@ def toggle_event_active(event_id):
         
         data = request.get_json()
         is_active = data.get('active', True)
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-5",
-                "hypothesisId": "A1",
-                "location": "app.py:toggle_event_active",
-                "message": "toggle_event_active request",
-                "data": {"event_id": event_id, "active": is_active},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         
         events_list = load_events()
         for event in events_list:
@@ -4877,30 +4752,10 @@ def toggle_event_active(event_id):
                     event['archived_at'] = datetime.now().isoformat()
                 
                 save_events(events_list)
-                with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-                    f.write(json.dumps({
-                        "sessionId": "debug-session",
-                        "runId": "pre-fix-5",
-                        "hypothesisId": "A2",
-                        "location": "app.py:toggle_event_active",
-                        "message": "toggle_event_active success",
-                        "data": {"event_id": event_id, "active": is_active},
-                        "timestamp": int(time.time() * 1000)
-                    }, ensure_ascii=False) + "\n")
                 return jsonify({'success': True})
         
         return jsonify({'success': False, 'error': 'אירוע לא נמצא'}), 404
     except Exception as e:
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-5",
-                "hypothesisId": "A3",
-                "location": "app.py:toggle_event_active",
-                "message": "toggle_event_active exception",
-                "data": {"error": str(e)},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def load_permissions():
@@ -6337,16 +6192,6 @@ def api_time_tracking_entries():
 def api_time_tracking_report():
     """דוח חודשי של מדידות זמן"""
     try:
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-3",
-                "hypothesisId": "R1",
-                "location": "app.py:api_time_tracking_report",
-                "message": "report request",
-                "data": {"month": request.args.get('month'), "user_id": request.args.get('user_id'), "client_id": request.args.get('client_id')},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         month = request.args.get('month')  # בפורמט YYYY-MM
         user_id = request.args.get('user_id')  # אופציונלי
         client_id = request.args.get('client_id')  # אופציונלי
@@ -6401,16 +6246,7 @@ def api_time_tracking_report():
         
         for uid, data in by_user.items():
             data['user_name'] = users.get(uid, {}).get('name', 'לא ידוע')
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-3",
-                "hypothesisId": "R2",
-                "location": "app.py:api_time_tracking_report",
-                "message": "report success",
-                "data": {"entries_count": len(entries), "total_hours": total_hours},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
+        
         return jsonify({
             'success': True,
             'month': month,
@@ -6424,16 +6260,6 @@ def api_time_tracking_report():
         print(f"Error in api_time_tracking_report: {e}")
         import traceback
         traceback.print_exc()
-        with open(r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log', 'a', encoding='utf-8') as f:
-            f.write(json.dumps({
-                "sessionId": "debug-session",
-                "runId": "pre-fix-3",
-                "hypothesisId": "R3",
-                "location": "app.py:api_time_tracking_report",
-                "message": "report exception",
-                "data": {"error": str(e)},
-                "timestamp": int(time.time() * 1000)
-            }, ensure_ascii=False) + "\n")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/logout', methods=['GET', 'POST'])

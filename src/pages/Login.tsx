@@ -71,22 +71,13 @@ export function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'L3',location:'Login.tsx:handleSubmit',message:'submit clicked',data:{hasEmail:!!email,hasPassword:!!password},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion agent log
     setError('');
     setLoading(true);
 
     try {
       await login(email, password);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'L3',location:'Login.tsx:handleSubmit',message:'login resolved',data:{},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       navigate('/');
     } catch (err: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'L4',location:'Login.tsx:handleSubmit',message:'login rejected',data:{},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       setError(err.response?.data?.error || 'שם משתמש או סיסמה שגויים');
     } finally {
       setLoading(false);

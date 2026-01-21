@@ -85,9 +85,6 @@ export function Events() {
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-4',hypothesisId:'E1',location:'Events.tsx:handleAddEvent',message:'add event submit',data:{title:!!eventForm.title,date:!!eventForm.date,client:!!eventForm.client_id,type:eventForm.type},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion agent log
     if (!eventForm.title || !eventForm.date || !eventForm.client_id) {
       toast({
         title: 'שגיאה',
@@ -116,9 +113,6 @@ export function Events() {
         },
       });
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-4',hypothesisId:'E2',location:'Events.tsx:handleAddEvent',message:'add event response',data:{status:response.status,success:response.data?.success},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       if (response.status === 200) {
         toast({
           title: 'הצלחה',
@@ -136,9 +130,6 @@ export function Events() {
         fetchEvents();
       }
     } catch (error: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-5',hypothesisId:'E3',location:'Events.tsx:handleAddEvent',message:'add event error',data:{status:error?.response?.status || null,err:error?.response?.data?.error || error?.message || null,baseURL:error?.config?.baseURL || null,url:error?.config?.url || null,origin:window.location.origin},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion agent log
       toast({
         title: 'שגיאה',
         description: error.response?.data?.error || 'שגיאה בהוספת האירוע',
