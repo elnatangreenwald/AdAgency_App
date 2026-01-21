@@ -829,7 +829,13 @@ def login():
         return redirect(url_for('home'))
     
     if request.method == 'POST':
+        # #region agent log - Railway visible
+        print(f"[DEBUG-LOGIN] USE_DATABASE={os.environ.get('USE_DATABASE')}, DATABASE_URL_exists={bool(os.environ.get('DATABASE_URL'))}", flush=True)
+        # #endregion
         u = load_users(); uid, pwd = request.form.get('username'), request.form.get('password')
+        # #region agent log - Railway visible
+        print(f"[DEBUG-LOGIN] load_users returned {len(u)} users: {list(u.keys())[:5]}", flush=True)
+        # #endregion
         email_match_user = None
         if uid:
             normalized_uid = uid.strip().lower()
@@ -838,16 +844,24 @@ def login():
                     email_match_user = user_id
                     break
         resolved_user_id = uid if uid in u else email_match_user
+        # #region agent log - Railway visible
+        print(f"[DEBUG-LOGIN] user lookup: uid={uid}, resolved={resolved_user_id}, found={uid in u}", flush=True)
+        # #endregion
         # בדיקת סיסמה - תומך גם בסיסמאות מוצפנות וגם בטקסט פשוט (להתאימות לאחור)
         if resolved_user_id and resolved_user_id in u:
             stored_password = u[resolved_user_id].get('password', '')
+            # #region agent log - Railway visible
+            print(f"[DEBUG-LOGIN] password stored: starts_with={stored_password[:15] if stored_password else 'EMPTY'}, is_hashed={stored_password.startswith('pbkdf2:') or stored_password.startswith('scrypt:')}", flush=True)
+            # #endregion
             # בדיקה אם הסיסמה מוצפנת (תומך ב-pbkdf2 ו-scrypt)
             if stored_password.startswith('pbkdf2:sha256:') or stored_password.startswith('scrypt:'):
                 password_valid = check_password_hash(stored_password, pwd)
             else:
                 # תמיכה בסיסמאות ישנות (לא מוצפנות) - רק למטרות migration
                 password_valid = (stored_password == pwd)
-            
+            # #region agent log - Railway visible
+            print(f"[DEBUG-LOGIN] password_valid={password_valid}", flush=True)
+            # #endregion
             if password_valid:
                 user = User(resolved_user_id)
                 login_user(user, remember=True)
