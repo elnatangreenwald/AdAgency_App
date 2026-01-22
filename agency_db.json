@@ -588,6 +588,16 @@
                         "assignee": "admin",
                         "dependencies": [],
                         "task_number": "0180001003"
+                    },
+                    {
+                        "id": "a46d779a-ff59-4b93-8e09-7f2ba0918492",
+                        "title": "הה",
+                        "status": "הועבר לסטודיו",
+                        "note": "",
+                        "created_date": "2026-01-21",
+                        "created_at": "2026-01-21T17:16:25.539794",
+                        "done": false,
+                        "task_number": "0180001004"
                     }
                 ],
                 "project_number": "0180001",
@@ -630,6 +640,17 @@
                         "assignee": "admin",
                         "dependencies": [],
                         "task_number": "0180003002"
+                    },
+                    {
+                        "id": "994fc67f-b879-4b96-a7d0-3301b2e474bc",
+                        "title": "נסיון",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "2026-01-21",
+                        "created_at": "2026-01-21T17:17:01.285025",
+                        "done": false,
+                        "deadline": "2026-01-22T00:00:00",
+                        "task_number": "0180003003"
                     }
                 ],
                 "project_number": "0180003",
@@ -1055,6 +1076,18 @@
                         "is_daily_task": true,
                         "deadline": "2026-01-19T00:00:00",
                         "task_number": "0330001001"
+                    },
+                    {
+                        "id": "49852ae0-617c-4674-9da1-a7399f9275a3",
+                        "title": "גג",
+                        "status": "לביצוע",
+                        "note": "",
+                        "created_date": "2026-01-21",
+                        "created_at": "2026-01-21T17:22:22.258939",
+                        "done": false,
+                        "is_daily_task": true,
+                        "deadline": "2026-01-21T00:00:00",
+                        "task_number": "0330001002"
                     }
                 ],
                 "project_number": "0330001",
@@ -1190,7 +1223,28 @@
         "name": "אונבכר",
         "retainer": 0,
         "extra_charges": [],
-        "projects": [],
+        "projects": [
+            {
+                "id": "ad80f715-bcf9-43e4-86a1-94045b00deb8",
+                "title": "בדיקה",
+                "tasks": [
+                    {
+                        "id": "e0a5f215-7f05-41f6-83e7-8f219024922e",
+                        "title": "חלונים",
+                        "status": "לביצוע",
+                        "note": "ככ",
+                        "created_date": "2026-01-21",
+                        "created_at": "2026-01-21T17:17:53.654057",
+                        "done": false,
+                        "deadline": "2026-01-22T00:00:00",
+                        "task_number": "0410001001"
+                    }
+                ],
+                "project_number": "0410001",
+                "is_shared": false,
+                "created_by": "admin"
+            }
+        ],
         "assigned_user": "admin",
         "files": [],
         "contacts": [],

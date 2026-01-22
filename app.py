@@ -1364,10 +1364,24 @@ def quick_add_charge():
                     'charge_number': charge_number
                 })
                 save_data(data)
+                # בדיקה אם זה AJAX request
+                wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                if wants_json:
+                    return jsonify({'success': True, 'message': 'החיוב נוסף בהצלחה'})
                 return redirect(url_for('client_page', client_id=client_id))
         
+        wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if wants_json:
+            return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
         return redirect(url_for('home'))
     except Exception as e:
+        print(f"Error in quick_add_charge: {e}")
+        wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if wants_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
         return redirect(url_for('home'))
 
 @app.route('/api/all_clients')

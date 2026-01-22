@@ -10,7 +10,7 @@
         "role": "עובד"
     },
     "NERYA": {
-        "password": "scrypt:32768:8:1$JhoycbIpLUf4yq2T$d512a9d6a2fa412d2742c9923d3e0909df86063a0eb2622bb664b66b27643d4264798dbeb2de2dcc5ed902e5877aeb915947291893bb4bcefbf441f9a5df15fd",
+        "password": "scrypt:32768:8:1$gse3sjvLjDFNaoi0$cb97c279561253ad451d5de31466a8d400709ee41520c19a6c4fa8e4f664d22dc2503d696ce338d37a0dfbd04fa67ee6b6545404020563f8e0330ec22726cddd",
         "name": "נריה ותקין",
         "role": "מנהל"
     },

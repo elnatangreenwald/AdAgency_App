@@ -287,13 +287,14 @@ export function Dashboard() {
       const response = await apiClient.post('/quick_add_charge', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
         },
       });
 
-      if (response.status === 200) {
+      if (response.data && response.data.success) {
         toast({
           title: 'הצלחה',
-          description: 'החיוב נוסף בהצלחה',
+          description: response.data.message || 'החיוב נוסף בהצלחה',
           variant: 'success',
         });
         setAddChargeOpen(false);
@@ -304,6 +305,12 @@ export function Dashboard() {
         });
         setSelectedClientId('');
         setChargeClientSearch('');
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: response.data?.error || 'שגיאה בהוספת החיוב',
+          variant: 'destructive',
+        });
       }
     } catch (error: any) {
       toast({
