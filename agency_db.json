@@ -441,6 +441,33 @@
                 "date": "07/01/26",
                 "completed": false,
                 "charge_number": "0180008"
+            },
+            {
+                "id": "85005aa5-4e92-45c5-8127-659caf19caac",
+                "title": "בדיקה 22",
+                "amount": 4444,
+                "our_cost": 0.0,
+                "date": "22/01/26",
+                "completed": false,
+                "charge_number": "0180009"
+            },
+            {
+                "id": "a1ab0655-c988-48ee-a7c3-e33bad3606c3",
+                "title": "בדיקת חיוב מעמוד לקוח",
+                "amount": 350,
+                "our_cost": 0.0,
+                "date": "22/01/26",
+                "completed": false,
+                "charge_number": "0180010"
+            },
+            {
+                "id": "6fed415c-44d3-41bc-a403-cae9775adc9b",
+                "title": "חלון 23",
+                "amount": 8,
+                "our_cost": 0.0,
+                "date": "22/01/26",
+                "completed": false,
+                "charge_number": "0180011"
             }
         ],
         "projects": [
@@ -1027,7 +1054,17 @@
         "id": "ca0a4cbd-62fd-42b1-bb42-e5db54add1a5",
         "name": "אמונה",
         "retainer": 0,
-        "extra_charges": [],
+        "extra_charges": [
+            {
+                "id": "d6baf3b1-d5d2-40f5-b50d-b86f5d97be9b",
+                "title": "בדיקת חיוב",
+                "amount": 100,
+                "our_cost": 0.0,
+                "date": "22/01/26",
+                "completed": false,
+                "charge_number": "0310001"
+            }
+        ],
         "projects": [],
         "assigned_user": "admin",
         "files": [],
@@ -1059,7 +1096,17 @@
         "id": "264b6bda-b749-43a4-a72f-6391bd3f661e",
         "name": "איגוד החוות",
         "retainer": 0,
-        "extra_charges": [],
+        "extra_charges": [
+            {
+                "id": "30fb0017-5a2a-452a-8f8c-147f9d1f9aee",
+                "title": "אתר",
+                "amount": 50,
+                "our_cost": 0.0,
+                "date": "22/01/26",
+                "completed": false,
+                "charge_number": "0330001"
+            }
+        ],
         "projects": [
             {
                 "id": "1a6f1e43-3461-4edd-b50b-37a8fdf0b2d9",

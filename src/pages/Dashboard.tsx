@@ -276,15 +276,15 @@ export function Dashboard() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('client_id', selectedClientId);
-      formData.append('charge_title', chargeForm.charge_title);
-      formData.append('charge_amount', chargeForm.charge_amount);
+      const params = new URLSearchParams();
+      params.append('client_id', selectedClientId);
+      params.append('charge_title', chargeForm.charge_title);
+      params.append('charge_amount', chargeForm.charge_amount);
       if (chargeForm.charge_our_cost) {
-        formData.append('charge_our_cost', chargeForm.charge_our_cost);
+        params.append('charge_our_cost', chargeForm.charge_our_cost);
       }
 
-      const response = await apiClient.post('/quick_add_charge', formData, {
+      const response = await apiClient.post('/quick_add_charge', params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',

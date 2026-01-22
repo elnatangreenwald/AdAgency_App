@@ -1337,6 +1337,7 @@ def quick_add_task():
 
 @app.route('/quick_add_charge', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def quick_add_charge():
     """Route להוספת חיוב מהיר מהדשבורד"""
     try:
@@ -1372,6 +1373,10 @@ def quick_add_charge():
         charge_amount = request.form.get('charge_amount')
         
         if not client_id or not charge_title or not charge_amount:
+            wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            if wants_json:
+                return jsonify({'success': False, 'error': 'חסרים שדות נדרשים'}), 400
             return redirect(url_for('home'))
         
         data = load_data()
@@ -2829,8 +2834,12 @@ def finance():
 
 @app.route('/update_finance/<client_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def update_finance(client_id):
     action, data = request.form.get('action'), load_data()
+    wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     for c in data:
         if c['id'] == client_id:
             if action == 'retainer': c['retainer'] = int(request.form.get('amount', 0))
@@ -2846,7 +2855,11 @@ def update_finance(client_id):
                     'completed': False,  # ברירת מחדל: לא הושלם
                     'charge_number': charge_number
                 })
-    save_data(data); return redirect(request.referrer)
+    save_data(data)
+    
+    if wants_json:
+        return jsonify({'success': True, 'message': 'עודכן בהצלחה'})
+    return redirect(request.referrer)
 
 @app.route('/generate_invoice/<client_id>')
 @login_required

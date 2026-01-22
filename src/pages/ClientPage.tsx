@@ -583,17 +583,18 @@ export function ClientPage() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('action', 'extra');
-      formData.append('title', chargeForm.title);
-      formData.append('amount', chargeForm.amount);
+      const params = new URLSearchParams();
+      params.append('action', 'extra');
+      params.append('title', chargeForm.title);
+      params.append('amount', chargeForm.amount);
       if (chargeForm.our_cost) {
-        formData.append('our_cost', chargeForm.our_cost);
+        params.append('our_cost', chargeForm.our_cost);
       }
 
-      const response = await apiClient.post(`/update_finance/${clientId}`, formData, {
+      const response = await apiClient.post(`/update_finance/${clientId}`, params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
         },
       });
 
