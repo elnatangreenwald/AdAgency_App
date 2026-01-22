@@ -226,7 +226,7 @@ export function Events() {
                     size="sm"
                     asChild
                   >
-                    <a href={`/event/${event.id}`}>פרטים</a>
+                    <Link to={`/event/${event.id}`}>פרטים</Link>
                   </Button>
                 </div>
               </CardContent>

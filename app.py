@@ -1340,6 +1340,33 @@ def quick_add_task():
 def quick_add_charge():
     """Route להוספת חיוב מהיר מהדשבורד"""
     try:
+        # #region agent log
+        import json as _json, time as _time
+        _log_path = r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log'
+        try:
+            with open(_log_path, 'a', encoding='utf-8') as _f:
+                _f.write(_json.dumps({
+                    'sessionId': 'debug-session',
+                    'runId': 'quick_charge-debug',
+                    'hypothesisId': 'QA1',
+                    'location': 'app.py:quick_add_charge:start',
+                    'message': 'incoming quick charge payload',
+                    'data': {
+                        'client_id': request.form.get('client_id'),
+                        'charge_title': request.form.get('charge_title'),
+                        'charge_amount': request.form.get('charge_amount'),
+                        'charge_our_cost': request.form.get('charge_our_cost'),
+                        'headers': {
+                            'Accept': request.headers.get('Accept'),
+                            'X-Requested-With': request.headers.get('X-Requested-With'),
+                        }
+                    },
+                    'timestamp': int(_time.time() * 1000)
+                }) + '\\n')
+        except Exception:
+            pass
+        # #endregion
+
         client_id = request.form.get('client_id')
         charge_title = request.form.get('charge_title')
         charge_amount = request.form.get('charge_amount')
@@ -1378,6 +1405,21 @@ def quick_add_charge():
         return redirect(url_for('home'))
     except Exception as e:
         print(f"Error in quick_add_charge: {e}")
+        import json as _json, time as _time
+        _log_path = r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log'
+        try:
+            with open(_log_path, 'a', encoding='utf-8') as _f:
+                _f.write(_json.dumps({
+                    'sessionId': 'debug-session',
+                    'runId': 'quick_charge-debug',
+                    'hypothesisId': 'QA2',
+                    'location': 'app.py:quick_add_charge:exception',
+                    'message': 'exception details',
+                    'data': {'error': str(e)},
+                    'timestamp': int(_time.time() * 1000)
+                }) + '\\n')
+        except Exception:
+            pass
         wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if wants_json:
@@ -4028,6 +4070,81 @@ def api_events():
         })
     except Exception as e:
         print(f"Error in api_events: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/event/<event_id>')
+@login_required
+def api_event_details(event_id):
+    """API endpoint להחזרת פרטי אירוע בודד"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not check_permission('/events', user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+        
+        events_list = load_events()
+        event = next((e for e in events_list if e.get('id') == event_id), None)
+        
+        if not event:
+            return jsonify({'success': False, 'error': 'אירוע לא נמצא'}), 404
+        
+        clients = load_data()
+        suppliers_list = load_suppliers()
+        equipment_bank = load_equipment_bank()
+        
+        # חיבור לקוח לאירוע
+        client_id = event.get('client_id', '')
+        client = next((c for c in clients if c.get('id') == client_id), None)
+        event['client'] = client
+        event['client_name'] = client.get('name', '') if client else ''
+        
+        # טעינת צ'ק-ליסט לפי סוג האירוע
+        event_type = event.get('event_type', '')
+        checklist_template = get_event_checklist_template(event_type)
+        
+        # אם אין צ'ק-ליסט לאירוע, טען מהתבנית
+        if 'checklist' not in event or not event.get('checklist'):
+            event['checklist'] = [{'task': task, 'completed': False} for task in checklist_template]
+        
+        # וודא שכל הפריטים מהתבנית קיימים
+        if checklist_template:
+            existing_tasks = {item.get('task', '') for item in event.get('checklist', [])}
+            for task in checklist_template:
+                if task not in existing_tasks:
+                    event['checklist'].append({'task': task, 'completed': False})
+        
+        # וודא ששדות קיימים
+        if 'suppliers' not in event:
+            event['suppliers'] = []
+        if 'equipment' not in event:
+            event['equipment'] = []
+        if 'charges' not in event:
+            event['charges'] = []
+        if 'graphics_items' not in event:
+            event['graphics_items'] = []
+        
+        # הוסף our_cost=0 לחיובים ישנים
+        for charge in event.get('charges', []):
+            if 'our_cost' not in charge:
+                charge['our_cost'] = 0
+        
+        # חישוב סה"כ לתקציב
+        total_budget = sum(ch.get('amount', 0) for ch in event.get('charges', []))
+        total_expenses = sum(ch.get('our_cost', 0) for ch in event.get('charges', []))
+        profit_margin = total_budget - total_expenses
+        
+        return jsonify({
+            'success': True,
+            'event': event,
+            'suppliers': suppliers_list,
+            'equipment_bank': equipment_bank,
+            'total_budget': total_budget,
+            'total_expenses': total_expenses,
+            'profit_margin': profit_margin
+        })
+    except Exception as e:
+        print(f"Error in api_event_details: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -8,6 +8,7 @@ import { AllClients } from './pages/AllClients';
 import { ClientPage } from './pages/ClientPage';
 import { Finance } from './pages/Finance';
 import { Events } from './pages/Events';
+import { EventPage } from './pages/EventPage';
 import { Suppliers } from './pages/Suppliers';
 import { Quotes } from './pages/Quotes';
 import { Forms } from './pages/Forms';
@@ -30,6 +31,7 @@ function App() {
             <Route path="client/:clientId" element={<ClientPage />} />
             <Route path="finance" element={<Finance />} />
             <Route path="events" element={<Events />} />
+            <Route path="event/:eventId" element={<EventPage />} />
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="quotes" element={<Quotes />} />
             <Route path="forms" element={<Forms />} />
