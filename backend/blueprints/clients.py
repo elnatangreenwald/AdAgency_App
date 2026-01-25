@@ -2,6 +2,7 @@
 Clients Blueprint
 Contains routes for client management, projects, and tasks
 """
+import json
 import os
 import uuid
 from datetime import datetime
@@ -25,6 +26,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 LOGOS_FOLDER = os.path.join(BASE_DIR, 'static', 'logos')
 DOCUMENTS_FOLDER = os.path.join(BASE_DIR, 'static', 'documents')
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'client_docs')
+DEBUG_LOG_PATH = r'c:\Users\Asus\Desktop\AdAgency_App\.cursor\debug.log'
 
 
 @clients_bp.route('/api/client/<client_id>')
@@ -332,18 +334,67 @@ def update_task(client_id, project_id, task_id):
 def delete_task(client_id, project_id, task_id):
     """Delete a task"""
     try:
+        # region agent log
+        with open(DEBUG_LOG_PATH, 'a', encoding='utf-8') as log_file:
+            log_file.write(json.dumps({
+                'sessionId': 'debug-session',
+                'runId': 'initial',
+                'hypothesisId': 'H1',
+                'location': 'clients.py:329',
+                'message': 'delete_task entry',
+                'data': {
+                    'client_id': client_id,
+                    'project_id': project_id,
+                    'task_id': task_id,
+                },
+                'timestamp': int(datetime.now().timestamp() * 1000),
+            }) + '\n')
+        # endregion
         data = load_data()
         client = next((c for c in data if c['id'] == client_id), None)
         
         if not client:
             return jsonify({'success': False, 'error': 'Client not found'}), 404
-        
+
         project = next((p for p in client.get('projects', []) if p['id'] == project_id), None)
         
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
+
+        # region agent log
+        with open(DEBUG_LOG_PATH, 'a', encoding='utf-8') as log_file:
+            log_file.write(json.dumps({
+                'sessionId': 'debug-session',
+                'runId': 'initial',
+                'hypothesisId': 'H1',
+                'location': 'clients.py:347',
+                'message': 'delete_task client/project lookup',
+                'data': {
+                    'client_found': True,
+                    'project_found': True,
+                },
+                'timestamp': int(datetime.now().timestamp() * 1000),
+            }) + '\n')
+        # endregion
         
-        project['tasks'] = [t for t in project.get('tasks', []) if t['id'] != task_id]
+        original_count = len(project.get('tasks', []))
+        filtered_tasks = [t for t in project.get('tasks', []) if t['id'] != task_id]
+        project['tasks'] = filtered_tasks
+        # region agent log
+        with open(DEBUG_LOG_PATH, 'a', encoding='utf-8') as log_file:
+            log_file.write(json.dumps({
+                'sessionId': 'debug-session',
+                'runId': 'initial',
+                'hypothesisId': 'H1',
+                'location': 'clients.py:349',
+                'message': 'delete_task filtered tasks',
+                'data': {
+                    'original_count': original_count,
+                    'remaining_count': len(filtered_tasks),
+                },
+                'timestamp': int(datetime.now().timestamp() * 1000),
+            }) + '\n')
+        # endregion
         save_data(data)
         
         return jsonify({'success': True})

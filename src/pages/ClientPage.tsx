@@ -130,6 +130,13 @@ export function ClientPage() {
   } | null>(null);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [activityModalOpen, setActivityModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<{
+    clientId: string;
+    projectId: string;
+    taskId: string;
+    taskTitle: string;
+  } | null>(null);
   const [currentTask, setCurrentTask] = useState<{
     clientId: string;
     projectId: string;
@@ -459,9 +466,35 @@ export function ClientPage() {
   const handleDeleteTask = async (
     clientId: string,
     projectId: string,
-    taskId: string
+    taskId: string,
+    taskTitle?: string
   ) => {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את המשימה?')) return;
+    // Open confirmation dialog
+    setTaskToDelete({ clientId, projectId, taskId, taskTitle: taskTitle || 'המשימה' });
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    
+    const { clientId, projectId, taskId } = taskToDelete;
+    setDeleteConfirmOpen(false);
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'initial',
+        hypothesisId: 'H1',
+        location: 'ClientPage.tsx:459',
+        message: 'handleDeleteTask request',
+        data: { clientId, projectId, taskId },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
 
     try {
       const formData = new FormData();
@@ -475,15 +508,61 @@ export function ClientPage() {
         }
       );
 
-      if (response.status === 200) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'debug-session',
+          runId: 'initial',
+          hypothesisId: 'H3',
+          location: 'ClientPage.tsx:477',
+          message: 'handleDeleteTask response',
+          data: {
+            status: response.status,
+            success: response.data?.success,
+            statusText: response.statusText,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+
+      if (response.status === 200 && response.data?.success) {
         toast({
           title: 'הצלחה',
-          description: 'המשימה נמחקה בהצלחה',
+          description: response.data?.message || 'המשימה נמחקה בהצלחה',
           variant: 'success',
         });
         fetchClient();
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: response.data?.error || 'שגיאה במחיקת המשימה',
+          variant: 'destructive',
+        });
       }
     } catch (error: any) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'debug-session',
+          runId: 'initial',
+          hypothesisId: 'H3',
+          location: 'ClientPage.tsx:489',
+          message: 'handleDeleteTask error',
+          data: {
+            message: error?.message,
+            status: error?.response?.status,
+            errorData: error?.response?.data,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+
       toast({
         title: 'שגיאה',
         description: error.response?.data?.error || 'שגיאה במחיקת המשימה',
@@ -1257,7 +1336,7 @@ export function ClientPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeleteTask(client.id, project.id, task.id)}
+                                onClick={() => handleDeleteTask(client.id, project.id, task.id, task.title)}
                                 className="text-red-600"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1825,6 +1904,27 @@ export function ClientPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>מחיקת משימה</DialogTitle>
+            <DialogDescription>
+              האם אתה בטוח שברצונך למחוק את המשימה "{taskToDelete?.taskTitle}"?
+              פעולה זו לא ניתנת לביטול.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              ביטול
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteTask}>
+              מחק
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

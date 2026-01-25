@@ -82,6 +82,7 @@ PERMISSIONS_FILE = os.path.join(BASE_DIR, 'permissions_db.json')
 USER_ACTIVITY_FILE = os.path.join(BASE_DIR, 'user_activity.json')
 ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
 TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
+DEBUG_LOG_PATH = os.path.join(BASE_DIR, '.cursor', 'debug.log')
 
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -2361,52 +2362,76 @@ def delete_project(client_id, project_id):
 
 @app.route('/delete_task/<client_id>/<project_id>/<task_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def delete_task(client_id, project_id, task_id):
     try:
-        print(f"Delete task called: client_id={client_id}, project_id={project_id}, task_id={task_id}")
         data = load_data()
+        task_found = False
+        task_title = None
+        
         for c in data:
-            if c['id'] == client_id:
-                for p in c.get('projects', []):
-                    if p['id'] == project_id:
-                        # שמור את המשימה בארכיון במקום למחוק אותה
-                        task_to_delete = None
-                        for t in p.get('tasks', []):
-                            if t['id'] == task_id:
-                                task_to_delete = t
-                                break
-                        
-                        if task_to_delete:
-                            # הוסף לארכיון
-                            if 'archived_tasks' not in p:
-                                p['archived_tasks'] = []
-                            task_to_delete['archived_date'] = datetime.now().strftime('%d/%m/%y %H:%M')
-                            p['archived_tasks'].append(task_to_delete)
-                        
-                        original_count = len(p.get('tasks', []))
-                        print(f"Original task count: {original_count}")
-                        # מחק מהרשימה הפעילה
-                        p['tasks'] = [t for t in p.get('tasks', []) if t['id'] != task_id]
-                        new_count = len(p.get('tasks', []))
-                        print(f"New task count: {new_count}")
-                        
-                        # אם המשימה נמחקה, שמור את השינויים
-                        if new_count < original_count:
-                            save_data(data)
-                            print("Task deleted successfully and archived, data saved")
-                        
-                        # תמיד נחזיר הצלחה (גם אם המשימה לא הייתה קיימת)
-                        return jsonify({
-                            'status': 'success',
-                            'message': 'המשימה נמחקה ונשמרה בארכיון'
-                        })
-        print(f"Client or project not found: client_id={client_id}, project_id={project_id}")
-        return jsonify({'status': 'error', 'error': 'לקוח או פרויקט לא נמצאו'}), 404
+            if c['id'] != client_id:
+                continue
+            for p in c.get('projects', []):
+                if p['id'] != project_id:
+                    continue
+                tasks = p.get('tasks', [])
+                
+                # Find the task to be deleted to get its title and check if it exists
+                task_to_delete = next((t for t in tasks if t['id'] == task_id), None)
+                if not task_to_delete:
+                    # Task already missing; treat as success to keep API simple
+                    return jsonify({'success': True})
+                
+                task_found = True
+                task_title = task_to_delete.get('title', 'לא ידוע')
+                
+                # Remove the task from dependencies of other tasks in the same project
+                for t in tasks:
+                    if t['id'] != task_id:
+                        dependencies = t.get('dependencies', [])
+                        if isinstance(dependencies, list) and task_id in dependencies:
+                            dependencies.remove(task_id)
+                            t['dependencies'] = dependencies
+                
+                # Cancel any active time tracking sessions for this task
+                try:
+                    time_data = load_time_tracking()
+                    active_sessions = time_data.get('active_sessions', {})
+                    sessions_to_cancel = []
+                    
+                    for user_id, session in active_sessions.items():
+                        if (session.get('client_id') == client_id and 
+                            session.get('project_id') == project_id and 
+                            session.get('task_id') == task_id):
+                            sessions_to_cancel.append(user_id)
+                    
+                    for user_id in sessions_to_cancel:
+                        del active_sessions[user_id]
+                        print(f"Cancelled active time tracking session for user {user_id} on task {task_id}")
+                    
+                    if sessions_to_cancel:
+                        save_time_tracking(time_data)
+                except Exception as time_error:
+                    # Don't fail task deletion if time tracking cleanup fails
+                    print(f"Warning: Could not clean up time tracking for task {task_id}: {time_error}")
+                
+                # Remove the task itself
+                filtered_tasks = [t for t in tasks if t['id'] != task_id]
+                p['tasks'] = filtered_tasks
+                
+                save_data(data)
+                print(f"Task '{task_title}' (ID: {task_id}) deleted successfully from project {project_id}")
+                return jsonify({'success': True, 'message': f'המשימה "{task_title}" נמחקה בהצלחה'})
+        
+        if not task_found:
+            return jsonify({'success': False, 'error': 'לקוח או פרויקט לא נמצאו'}), 404
+        return jsonify({'success': False, 'error': 'משימה לא נמצאה'}), 404
     except Exception as e:
         print(f"Error in delete_task: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'status': 'error', 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/upload_document/<client_id>', methods=['POST'])
 @login_required
