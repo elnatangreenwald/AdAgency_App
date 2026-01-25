@@ -6145,6 +6145,31 @@ def admin_dashboard():
 
 # ========== Time Tracking API Endpoints ==========
 
+def _enrich_time_tracking_session(session):
+    """מוסיף ל-session שמות לקוח/פרויקט/משימה ו-elapsed_seconds (לפי start_time)."""
+    if not session:
+        return
+    clients = load_data()
+    clients_dict = {c['id']: c for c in clients}
+    client = clients_dict.get(session.get('client_id'), {})
+    session['client_name'] = client.get('name', 'לא ידוע')
+    project = None
+    task = None
+    for p in client.get('projects', []):
+        if p.get('id') == session.get('project_id'):
+            project = p
+            for t in p.get('tasks', []):
+                if t.get('id') == session.get('task_id'):
+                    task = t
+                    break
+            break
+    session['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
+    session['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+    if session.get('start_time'):
+        start = datetime.fromisoformat(session['start_time'])
+        session['elapsed_seconds'] = int((datetime.now() - start).total_seconds())
+
+
 @app.route('/api/time_tracking/start', methods=['POST'])
 @login_required
 @csrf.exempt
@@ -6164,7 +6189,8 @@ def api_time_tracking_start():
         
         # בדיקה אם יש מדידה פעילה למשתמש זה
         if user_id in time_data.get('active_sessions', {}):
-            active_session = time_data['active_sessions'][user_id]
+            active_session = time_data['active_sessions'][user_id].copy()
+            _enrich_time_tracking_session(active_session)
             return jsonify({
                 'success': False,
                 'error': 'יש מדידה פעילה אחרת',
@@ -6282,11 +6308,9 @@ def api_time_tracking_active():
         time_data = load_time_tracking()
         
         active_session = time_data.get('active_sessions', {}).get(user_id)
-        
         if active_session:
-            start_time = datetime.fromisoformat(active_session['start_time'])
-            elapsed_seconds = (datetime.now() - start_time).total_seconds()
-            active_session['elapsed_seconds'] = int(elapsed_seconds)
+            active_session = dict(active_session)
+            _enrich_time_tracking_session(active_session)
         
         return jsonify({
             'success': True,

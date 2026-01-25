@@ -29,6 +29,9 @@ interface ActiveSession {
   task_id: string;
   start_time: string;
   elapsed_seconds?: number;
+  client_name?: string;
+  project_title?: string;
+  task_title?: string;
 }
 
 export function TimeTracker({ clientId, projectId, taskId, compact = false, onStop }: TimeTrackerProps) {
@@ -39,6 +42,8 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
   const [reminderShown, setReminderShown] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictSession, setConflictSession] = useState<ActiveSession | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const reminderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
@@ -139,11 +144,11 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
       });
 
       if (response.data.success) {
-        // איפוס תזכורת כשמתחילה מדידה חדשה
+        setShowConflictModal(false);
+        setConflictSession(null);
         setReminderShown(false);
         setShowReminder(false);
         reminderShownRef.current = false;
-        
         setActiveSession(response.data.session);
         setElapsedSeconds(0);
         toast({
@@ -153,11 +158,10 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
         });
       } else {
         if (response.data.active_session) {
-          toast({
-            title: 'יש מדידה פעילה אחרת',
-            description: 'עצור את המדידה הקודמת לפני התחלת מדידה חדשה',
-            variant: 'destructive',
-          });
+          const as = response.data.active_session;
+          setConflictSession(as);
+          setShowConflictModal(true);
+          window.dispatchEvent(new CustomEvent('time-tracking:active-session', { detail: { active_session: as } }));
         } else {
           toast({
             title: 'שגיאה',
@@ -168,11 +172,20 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
       }
     } catch (error: any) {
       console.error('Error starting time tracking:', error);
-      toast({
-        title: 'שגיאה',
-        description: error.response?.data?.error || 'שגיאה בהתחלת מדידת זמן',
-        variant: 'destructive',
-      });
+      const status = error.response?.status;
+      const data = error.response?.data;
+      if (status === 400 && data?.active_session) {
+        const as = data.active_session;
+        setConflictSession(as);
+        setShowConflictModal(true);
+        window.dispatchEvent(new CustomEvent('time-tracking:active-session', { detail: { active_session: as } }));
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: data?.error || 'שגיאה בהתחלת מדידת זמן',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -284,7 +297,63 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
     await handleCancel();
   };
 
+  const handleContinueCurrent = () => {
+    setShowConflictModal(false);
+    setConflictSession(null);
+  };
+
+  const handleStopAndStartNew = async () => {
+    setLoading(true);
+    try {
+      const stopRes = await apiClient.post('/api/time_tracking/stop', { note: '' });
+      if (!stopRes.data.success) {
+        toast({
+          title: 'שגיאה',
+          description: stopRes.data.error || 'שגיאה בעצירת המדידה',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const startRes = await apiClient.post('/api/time_tracking/start', {
+        client_id: clientId,
+        project_id: projectId,
+        task_id: taskId,
+      });
+      if (startRes.data.success) {
+        setShowConflictModal(false);
+        setConflictSession(null);
+        setActiveSession(startRes.data.session);
+        setElapsedSeconds(0);
+        toast({
+          title: 'מדידת זמן התחילה',
+          description: 'המדידה הקודמת נעצרה ומדידה חדשה החלה',
+          variant: 'success',
+        });
+        onStop?.();
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: startRes.data.error || 'שגיאה בהתחלת מדידה חדשה',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'שגיאה',
+        description: err.response?.data?.error || 'שגיאה בעת מעבר למדידה חדשה',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isActive = activeSession && activeSession.task_id === taskId;
+
+  const conflictLabel = conflictSession
+    ? `${conflictSession.client_name ?? 'לא ידוע'} › ${conflictSession.project_title ?? 'לא ידוע'} › ${conflictSession.task_title ?? 'לא ידוע'}`
+    : '';
+  const conflictElapsed = conflictSession?.elapsed_seconds ?? 0;
 
   if (compact) {
     return (
@@ -365,6 +434,40 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
                 className="text-gray-600"
               >
                 בטל (ללא שמירה)
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Conflict Modal - מדידה פעילה קיימת */}
+        <Dialog open={showConflictModal} onOpenChange={(open) => !open && handleContinueCurrent()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-right">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                יש מדידה פעילה
+              </DialogTitle>
+              <DialogDescription className="text-right">
+                כרגע רצה מדידה עבור:
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-3 text-right">
+              <p className="font-medium text-[#292f4c]">{conflictLabel}</p>
+              <p className="text-sm text-gray-500">
+                זמן מצטבר: <span className="font-mono font-bold text-[#0073ea]">{formatTime(conflictElapsed)}</span>
+              </p>
+            </div>
+            <DialogFooter className="flex-row-reverse gap-2 flex-wrap">
+              <Button variant="outline" onClick={handleContinueCurrent}>
+                המשך במדידה הנוכחית
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleStopAndStartNew}
+                disabled={loading}
+              >
+                <Square className="w-4 h-4 ml-2" />
+                עצור מדידה זאת והתחל מדידה חדשה
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -493,6 +596,40 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
               className="text-gray-600"
             >
               בטל (ללא שמירה)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Conflict Modal - מדידה פעילה קיימת */}
+      <Dialog open={showConflictModal} onOpenChange={(open) => !open && handleContinueCurrent()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-right">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              יש מדידה פעילה
+            </DialogTitle>
+            <DialogDescription className="text-right">
+              כרגע רצה מדידה עבור:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3 text-right">
+            <p className="font-medium text-[#292f4c]">{conflictLabel}</p>
+            <p className="text-sm text-gray-500">
+              זמן מצטבר: <span className="font-mono font-bold text-[#0073ea]">{formatTime(conflictElapsed)}</span>
+            </p>
+          </div>
+          <DialogFooter className="flex-row-reverse gap-2 flex-wrap">
+            <Button variant="outline" onClick={handleContinueCurrent}>
+              המשך במדידה הנוכחית
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleStopAndStartNew}
+              disabled={loading}
+            >
+              <Square className="w-4 h-4 ml-2" />
+              עצור מדידה זאת והתחל מדידה חדשה
             </Button>
           </DialogFooter>
         </DialogContent>

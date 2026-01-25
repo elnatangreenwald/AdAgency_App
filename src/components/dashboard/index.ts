@@ -6,3 +6,4 @@
 export { QuickActions } from './QuickActions';
 export { ClientsGrid } from './ClientsGrid';
 export { CalendarWidget } from './CalendarWidget';
+export { TimeTrackingIndicator } from './TimeTrackingIndicator';

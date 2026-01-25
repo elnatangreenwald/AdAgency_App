@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api';
 import ChatWidget from '@/components/ChatWidget';
+import { TimeTrackingIndicator } from '@/components/dashboard/TimeTrackingIndicator';
 import { Menu, X } from 'lucide-react';
 
 export function Layout() {
@@ -96,6 +97,9 @@ export function Layout() {
       {/* Main Content */}
       <main className="min-h-screen pt-16 lg:pt-0 lg:pr-[260px]">
         <div className="p-4 sm:p-6 lg:p-10">
+          <div className="mb-4">
+            <TimeTrackingIndicator />
+          </div>
           <Outlet />
         </div>
       </main>
