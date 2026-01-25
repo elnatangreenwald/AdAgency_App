@@ -228,6 +228,7 @@
 - **ביטול ללא שמירה**: `cancel` מוחק את ה-session ולא יוצר `entry`.
 - **שמות**: `client_name`, `project_title`, `task_title` מחושבים ב-entries/report מתוך `load_data()` ו-`load_users()` — לא נשמרים ב-session או ב-entry גולמי.
 - **התאמה ל-API**: ה-Frontend שולח JSON; ה-routes ב-`app.py` תומכים ב-JSON ו-form. ה-Blueprint ב-`time_tracking.py` כרגע עובד עם form — אם מחליפים ל-Blueprint בלבד, יש לוודא תאימות ל-JSON.
+- **ניקוי מדידות "תקועות"**: לפני שימוש ב-`active_sessions` (ב-`/active` ו-`/start`), מסירים אוטומטית מדידות ש־`start_time` שלהן ישן מ־**2 שעות** (`_drop_stale_active_sessions`). מונע הודעות "מדידה של שעתיים" שנשארו פעילות בשרת (דפדפן נסגר וכו').
 
 ---
 

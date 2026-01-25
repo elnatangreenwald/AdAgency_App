@@ -48,6 +48,11 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
   const reminderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
 
+  const idsMatch = (s: { task_id?: string; client_id?: string; project_id?: string }) =>
+    String(s?.task_id) === String(taskId) &&
+    String(s?.client_id) === String(clientId) &&
+    String(s?.project_id) === String(projectId);
+
   useEffect(() => {
     checkActiveSession();
     return () => {
@@ -57,8 +62,43 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
     };
   }, [clientId, projectId, taskId]);
 
+  useEffect(() => {
+    const onFocus = () => checkActiveSession();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [clientId, projectId, taskId]);
+
   // Ref לשמירת מצב התזכורת בתוך ה-interval (למניעת stale closure)
   const reminderShownRef = useRef(false);
+
+  const REMINDER_STORAGE_KEY = (id: string) => `time-tracking-reminder-shown-${id}`;
+
+  const shouldShowReminder = (session: ActiveSession, elapsed: number): boolean => {
+    if (elapsed < 3600) return false;
+    try {
+      if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(REMINDER_STORAGE_KEY(session.id))) return false;
+    } catch {
+      /* ignore */
+    }
+    return true;
+  };
+
+  const markReminderShown = (session: ActiveSession) => {
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(REMINDER_STORAGE_KEY(session.id), '1');
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const clearReminderMarker = (session: ActiveSession | null) => {
+    if (!session?.id) return;
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(REMINDER_STORAGE_KEY(session.id));
+    } catch {
+      /* ignore */
+    }
+  };
   
   // סנכרון ה-ref עם ה-state
   useEffect(() => {
@@ -66,7 +106,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
   }, [reminderShown]);
 
   useEffect(() => {
-    if (activeSession && activeSession.task_id === taskId) {
+    if (activeSession && idsMatch(activeSession)) {
       // עדכון זמן כל שנייה
       intervalRef.current = setInterval(() => {
         if (activeSession.start_time) {
@@ -75,8 +115,8 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
           const elapsed = Math.floor((now.getTime() - start.getTime()) / 1000);
           setElapsedSeconds(elapsed);
           
-          // בדיקה אם עברה שעה (3600 שניות) והתזכורת עדיין לא הוצגה
-          if (elapsed >= 3600 && !reminderShownRef.current) {
+          if (shouldShowReminder(activeSession, elapsed) && !reminderShownRef.current) {
+            markReminderShown(activeSession);
             setShowReminder(true);
             setReminderShown(true);
           }
@@ -112,12 +152,12 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
       if (response.data.success && response.data.active_session) {
         const session = response.data.active_session;
         // בדיקה אם המדידה הפעילה היא עבור המשימה הזו
-        if (session.task_id === taskId && session.client_id === clientId && session.project_id === projectId) {
+        if (idsMatch(session)) {
           setActiveSession(session);
-          if (session.elapsed_seconds) {
+          if (session.elapsed_seconds !== undefined) {
             setElapsedSeconds(session.elapsed_seconds);
-            // אם יש מדידה פעילה שעברה שעה, הצג תזכורת
-            if (session.elapsed_seconds >= 3600 && !reminderShownRef.current) {
+            if (shouldShowReminder(session, session.elapsed_seconds) && !reminderShownRef.current) {
+              markReminderShown(session);
               setShowReminder(true);
               setReminderShown(true);
               reminderShownRef.current = true;
@@ -201,6 +241,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
       });
 
       if (response.data.success) {
+        clearReminderMarker(activeSession);
         setActiveSession(null);
         setElapsedSeconds(0);
         setNote('');
@@ -263,6 +304,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
     try {
       const response = await apiClient.post('/api/time_tracking/cancel');
       if (response.data.success) {
+        clearReminderMarker(activeSession);
         setActiveSession(null);
         setElapsedSeconds(0);
         setShowReminder(false);
@@ -314,6 +356,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
         });
         return;
       }
+      clearReminderMarker(conflictSession);
       const startRes = await apiClient.post('/api/time_tracking/start', {
         client_id: clientId,
         project_id: projectId,
@@ -348,7 +391,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
     }
   };
 
-  const isActive = activeSession && activeSession.task_id === taskId;
+  const isActive = activeSession && idsMatch(activeSession);
 
   const conflictLabel = conflictSession
     ? `${conflictSession.client_name ?? 'לא ידוע'} › ${conflictSession.project_title ?? 'לא ידוע'} › ${conflictSession.task_title ?? 'לא ידוע'}`

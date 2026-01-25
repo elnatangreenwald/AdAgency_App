@@ -6145,6 +6145,25 @@ def admin_dashboard():
 
 # ========== Time Tracking API Endpoints ==========
 
+STALE_SESSION_HOURS = 2  # מדידות שלא נעצרו (דפדפן נסגר וכו') – מנוקות אחרי 2 שעות
+
+def _drop_stale_active_sessions(time_data):
+    """מסיר מדידות פעילות ישנות (למשל לא נעצרו – דפדפן נסגר). מונע 'מדידה של שעתיים' תמידית."""
+    changed = False
+    now = datetime.now()
+    sessions = time_data.get('active_sessions', {})
+    for user_id, sess in list(sessions.items()):
+        try:
+            start = datetime.fromisoformat(sess.get('start_time', '') or '')
+            if (now - start).total_seconds() > STALE_SESSION_HOURS * 3600:
+                del sessions[user_id]
+                changed = True
+        except Exception:
+            pass
+    if changed:
+        save_time_tracking(time_data)
+
+
 def _enrich_time_tracking_session(session):
     """מוסיף ל-session שמות לקוח/פרויקט/משימה ו-elapsed_seconds (לפי start_time)."""
     if not session:
@@ -6186,6 +6205,7 @@ def api_time_tracking_start():
             return jsonify({'success': False, 'error': 'חסרים פרמטרים נדרשים'}), 400
         
         time_data = load_time_tracking()
+        _drop_stale_active_sessions(time_data)
         
         # בדיקה אם יש מדידה פעילה למשתמש זה
         if user_id in time_data.get('active_sessions', {}):
@@ -6306,6 +6326,7 @@ def api_time_tracking_active():
     try:
         user_id = current_user.id
         time_data = load_time_tracking()
+        _drop_stale_active_sessions(time_data)
         
         active_session = time_data.get('active_sessions', {}).get(user_id)
         if active_session:
