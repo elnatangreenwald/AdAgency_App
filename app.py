@@ -6155,7 +6155,7 @@ def _drop_stale_active_sessions(time_data):
     for user_id, sess in list(sessions.items()):
         try:
             start = datetime.fromisoformat(sess.get('start_time', '') or '')
-            if (now - start).total_seconds() > STALE_SESSION_HOURS * 3600:
+            if (now - start).total_seconds() >= STALE_SESSION_HOURS * 3600:
                 del sessions[user_id]
                 changed = True
         except Exception:

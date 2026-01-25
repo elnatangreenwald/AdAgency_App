@@ -75,6 +75,8 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
 
   const shouldShowReminder = (session: ActiveSession, elapsed: number): boolean => {
     if (elapsed < 3600) return false;
+    /* אל תציג תזכורת למדידות שכבר רצות 2h+ בטעינה – כנראה "תקועות", מונע "שעתיים" קבוע */
+    if (elapsed >= 7200) return false;
     try {
       if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(REMINDER_STORAGE_KEY(session.id))) return false;
     } catch {
