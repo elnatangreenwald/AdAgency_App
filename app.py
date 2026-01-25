@@ -44,7 +44,7 @@ if USE_DATABASE:
         load_messages, save_messages, load_events, save_events,
         load_equipment_bank, save_equipment_bank,
         load_checklist_templates, save_checklist_templates,
-        load_forms, save_forms
+        load_forms, save_forms, delete_user_record
     )
 
 app = Flask(__name__)
@@ -5144,26 +5144,32 @@ def manage_users():
                 return jsonify({'success': True, 'message': 'הרשאה עודכנה בהצלחה'})
         elif action == 'delete_user':
             user_id = request.form.get('user_id')
-            # לא למחוק את admin
-            if user_id and user_id in users and user_id != 'admin':
-                user_name = users[user_id].get('name', user_id)
-                # הסרת המשתמש מרשימת המשתמשים
-                del users[user_id]
-                save_users(users)
-                
-                # הסרת המשתמש מכל השיוכים של לקוחות
-                for c in clients:
-                    if 'assigned_user' in c:
-                        if isinstance(c['assigned_user'], list):
-                            if user_id in c['assigned_user']:
-                                c['assigned_user'] = [uid for uid in c['assigned_user'] if uid != user_id]
-                        elif c['assigned_user'] == user_id:
-                            c['assigned_user'] = []
-                save_data(clients)
-                
-                flash(f'המשתמש "{user_name}" נמחק בהצלחה', 'success')
-            else:
+            if not user_id or user_id == 'admin' or user_id not in users:
                 flash('לא ניתן למחוק משתמש זה', 'error')
+            else:
+                user_name = users[user_id].get('name', user_id)
+                deleted = False
+                if USE_DATABASE:
+                    deleted = delete_user_record(user_id)
+                    if deleted:
+                        users.pop(user_id, None)
+                else:
+                    deleted = True
+                    users.pop(user_id, None)
+                    save_users(users)
+
+                if deleted:
+                    for c in clients:
+                        if 'assigned_user' in c:
+                            if isinstance(c['assigned_user'], list):
+                                if user_id in c['assigned_user']:
+                                    c['assigned_user'] = [uid for uid in c['assigned_user'] if uid != user_id]
+                            elif c['assigned_user'] == user_id:
+                                c['assigned_user'] = []
+                    save_data(clients)
+                    flash(f'המשתמש "{user_name}" נמחק בהצלחה', 'success')
+                else:
+                    flash('לא ניתן למחוק משתמש זה', 'error')
         elif action == 'assign':
             user_ids = request.form.getlist('user_ids')  # מקבל רשימת משתמשים
             cid = request.form.get('client_id')

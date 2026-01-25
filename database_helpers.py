@@ -97,6 +97,19 @@ def save_users(users):
     finally:
         db.close()
 
+def delete_user_record(user_id):
+    """Delete a user record from the database."""
+    db = get_db()
+    try:
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            return False
+        db.delete(user)
+        db.commit()
+        return True
+    finally:
+        db.close()
+
 def load_data():
     """Load clients data from database"""
     db = get_db()
