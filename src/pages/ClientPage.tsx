@@ -37,6 +37,7 @@ import {
   FileText,
   Clock,
   Users,
+  Bell,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -54,6 +55,7 @@ interface Task {
   estimated_hours?: number;
   dependencies?: string[];
   manager_note?: string;
+  created_by?: string;
 }
 
 interface Project {
@@ -222,11 +224,8 @@ export function ClientPage() {
       if (response.data.success) {
         setClient(response.data.client);
         setRetainerAmount(response.data.client.retainer?.toString() || '0');
-        // Expand all projects by default
-        const allProjectIds = new Set<string>(
-          response.data.client.projects?.map((p: Project) => p.id) || []
-        );
-        setExpandedProjects(allProjectIds);
+        // Projects are collapsed by default - no need to expand them
+        setExpandedProjects(new Set<string>());
       }
     } catch (error: any) {
       console.error('Error fetching client:', error);
@@ -1047,6 +1046,87 @@ export function ClientPage() {
   const isAdminOrManager =
     currentUser?.id === 'admin' || ['מנהל', 'אדמין'].includes(userRole);
 
+  // Check if a project has new tasks from other users (created in last 24 hours)
+  const hasNewTasksFromOthers = (project: Project): boolean => {
+    if (!project.tasks || project.tasks.length === 0) return false;
+    
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    return project.tasks.some((task) => {
+      // Check if task was created by someone else
+      if (task.created_by && task.created_by !== currentUser?.id) {
+        // Check if created within last 24 hours
+        if (task.created_date) {
+          try {
+            // Handle different date formats
+            let taskDate: Date;
+            if (task.created_date.includes('/')) {
+              // Format: dd/mm/yy or dd/mm/yyyy
+              const parts = task.created_date.split(' ')[0].split('/');
+              if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                let year = parseInt(parts[2], 10);
+                if (year < 100) year += 2000;
+                taskDate = new Date(year, month, day);
+              } else {
+                return false;
+              }
+            } else if (task.created_date.includes('-')) {
+              // Format: yyyy-mm-dd
+              taskDate = new Date(task.created_date);
+            } else {
+              return false;
+            }
+            return taskDate >= oneDayAgo;
+          } catch {
+            return false;
+          }
+        }
+      }
+      return false;
+    });
+  };
+
+  // Count new tasks from others in a project
+  const countNewTasksFromOthers = (project: Project): number => {
+    if (!project.tasks || project.tasks.length === 0) return 0;
+    
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    return project.tasks.filter((task) => {
+      if (task.created_by && task.created_by !== currentUser?.id) {
+        if (task.created_date) {
+          try {
+            let taskDate: Date;
+            if (task.created_date.includes('/')) {
+              const parts = task.created_date.split(' ')[0].split('/');
+              if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                let year = parseInt(parts[2], 10);
+                if (year < 100) year += 2000;
+                taskDate = new Date(year, month, day);
+              } else {
+                return false;
+              }
+            } else if (task.created_date.includes('-')) {
+              taskDate = new Date(task.created_date);
+            } else {
+              return false;
+            }
+            return taskDate >= oneDayAgo;
+          } catch {
+            return false;
+          }
+        }
+      }
+      return false;
+    }).length;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -1212,15 +1292,24 @@ export function ClientPage() {
                       onClick={() => handleToggleProject(project.id)}
                     >
                       {expandedProjects.has(project.id) ? (
-                        <ChevronDown className="w-5 h-5 text-gray-600" />
-                      ) : (
                         <ChevronUp className="w-5 h-5 text-gray-600" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-600" />
                       )}
                       <h3 className="text-xl font-bold text-[#3d817a] flex items-center gap-2">
                         {project.title}
                         {project.project_number && (
                           <span className="text-sm text-gray-500 font-normal font-mono">
                             #{project.project_number}
+                          </span>
+                        )}
+                        {/* New tasks notification badge */}
+                        {hasNewTasksFromOthers(project) && (
+                          <span className="relative flex items-center">
+                            <Bell className="w-5 h-5 text-orange-500 animate-pulse" />
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                              {countNewTasksFromOthers(project)}
+                            </span>
                           </span>
                         )}
                       </h3>
@@ -1250,10 +1339,39 @@ export function ClientPage() {
                       {/* Tasks List */}
                       {project.tasks && project.tasks.length > 0 && (
                         <div className="space-y-2">
-                          {project.tasks.map((task) => (
+                          {project.tasks.map((task) => {
+                            // Check if this is a new task from another user
+                            const isNewFromOther = (() => {
+                              if (task.created_by && task.created_by !== currentUser?.id && task.created_date) {
+                                try {
+                                  const now = new Date();
+                                  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                                  let taskDate: Date;
+                                  if (task.created_date.includes('/')) {
+                                    const parts = task.created_date.split(' ')[0].split('/');
+                                    if (parts.length === 3) {
+                                      const day = parseInt(parts[0], 10);
+                                      const month = parseInt(parts[1], 10) - 1;
+                                      let year = parseInt(parts[2], 10);
+                                      if (year < 100) year += 2000;
+                                      taskDate = new Date(year, month, day);
+                                    } else return false;
+                                  } else if (task.created_date.includes('-')) {
+                                    taskDate = new Date(task.created_date);
+                                  } else return false;
+                                  return taskDate >= oneDayAgo;
+                                } catch { return false; }
+                              }
+                              return false;
+                            })();
+                            
+                            return (
                             <div
                               key={task.id}
-                              className="bg-white p-4 rounded-lg border-r-4 flex items-center gap-4 flex-wrap"
+                              className={cn(
+                                "bg-white p-4 rounded-lg border-r-4 flex items-center gap-4 flex-wrap",
+                                isNewFromOther && "ring-2 ring-orange-400 ring-offset-2 bg-orange-50"
+                              )}
                               style={{
                                 borderRightColor: getPriorityColor(task.priority),
                               }}
@@ -1261,6 +1379,12 @@ export function ClientPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <div className="font-bold text-[#292f4c]">{task.title}</div>
+                                  {isNewFromOther && (
+                                    <span className="px-2 py-1 rounded-full text-xs font-bold text-white bg-orange-500 flex items-center gap-1">
+                                      <Bell className="w-3 h-3" />
+                                      חדש
+                                    </span>
+                                  )}
                                   {task.priority && ['high', 'urgent'].includes(task.priority) && (
                                     <span
                                       className="px-2 py-1 rounded-full text-xs font-bold text-white"
@@ -1342,7 +1466,8 @@ export function ClientPage() {
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
