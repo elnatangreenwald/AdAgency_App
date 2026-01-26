@@ -15,6 +15,7 @@ export interface Task {
   deadline?: string;
   assigned_user?: string | string[];
   assignee?: string;
+  created_by?: string;  // NEW: Track who created the task
   note?: string;
   notes?: string;
   manager_note?: string;
@@ -225,6 +226,24 @@ export interface Quote {
 }
 
 export type QuoteStatus = 'ממתין' | 'אושר' | 'נדחה' | 'פג תוקף';
+
+// ============ Notification Types ============
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'task_assigned' | 'task_updated' | 'task_completed' | 'general';
+  task_id?: string;
+  client_id?: string;
+  project_id?: string;
+  from_user_id?: string;
+  from_user_name?: string;
+  task_title?: string;
+  client_name?: string;
+  message: string;
+  created_at: string;
+  read: boolean;
+  read_at?: string;
+}
 
 // ============ Message/Chat Types ============
 export interface Message {

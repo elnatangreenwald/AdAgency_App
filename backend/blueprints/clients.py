@@ -17,6 +17,7 @@ from backend.utils.helpers import (
     get_next_task_number, get_next_charge_number, get_next_workday
 )
 from backend.utils.permissions import get_user_role, can_user_access_client, is_manager_or_admin
+from backend.utils.notifications import create_notification
 
 # Create blueprint
 clients_bp = Blueprint('clients', __name__)
@@ -171,6 +172,7 @@ def add_task(client_id, project_id):
     """Add task to project"""
     try:
         data = load_data()
+        users = load_users()
         client = next((c for c in data if c['id'] == client_id), None)
         
         if not client:
@@ -188,11 +190,15 @@ def add_task(client_id, project_id):
         if 'tasks' not in project:
             project['tasks'] = []
         
-        # Handle assigned users
+        # Handle assigned users - support both 'assigned_user' and 'assigned_to'
         assigned_users = request.form.getlist('assigned_user')
         if not assigned_users:
-            assigned_user = request.form.get('assigned_user', '')
+            assigned_user = request.form.get('assigned_user', '') or request.form.get('assigned_to', '')
             assigned_users = [assigned_user] if assigned_user else []
+        
+        # If no assignee specified, assign to current user
+        if not assigned_users or (len(assigned_users) == 1 and not assigned_users[0]):
+            assigned_users = [current_user.id]
         
         # Get due date
         due_date = request.form.get('due_date', '')
@@ -201,6 +207,10 @@ def add_task(client_id, project_id):
         
         # Check if recurring (daily) task
         is_recurring = request.form.get('is_recurring') == 'on' or request.form.get('is_recurring') == 'true'
+        
+        # Get creator info
+        created_by = current_user.id
+        creator_name = users.get(created_by, {}).get('name', created_by)
         
         new_task = {
             'id': str(uuid.uuid4()),
@@ -211,6 +221,7 @@ def add_task(client_id, project_id):
             'priority': request.form.get('priority', 'רגילה'),
             'due_date': due_date,
             'assigned_user': assigned_users,
+            'created_by': created_by,  # NEW: Track who created the task
             'notes': '',
             'is_recurring': is_recurring,
             'created_at': datetime.now().isoformat()
@@ -218,6 +229,23 @@ def add_task(client_id, project_id):
         
         project['tasks'].append(new_task)
         save_data(data)
+        
+        # Create notification if assigned to someone else
+        for assigned_user_id in assigned_users:
+            if assigned_user_id and assigned_user_id != created_by:
+                create_notification(
+                    user_id=assigned_user_id,
+                    notification_type='task_assigned',
+                    data={
+                        'task_id': new_task['id'],
+                        'client_id': client_id,
+                        'project_id': project_id,
+                        'from_user_id': created_by,
+                        'from_user_name': creator_name,
+                        'task_title': title,
+                        'client_name': client.get('name', '')
+                    }
+                )
         
         return jsonify({'success': True, 'task': new_task})
     except Exception as e:

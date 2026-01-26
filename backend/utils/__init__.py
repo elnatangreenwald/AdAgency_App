@@ -23,6 +23,13 @@ from .permissions import (
 
 from .email import send_form_email, send_password_reset_email
 
+from .notifications import (
+    load_notifications, save_notifications,
+    create_notification, get_user_notifications,
+    get_unread_count, mark_notifications_read,
+    get_new_notifications_since, delete_old_notifications
+)
+
 __all__ = [
     # Data helpers
     'load_data', 'save_data', 'load_users', 'save_users',
@@ -44,4 +51,9 @@ __all__ = [
     'get_accessible_clients',
     # Email
     'send_form_email', 'send_password_reset_email',
+    # Notifications
+    'load_notifications', 'save_notifications',
+    'create_notification', 'get_user_notifications',
+    'get_unread_count', 'mark_notifications_read',
+    'get_new_notifications_since', 'delete_old_notifications',
 ]

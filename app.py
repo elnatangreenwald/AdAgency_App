@@ -47,6 +47,9 @@ if USE_DATABASE:
         load_forms, save_forms, delete_user_record
     )
 
+# Import notifications module
+from backend.utils.notifications import create_notification
+
 app = Flask(__name__)
 # SECRET_KEY מ-environment variable (חובה בפרודקשן!)
 app.secret_key = os.environ.get('SECRET_KEY') or 'vatkin_master_final_v100_CHANGE_IN_PRODUCTION'
@@ -1094,6 +1097,108 @@ def api_sidebar_users():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+# ==================== NOTIFICATIONS API ====================
+
+from backend.utils.notifications import (
+    get_user_notifications, get_unread_count,
+    mark_notifications_read, get_new_notifications_since
+)
+
+@app.route('/api/notifications')
+@login_required
+def api_get_notifications():
+    """Get notifications for the current user"""
+    try:
+        unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+        limit = int(request.args.get('limit', 50))
+        
+        notifications = get_user_notifications(
+            current_user.id, 
+            unread_only=unread_only,
+            limit=limit
+        )
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications
+        })
+    except Exception as e:
+        print(f"Error in api_get_notifications: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/notifications/unread-count')
+@login_required
+@limiter.exempt
+def api_unread_notifications_count():
+    """Get count of unread notifications for the current user"""
+    try:
+        count = get_unread_count(current_user.id)
+        
+        return jsonify({
+            'success': True,
+            'count': count
+        })
+    except Exception as e:
+        print(f"Error in api_unread_notifications_count: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/notifications/new')
+@login_required
+@limiter.exempt
+def api_new_notifications():
+    """Get new notifications since a timestamp (for polling)"""
+    try:
+        since = request.args.get('since', '')
+        
+        if not since:
+            # If no timestamp provided, return unread notifications
+            notifications = get_user_notifications(
+                current_user.id, 
+                unread_only=True,
+                limit=10
+            )
+        else:
+            notifications = get_new_notifications_since(current_user.id, since)
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications,
+            'count': len(notifications)
+        })
+    except Exception as e:
+        print(f"Error in api_new_notifications: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/notifications/mark-read', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_mark_notifications_read():
+    """Mark notifications as read"""
+    try:
+        data = request.get_json() if request.is_json else {}
+        notification_ids = data.get('notification_ids', [])
+        mark_all = data.get('mark_all', False)
+        
+        if mark_all:
+            count = mark_notifications_read('all', user_id=current_user.id)
+        elif notification_ids:
+            count = mark_notifications_read(notification_ids)
+        else:
+            return jsonify({'success': False, 'error': 'No notifications specified'}), 400
+        
+        return jsonify({
+            'success': True,
+            'marked_count': count
+        })
+    except Exception as e:
+        print(f"Error in api_mark_notifications_read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/clients')
 @login_required
 def api_clients():
@@ -1259,6 +1364,7 @@ def quick_add_task():
             task_note = data_json.get('task_note', '')
             task_deadline = data_json.get('task_deadline', '')
             is_daily_task = data_json.get('is_daily_task', False)
+            assigned_to = data_json.get('assigned_to', '')  # NEW: Support task assignment
         else:
             client_id = request.form.get('client_id')
             project_id = request.form.get('project_id')
@@ -1267,6 +1373,7 @@ def quick_add_task():
             task_note = request.form.get('task_note', '')
             task_deadline = request.form.get('task_deadline', '')
             is_daily_task = request.form.get('is_daily_task', 'false').lower() == 'true'
+            assigned_to = request.form.get('assigned_to', '')  # NEW: Support task assignment
         
         if not client_id or not project_id or not task_title:
             wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
@@ -1274,6 +1381,15 @@ def quick_add_task():
             if wants_json:
                 return jsonify({'success': False, 'error': 'חסרים פרמטרים נדרשים'}), 400
             return redirect(url_for('home'))
+        
+        # Load users for notification
+        users = load_users()
+        created_by = current_user.id
+        creator_name = users.get(created_by, {}).get('name', created_by)
+        
+        # If no assignee specified, assign to current user
+        if not assigned_to:
+            assigned_to = created_by
         
         data = load_data()
         for c in data:
@@ -1287,6 +1403,8 @@ def quick_add_task():
                             'note': task_note,
                             'created_date': datetime.now().strftime('%Y-%m-%d'),
                             'created_at': datetime.now().isoformat(),
+                            'created_by': created_by,  # NEW: Track who created the task
+                            'assigned_user': [assigned_to] if assigned_to else [created_by],  # NEW: Track assignee
                             'done': False
                         }
                         # הוסף deadline אם קיים
@@ -1309,6 +1427,22 @@ def quick_add_task():
                         task['task_number'] = task_number
                         p.setdefault('tasks', []).append(task)
                         save_data(data)
+                        
+                        # NEW: Create notification if assigned to someone else
+                        if assigned_to and assigned_to != created_by:
+                            create_notification(
+                                user_id=assigned_to,
+                                notification_type='task_assigned',
+                                data={
+                                    'task_id': task['id'],
+                                    'client_id': client_id,
+                                    'project_id': project_id,
+                                    'from_user_id': created_by,
+                                    'from_user_name': creator_name,
+                                    'task_title': task_title,
+                                    'client_name': c.get('name', '')
+                                }
+                            )
                         
                         # בדיקה אם זה AJAX request
                         wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \

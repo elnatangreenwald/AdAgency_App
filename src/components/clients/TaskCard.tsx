@@ -92,6 +92,11 @@ export function TaskCard({
 
   const assignedUser = task.assignee || (Array.isArray(task.assigned_user) ? task.assigned_user[0] : task.assigned_user);
   const assignedUserName = users.find((u) => u.id === assignedUser)?.name || assignedUser || '';
+  
+  // Check if task was created by someone else
+  const createdByUser = task.created_by;
+  const createdByName = createdByUser ? users.find((u) => u.id === createdByUser)?.name : null;
+  const wasAssignedByOther = createdByUser && createdByUser !== assignedUser && createdByName;
 
   return (
     <div
@@ -120,11 +125,18 @@ export function TaskCard({
             <div className={cn('font-medium truncate', task.status === 'הושלם' && 'line-through')}>
               {task.title}
             </div>
-            {assignedUserName && (
-              <div className="text-xs text-gray-500 mt-0.5">
-                👤 {assignedUserName}
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+              {assignedUserName && (
+                <span className="text-xs text-gray-500">
+                  👤 {assignedUserName}
+                </span>
+              )}
+              {wasAssignedByOther && (
+                <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                  נפתחה ע"י: {createdByName}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

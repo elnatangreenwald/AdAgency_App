@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api';
 import ChatWidget from '@/components/ChatWidget';
 import { TimeTrackingIndicator } from '@/components/dashboard/TimeTrackingIndicator';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Menu, X } from 'lucide-react';
 
 export function Layout() {
@@ -70,7 +71,14 @@ export function Layout() {
           alt="Vatkin Logo" 
           className="h-10 rounded-lg bg-white p-1"
         />
-        <div className="w-10" /> {/* Spacer for centering */}
+        <NotificationBell />
+      </div>
+
+      {/* Desktop Notification Bell */}
+      <div className="hidden lg:block fixed top-4 left-4 z-[1001]">
+        <div className="bg-[#043841] rounded-full shadow-lg">
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Mobile Overlay */}

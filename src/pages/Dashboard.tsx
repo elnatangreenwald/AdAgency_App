@@ -74,7 +74,11 @@ export function Dashboard() {
     task_deadline: '',
     task_note: '',
     is_daily_task: false,
+    assigned_to: '',  // NEW: Task assignment
   });
+
+  // Users for task assignment
+  const [users, setUsers] = useState<{id: string; name: string}[]>([]);
 
   const [chargeForm, setChargeForm] = useState({
     charge_title: '',
@@ -95,6 +99,7 @@ export function Dashboard() {
   useEffect(() => {
     fetchClients();
     fetchCalendarTasks();
+    fetchUsers();
   }, []);
 
   const fetchClients = async () => {
@@ -106,6 +111,26 @@ export function Dashboard() {
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await apiClient.get('/api/sidebar_users');
+      if (response.data.success) {
+        if (response.data.users) {
+          setUsers(response.data.users);
+        } else if (response.data.users_dict) {
+          // Convert dict to array
+          const usersArray = Object.entries(response.data.users_dict).map(([id, info]: [string, any]) => ({
+            id,
+            name: info.name
+          }));
+          setUsers(usersArray);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
     }
   };
 
@@ -218,6 +243,10 @@ export function Dashboard() {
       if (taskForm.is_daily_task) {
         formData.append('is_daily_task', 'true');
       }
+      // NEW: Send assigned_to for task assignment
+      if (taskForm.assigned_to) {
+        formData.append('assigned_to', taskForm.assigned_to);
+      }
 
       const response = await apiClient.post('/quick_add_task', formData, {
         headers: {
@@ -239,6 +268,7 @@ export function Dashboard() {
           task_deadline: '',
           task_note: '',
           is_daily_task: false,
+          assigned_to: '',
         });
         setSelectedClientId('');
         setSelectedProjectId('');
@@ -561,6 +591,28 @@ export function Dashboard() {
                   <SelectItem value="הועבר לדיגיטל">הועבר לדיגיטל</SelectItem>
                   <SelectItem value="נשלח ללקוח">נשלח ללקוח</SelectItem>
                   <SelectItem value="הושלם">הושלם</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>שייך ל:</Label>
+              <Select
+                value={taskForm.assigned_to || '_self'}
+                onValueChange={(value) =>
+                  setTaskForm({ ...taskForm, assigned_to: value === '_self' ? '' : value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="לי (ברירת מחדל)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_self">לי (ברירת מחדל)</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
