@@ -1019,7 +1019,9 @@
         "calculated_total": 0,
         "calculated_open_charges": 0,
         "calculated_monthly_revenue": 0,
-        "client_number": 30
+        "client_number": 30,
+        "archived": true,
+        "archived_at": "2026-01-27T22:40:34.661027"
     },
     {
         "id": "ca0a4cbd-62fd-42b1-bb42-e5db54add1a5",
