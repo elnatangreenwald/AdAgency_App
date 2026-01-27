@@ -3193,23 +3193,22 @@ def delete_charge(client_id, charge_id):
 @app.route('/archive_client/<client_id>', methods=['POST'])
 @login_required
 def archive_client(client_id):
-    """מעביר לקוח לארכיון (לא מוחק אותו)"""
+    """מעביר לקוח לארכיון (לא מוחק אותו). מחזיר JSON כדי למנוע 'Pending' על ה-toggle."""
     try:
         user_role = get_user_role(current_user.id)
-        # רק מנהל ואדמין יכולים להעביר לקוח לארכיון
         if not is_manager_or_admin(current_user.id, user_role):
-            return "גישה חסומה - אין לך הרשאה לבצע פעולה זו", 403
-        
+            return jsonify({'success': False, 'error': 'גישה חסומה - אין לך הרשאה לבצע פעולה זו'}), 403
+
         data = load_data()
         for c in data:
             if c['id'] == client_id:
                 c['archived'] = True
                 c['archived_at'] = datetime.now().isoformat()
                 save_data(data)
-                return redirect(url_for('home'))
-        return "לקוח לא נמצא", 404
+                return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
-        return f"שגיאה בהעברת לקוח לארכיון: {str(e)}", 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/toggle_client_active/<client_id>', methods=['POST'])
 @login_required
