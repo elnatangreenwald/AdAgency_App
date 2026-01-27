@@ -118,7 +118,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       // Proxy all Flask routes
-      '^/(login|logout|client|all_clients|finance|events|suppliers|quotes|forms|admin|quick_update|quick_add_task|quick_add_charge|get_client_projects|update_task|add_project|add_task|add_event|upload_logo|upload_document|add_activity|delete_activity|add_contact|delete_contact|add_client|delete_document|download_doc|reset_password|archive|toggle_client_active)': {
+      '^/(login|logout|client|all_clients|finance|events|suppliers|quotes|forms|admin|quick_update|quick_add_task|quick_add_charge|get_client_projects|update_task|add_project|add_task|add_event|upload_logo|upload_document|add_activity|delete_activity|add_contact|delete_contact|add_client|delete_document|download_doc|reset_password|archive|toggle_client_active|delete_charge|update_charge_our_cost|update_finance)': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       },

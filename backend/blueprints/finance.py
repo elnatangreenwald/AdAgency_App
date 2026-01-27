@@ -11,7 +11,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
-from backend.extensions import csrf
+from backend.extensions import csrf, limiter
 from backend.utils.helpers import load_data, save_data, load_users, get_next_charge_number
 from backend.utils.permissions import get_user_role, can_user_access_client, is_manager_or_admin, filter_active_clients
 
@@ -164,6 +164,7 @@ def update_charge_our_cost(client_id, charge_id):
 @finance_bp.route('/delete_charge/<client_id>/<charge_id>', methods=['POST'])
 @login_required
 @csrf.exempt
+@limiter.exempt  # פטור מ-rate limiting כי זו פעולה רגילה של משתמש
 def delete_charge(client_id, charge_id):
     """Delete a charge"""
     try:

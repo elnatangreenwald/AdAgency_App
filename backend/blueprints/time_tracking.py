@@ -11,7 +11,7 @@ from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 import os
 
-from backend.extensions import csrf
+from backend.extensions import csrf, limiter
 from backend.utils.helpers import load_time_tracking, save_time_tracking, load_data, load_users
 from backend.utils.permissions import get_user_role, is_manager_or_admin
 
@@ -154,6 +154,7 @@ def api_time_tracking_cancel():
 
 @time_tracking_bp.route('/api/time_tracking/active')
 @login_required
+@limiter.exempt  # פטור מ-rate limiting כי זה נקרא הרבה פעמים (auto-refresh)
 def api_time_tracking_active():
     """Get active time tracking session for current user"""
     try:
