@@ -6453,6 +6453,7 @@ def api_time_tracking_cancel():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/time_tracking/active', methods=['GET'])
+@limiter.exempt  # פטור מ-rate limiting כי זה נקרא באופן אוטומטי כל 10 שניות
 @login_required
 @csrf.exempt
 def api_time_tracking_active():
