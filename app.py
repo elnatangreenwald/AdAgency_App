@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import uuid
+# Debug timestamp: 2026-01-27 14:33 - Force reload
 import smtplib
 import secrets
 import base64
@@ -85,8 +86,6 @@ PERMISSIONS_FILE = os.path.join(BASE_DIR, 'permissions_db.json')
 USER_ACTIVITY_FILE = os.path.join(BASE_DIR, 'user_activity.json')
 ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
 TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
-DEBUG_LOG_PATH = os.path.join(BASE_DIR, '.cursor', 'debug.log')
-
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -1476,33 +1475,6 @@ def quick_add_task():
 def quick_add_charge():
     """Route להוספת חיוב מהיר מהדשבורד"""
     try:
-        # #region agent log
-        import json as _json, time as _time
-        _log_path = r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log'
-        try:
-            with open(_log_path, 'a', encoding='utf-8') as _f:
-                _f.write(_json.dumps({
-                    'sessionId': 'debug-session',
-                    'runId': 'quick_charge-debug',
-                    'hypothesisId': 'QA1',
-                    'location': 'app.py:quick_add_charge:start',
-                    'message': 'incoming quick charge payload',
-                    'data': {
-                        'client_id': request.form.get('client_id'),
-                        'charge_title': request.form.get('charge_title'),
-                        'charge_amount': request.form.get('charge_amount'),
-                        'charge_our_cost': request.form.get('charge_our_cost'),
-                        'headers': {
-                            'Accept': request.headers.get('Accept'),
-                            'X-Requested-With': request.headers.get('X-Requested-With'),
-                        }
-                    },
-                    'timestamp': int(_time.time() * 1000)
-                }) + '\\n')
-        except Exception:
-            pass
-        # #endregion
-
         client_id = request.form.get('client_id')
         charge_title = request.form.get('charge_title')
         charge_amount = request.form.get('charge_amount')
@@ -1545,21 +1517,6 @@ def quick_add_charge():
         return redirect(url_for('home'))
     except Exception as e:
         print(f"Error in quick_add_charge: {e}")
-        import json as _json, time as _time
-        _log_path = r'c:\\Users\\Asus\\Desktop\\AdAgency_App\\.cursor\\debug.log'
-        try:
-            with open(_log_path, 'a', encoding='utf-8') as _f:
-                _f.write(_json.dumps({
-                    'sessionId': 'debug-session',
-                    'runId': 'quick_charge-debug',
-                    'hypothesisId': 'QA2',
-                    'location': 'app.py:quick_add_charge:exception',
-                    'message': 'exception details',
-                    'data': {'error': str(e)},
-                    'timestamp': int(_time.time() * 1000)
-                }) + '\\n')
-        except Exception:
-            pass
         wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                     request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if wants_json:
@@ -2708,35 +2665,48 @@ def delete_contact(client_id, contact_id):
 
 @app.route('/add_client', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def add_client():
     """הוספת לקוח חדש"""
     try:
         user_role = get_user_role(current_user.id)
         if not is_manager_or_admin(current_user.id, user_role):
-            return "גישה חסומה - רק מנהלים יכולים להוסיף לקוחות", 403
+            return jsonify({'success': False, 'error': 'גישה חסומה - רק מנהלים יכולים להוסיף לקוחות'}), 403
         
         data = load_data()
         client_number = get_next_client_number()
         
+        name = request.form.get('name', '').strip()
+        
+        if not name:
+            return jsonify({'success': False, 'error': 'שם לקוח חסר'}), 400
+        
+        # Create new client with full structure matching existing clients
         new_client = {
             'id': str(uuid.uuid4()),
-            'name': request.form.get('name', '').strip(),
+            'name': name,
             'client_number': client_number,
-            'assigned_user': [],
-            'projects': [],
-            'extra_charges': [],
             'retainer': 0,
-            'documents': [],
+            'extra_charges': [],
+            'projects': [],
+            'assigned_user': [current_user.id],  # Assign to current user
+            'files': [],
             'contacts': [],
+            'documents': [],
+            'calculated_extra': 0,
+            'calculated_retainer': 0,
+            'calculated_total': 0,
+            'calculated_open_charges': 0,
+            'calculated_monthly_revenue': 0,
             'archived': False
         }
         
         data.append(new_client)
         save_data(data)
         
-        return redirect(url_for('all_clients'))
+        return jsonify({'success': True, 'client_id': new_client['id']})
     except Exception as e:
-        return f"שגיאה בהוספת לקוח: {str(e)}", 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/delete_document/<client_id>/<doc_id>', methods=['POST'])
 @login_required

@@ -27,7 +27,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 LOGOS_FOLDER = os.path.join(BASE_DIR, 'static', 'logos')
 DOCUMENTS_FOLDER = os.path.join(BASE_DIR, 'static', 'documents')
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'client_docs')
-DEBUG_LOG_PATH = r'c:\Users\Asus\Desktop\AdAgency_App\.cursor\debug.log'
 
 
 @clients_bp.route('/api/client/<client_id>')
@@ -88,6 +87,7 @@ def add_client():
         
         # Get form data
         name = request.form.get('name', '').strip()
+        
         if not name:
             return jsonify({'success': False, 'error': 'שם לקוח חסר'}), 400
         

@@ -479,22 +479,6 @@ export function ClientPage() {
     const { clientId, projectId, taskId } = taskToDelete;
     setDeleteConfirmOpen(false);
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'initial',
-        hypothesisId: 'H1',
-        location: 'ClientPage.tsx:459',
-        message: 'handleDeleteTask request',
-        data: { clientId, projectId, taskId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
     try {
       const formData = new FormData();
       const response = await apiClient.post(
@@ -506,26 +490,6 @@ export function ClientPage() {
           },
         }
       );
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'debug-session',
-          runId: 'initial',
-          hypothesisId: 'H3',
-          location: 'ClientPage.tsx:477',
-          message: 'handleDeleteTask response',
-          data: {
-            status: response.status,
-            success: response.data?.success,
-            statusText: response.statusText,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
 
       if (response.status === 200 && response.data?.success) {
         toast({
@@ -542,26 +506,6 @@ export function ClientPage() {
         });
       }
     } catch (error: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'debug-session',
-          runId: 'initial',
-          hypothesisId: 'H3',
-          location: 'ClientPage.tsx:489',
-          message: 'handleDeleteTask error',
-          data: {
-            message: error?.message,
-            status: error?.response?.status,
-            errorData: error?.response?.data,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-
       toast({
         title: 'שגיאה',
         description: error.response?.data?.error || 'שגיאה במחיקת המשימה',

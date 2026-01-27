@@ -329,22 +329,6 @@ export function ManageUsers() {
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'initial',
-        hypothesisId: 'H2',
-        location: 'ManageUsers.tsx:330',
-        message: 'handleDeleteUser request',
-        data: { userId: selectedUser.id },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
     try {
       const formData = new FormData();
       formData.append('action', 'delete_user');
@@ -355,26 +339,6 @@ export function ManageUsers() {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
-
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/a8c0c01a-2bea-45d6-8086-e4f9c7116109', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'debug-session',
-          runId: 'initial',
-          hypothesisId: 'H2',
-          location: 'ManageUsers.tsx:337',
-          message: 'handleDeleteUser response',
-          data: {
-            status: response.status,
-            statusText: response.statusText,
-            statusSuccess: response.data?.success,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
 
       if (response.status === 200) {
         toast({

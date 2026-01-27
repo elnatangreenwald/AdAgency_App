@@ -86,10 +86,10 @@ export function AllClients() {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('name', newClientName);
+      const params = new URLSearchParams();
+      params.append('name', newClientName);
 
-      const response = await apiClient.post('/add_client', formData, {
+      const response = await apiClient.post('/add_client', params.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
