@@ -7,7 +7,7 @@ import smtplib
 import secrets
 import base64
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory, send_file, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
@@ -6253,14 +6253,32 @@ def admin_dashboard():
 
 STALE_SESSION_HOURS = 2  # מדידות שלא נעצרו (דפדפן נסגר וכו') – מנוקות אחרי 2 שעות
 
+def _parse_start_time(iso_str):
+    """מפרש start_time מ-ISO. אם יש Z או +00:00 – UTC; אחרת naive (תאימות לאחור)."""
+    if not iso_str:
+        return None
+    s = (iso_str or '').strip()
+    if 'Z' in s or '+00:00' in s:
+        s = s.replace('Z', '+00:00')
+        return datetime.fromisoformat(s)
+    return datetime.fromisoformat(s)
+
+def _now_for_start(start_dt):
+    """מחזיר 'עכשיו' באותו הקשר של start_dt (UTC אם start מוגדר כ-UTC, אחרת local)."""
+    if start_dt and start_dt.tzinfo is not None:
+        return datetime.now(timezone.utc)
+    return datetime.now()
+
 def _drop_stale_active_sessions(time_data):
     """מסיר מדידות פעילות ישנות (למשל לא נעצרו – דפדפן נסגר). מונע 'מדידה של שעתיים' תמידית."""
     changed = False
-    now = datetime.now()
     sessions = time_data.get('active_sessions', {})
     for user_id, sess in list(sessions.items()):
         try:
-            start = datetime.fromisoformat(sess.get('start_time', '') or '')
+            start = _parse_start_time(sess.get('start_time', '') or '')
+            if start is None:
+                continue
+            now = _now_for_start(start)
             if (now - start).total_seconds() >= STALE_SESSION_HOURS * 3600:
                 del sessions[user_id]
                 changed = True
@@ -6291,8 +6309,10 @@ def _enrich_time_tracking_session(session):
     session['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
     session['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
     if session.get('start_time'):
-        start = datetime.fromisoformat(session['start_time'])
-        session['elapsed_seconds'] = int((datetime.now() - start).total_seconds())
+        start = _parse_start_time(session['start_time'])
+        if start is not None:
+            now = _now_for_start(start)
+            session['elapsed_seconds'] = int((now - start).total_seconds())
 
 
 @app.route('/api/time_tracking/start', methods=['POST'])
@@ -6323,9 +6343,8 @@ def api_time_tracking_start():
                 'active_session': active_session
             }), 400
         
-        # יצירת מדידה חדשה
-        session_id = str(uuid.uuid4())
-        start_time = datetime.now().isoformat()
+        # יצירת מדידה חדשה – שמירת start_time ב-UTC עם Z כדי שהדפדפן יפרש נכון (מניעת +2h בישראל)
+        start_time = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         session = {
             'id': session_id,
@@ -6365,10 +6384,13 @@ def api_time_tracking_stop():
             return jsonify({'success': False, 'error': 'אין מדידה פעילה'}), 400
         
         session = time_data['active_sessions'][user_id]
-        start_time = datetime.fromisoformat(session['start_time'])
-        end_time = datetime.now()
-        duration_seconds = (end_time - start_time).total_seconds()
+        start_dt = _parse_start_time(session.get('start_time', '') or '')
+        if start_dt is None:
+            return jsonify({'success': False, 'error': 'שגיאה בתאריך התחלה'}), 400
+        end_time = _now_for_start(start_dt)
+        duration_seconds = (end_time - start_dt).total_seconds()
         duration_hours = round(duration_seconds / 3600, 2)
+        end_time_iso = end_time.isoformat().replace('+00:00', 'Z') if end_time.tzinfo else end_time.isoformat()
         
         # יצירת רשומה במדידות
         entry = {
@@ -6378,10 +6400,10 @@ def api_time_tracking_stop():
             'project_id': session['project_id'],
             'task_id': session['task_id'],
             'start_time': session['start_time'],
-            'end_time': end_time.isoformat(),
+            'end_time': end_time_iso,
             'duration_hours': duration_hours,
             'note': note,
-            'date': start_time.date().isoformat(),
+            'date': start_dt.date().isoformat(),
         }
         
         time_data.setdefault('entries', []).append(entry)
