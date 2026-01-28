@@ -3177,7 +3177,10 @@ def update_charge_our_cost(client_id, charge_id):
 
 @app.route('/delete_charge/<client_id>/<charge_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript (דף לקוח)
+@limiter.exempt  # פטור מ-rate limiting (פעולה רגילה של משתמש)
 def delete_charge(client_id, charge_id):
+    """מחיקת חיוב מלקוח. מחזיר JSON להתאמה ל-SPA."""
     try:
         data = load_data()
         for c in data:
@@ -3185,10 +3188,10 @@ def delete_charge(client_id, charge_id):
                 charges = c.get('extra_charges', [])
                 c['extra_charges'] = [ch for ch in charges if ch.get('id') != charge_id]
                 save_data(data)
-                return redirect(request.referrer or url_for('client_page', client_id=client_id))
-        return "לקוח לא נמצא", 404
+                return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
-        return f"שגיאה במחיקת החיוב: {str(e)}", 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/archive_client/<client_id>', methods=['POST'])
 @login_required

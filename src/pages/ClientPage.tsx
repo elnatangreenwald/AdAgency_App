@@ -642,12 +642,7 @@ export function ClientPage() {
     if (!confirm('האם אתה בטוח שברצונך למחוק את החיוב?')) return;
 
     try {
-      const formData = new FormData();
-      const response = await apiClient.post(`/delete_charge/${clientId}/${chargeId}`, formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      const response = await apiClient.post(`/delete_charge/${clientId}/${chargeId}`, {});
 
       if (response.status === 200) {
         toast({
