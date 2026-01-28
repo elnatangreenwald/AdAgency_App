@@ -6,6 +6,7 @@ but use PostgreSQL instead
 import os
 import json
 from werkzeug.security import generate_password_hash
+from sqlalchemy.orm.attributes import flag_modified
 from database import (
     get_db, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity
@@ -128,6 +129,9 @@ def load_data():
                 'files': client.files or [],
                 'contacts': client.contacts or [],
                 'logo_url': client.logo_url,
+                'active': client.active if client.active is not None else True,
+                'archived': client.archived if client.archived is not None else False,
+                'archived_at': client.archived_at,
                 'calculated_extra': client.calculated_extra or 0,
                 'calculated_retainer': client.calculated_retainer or 0,
                 'calculated_total': client.calculated_total or 0,
@@ -192,11 +196,20 @@ def save_data(data):
                 client.files = client_data.get('files', [])
                 client.contacts = client_data.get('contacts', [])
                 client.logo_url = client_data.get('logo_url')
+                client.active = client_data.get('active', True)
+                client.archived = client_data.get('archived', False)
+                client.archived_at = client_data.get('archived_at')
                 client.calculated_extra = client_data.get('calculated_extra', 0)
                 client.calculated_retainer = client_data.get('calculated_retainer', 0)
                 client.calculated_total = client_data.get('calculated_total', 0)
                 client.calculated_open_charges = client_data.get('calculated_open_charges', 0)
                 client.calculated_monthly_revenue = client_data.get('calculated_monthly_revenue', 0)
+                # Flag JSONB fields so SQLAlchemy detects in-place changes (e.g. deletions)
+                flag_modified(client, 'extra_charges')
+                flag_modified(client, 'projects')
+                flag_modified(client, 'assigned_user')
+                flag_modified(client, 'files')
+                flag_modified(client, 'contacts')
             else:
                 client = Client(
                     id=client_id,
@@ -209,6 +222,9 @@ def save_data(data):
                     files=client_data.get('files', []),
                     contacts=client_data.get('contacts', []),
                     logo_url=client_data.get('logo_url'),
+                    active=client_data.get('active', True),
+                    archived=client_data.get('archived', False),
+                    archived_at=client_data.get('archived_at'),
                     calculated_extra=client_data.get('calculated_extra', 0),
                     calculated_retainer=client_data.get('calculated_retainer', 0),
                     calculated_total=client_data.get('calculated_total', 0),
