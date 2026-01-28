@@ -6344,6 +6344,7 @@ def api_time_tracking_start():
             }), 400
         
         # יצירת מדידה חדשה – שמירת start_time ב-UTC עם Z כדי שהדפדפן יפרש נכון (מניעת +2h בישראל)
+        session_id = str(uuid.uuid4())
         start_time = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         session = {
