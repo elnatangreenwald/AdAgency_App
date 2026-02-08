@@ -348,19 +348,19 @@ if not USE_DATABASE:
     def save_events(events):
         with open(EVENTS_FILE, 'w', encoding='utf-8') as f: json.dump(events, f, ensure_ascii=False, indent=4)
 
-def load_time_tracking():
-    """טעינת מדידות זמן"""
-    if not os.path.exists(TIME_TRACKING_FILE) or os.stat(TIME_TRACKING_FILE).st_size == 0:
-        return {'entries': [], 'active_sessions': {}}
-    with open(TIME_TRACKING_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-def save_time_tracking(data):
-    """שמירת מדידות זמן"""
-    with open(TIME_TRACKING_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
 if not USE_DATABASE:
+    def load_time_tracking():
+        """טעינת מדידות זמן מקובץ JSON"""
+        if not os.path.exists(TIME_TRACKING_FILE) or os.stat(TIME_TRACKING_FILE).st_size == 0:
+            return {'entries': [], 'active_sessions': {}}
+        with open(TIME_TRACKING_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    def save_time_tracking(data):
+        """שמירת מדידות זמן לקובץ JSON"""
+        with open(TIME_TRACKING_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
     def load_equipment_bank():
         if not os.path.exists(EQUIPMENT_BANK_FILE) or os.stat(EQUIPMENT_BANK_FILE).st_size == 0: 
             # יצירת מאגר ציוד בסיסי

@@ -38,10 +38,10 @@ def verify_connection():
         with engine.connect() as conn:
             result = conn.execute(text("SELECT 1"))
             result.fetchone()  # Consume the result
-        print("✓ Database connection verified")
+        print("[OK] Database connection verified")
         return True
     except Exception as e:
-        print(f"✗ Failed to connect to database: {e}")
+        print(f"[FAIL] Failed to connect to database: {e}")
         print("\nPlease check:")
         print("1. DATABASE_URL is set correctly")
         print("2. The connection string is valid")
