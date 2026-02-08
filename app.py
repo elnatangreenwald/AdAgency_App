@@ -1260,6 +1260,12 @@ def get_tasks_for_calendar():
                     if not deadline:
                         continue
                     
+                    # סינון משימות שהושלמו (למעט משימות יומיות)
+                    task_status = task.get('status', 'לביצוע')
+                    is_daily_task = task.get('is_daily_task', False)
+                    if task_status == 'הושלם' and not is_daily_task:
+                        continue
+                    
                     # המרת תאריך לפורמט ISO
                     try:
                         if 'T' in deadline:
@@ -1271,7 +1277,6 @@ def get_tasks_for_calendar():
                         assignee_id = task.get('assignee', '')
                         assignee_name = users.get(assignee_id, {}).get('name', assignee_id) if assignee_id else 'ללא אחראי'
                         
-                        task_status = task.get('status', 'לביצוע')
                         task_title = task.get('title', 'ללא כותרת')
                         
                         tasks.append({
