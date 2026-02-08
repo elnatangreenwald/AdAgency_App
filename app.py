@@ -6907,6 +6907,21 @@ def serve_react_app(path=''):
 def dashboard_redirect():
     return redirect('/app/dashboard')
 
+@app.route('/time_tracking')
+@login_required  
+def time_tracking_redirect():
+    return redirect('/app/time_tracking')
+
+# Catch-all route for React SPA - must be last
+@app.route('/app/time_tracking')
+@login_required
+def serve_time_tracking():
+    """Serve React SPA for time tracking page"""
+    react_index = os.path.join(REACT_BUILD_DIR, 'index.html')
+    if os.path.exists(react_index):
+        return send_from_directory(REACT_BUILD_DIR, 'index.html')
+    return "React build not found. Run 'npm run build' first.", 404
+
 if __name__ == '__main__':
     # Railway deployment configuration
     port = int(os.environ.get('PORT', 5000))
