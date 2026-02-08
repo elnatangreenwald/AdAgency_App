@@ -24,8 +24,10 @@ import sys
 from sqlalchemy import text
 from database import (
     init_db, get_db, engine, User, Client, Supplier, Quote, Message, Event,
-    Equipment, ChecklistTemplate, Form, Permission, UserActivity
+    Equipment, ChecklistTemplate, Form, Permission, UserActivity,
+    TimeTrackingEntry, TimeTrackingActiveSession
 )
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -446,6 +448,95 @@ def migrate_user_activity():
     finally:
         db.close()
 
+def _parse_datetime(dt_str):
+    """Parse datetime string to datetime object"""
+    if not dt_str:
+        return None
+    if isinstance(dt_str, datetime):
+        return dt_str
+    # Try different formats
+    for fmt in ['%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M']:
+        try:
+            return datetime.strptime(dt_str.replace('+00:00', '').replace('Z', ''), fmt.replace('Z', ''))
+        except:
+            continue
+    return None
+
+def migrate_time_tracking():
+    """Migrate time tracking from time_tracking.json"""
+    time_tracking_file = os.path.join(BASE_DIR, 'time_tracking.json')
+    if not os.path.exists(time_tracking_file) or os.stat(time_tracking_file).st_size == 0:
+        print("time_tracking.json not found or empty, skipping...")
+        return
+    
+    db = get_db()
+    try:
+        with open(time_tracking_file, 'r', encoding='utf-8') as f:
+            time_data = json.load(f)
+        
+        # Migrate entries
+        entries = time_data.get('entries', [])
+        migrated_entries = 0
+        for entry_data in entries:
+            entry_id = entry_data.get('id')
+            if not entry_id:
+                continue
+            
+            # Check if entry already exists
+            existing = db.query(TimeTrackingEntry).filter(TimeTrackingEntry.id == entry_id).first()
+            if existing:
+                continue
+            
+            start_time = _parse_datetime(entry_data.get('start_time'))
+            end_time = _parse_datetime(entry_data.get('end_time'))
+            
+            entry = TimeTrackingEntry(
+                id=entry_id,
+                user_id=entry_data.get('user_id'),
+                client_id=entry_data.get('client_id'),
+                project_id=entry_data.get('project_id'),
+                task_id=entry_data.get('task_id'),
+                start_time=start_time,
+                end_time=end_time,
+                duration_hours=str(entry_data.get('duration_hours', 0)),
+                note=entry_data.get('note', ''),
+                date=entry_data.get('date'),
+                manual_entry=entry_data.get('manual_entry', False)
+            )
+            db.add(entry)
+            migrated_entries += 1
+        
+        # Migrate active sessions
+        active_sessions = time_data.get('active_sessions', {})
+        migrated_sessions = 0
+        for user_id, session_data in active_sessions.items():
+            # Check if session already exists
+            existing = db.query(TimeTrackingActiveSession).filter(TimeTrackingActiveSession.user_id == user_id).first()
+            if existing:
+                continue
+            
+            start_time = _parse_datetime(session_data.get('start_time'))
+            
+            session = TimeTrackingActiveSession(
+                user_id=user_id,
+                session_id=session_data.get('id', ''),
+                client_id=session_data.get('client_id'),
+                project_id=session_data.get('project_id'),
+                task_id=session_data.get('task_id'),
+                start_time=start_time
+            )
+            db.add(session)
+            migrated_sessions += 1
+        
+        db.commit()
+        print(f"✓ Migrated {migrated_entries} time tracking entries and {migrated_sessions} active sessions")
+    except Exception as e:
+        db.rollback()
+        print(f"✗ Error migrating time tracking: {e}")
+        raise
+    finally:
+        db.close()
+
 def main():
     """Run all migrations"""
     print("=" * 60)
@@ -505,6 +596,7 @@ def main():
     migrate_forms()
     migrate_permissions()
     migrate_user_activity()
+    migrate_time_tracking()
     
     print("\n" + "=" * 60)
     print("Migration completed successfully!")

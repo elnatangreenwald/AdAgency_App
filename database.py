@@ -153,3 +153,31 @@ class UserActivity(Base):
     activity = Column(JSONB)  # Activity data as JSON
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class TimeTrackingEntry(Base):
+    __tablename__ = 'time_tracking_entries'
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False)
+    client_id = Column(String, nullable=False)
+    project_id = Column(String)
+    task_id = Column(String)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime)
+    duration_hours = Column(String)  # Store as string to preserve decimal precision
+    note = Column(Text)
+    date = Column(String)  # YYYY-MM-DD format
+    manual_entry = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class TimeTrackingActiveSession(Base):
+    __tablename__ = 'time_tracking_active_sessions'
+    
+    user_id = Column(String, primary_key=True)
+    session_id = Column(String, nullable=False)
+    client_id = Column(String, nullable=False)
+    project_id = Column(String)
+    task_id = Column(String)
+    start_time = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

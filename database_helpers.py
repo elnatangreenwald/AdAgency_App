@@ -9,8 +9,10 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy.orm.attributes import flag_modified
 from database import (
     get_db, User, Client, Supplier, Quote, Message, Event,
-    Equipment, ChecklistTemplate, Form, Permission, UserActivity
+    Equipment, ChecklistTemplate, Form, Permission, UserActivity,
+    TimeTrackingEntry, TimeTrackingActiveSession
 )
+from datetime import datetime
 
 # This module is only imported when USE_DATABASE=true in app.py
 # So we always use the database here
@@ -462,6 +464,137 @@ def save_forms(forms):
             else:
                 form = Form(id=form_id, data=form_data)
                 db.add(form)
+        db.commit()
+    finally:
+        db.close()
+
+# ============ Time Tracking Functions ============
+
+def _parse_datetime(dt_str):
+    """Parse datetime string to datetime object"""
+    if not dt_str:
+        return None
+    if isinstance(dt_str, datetime):
+        return dt_str
+    # Try different formats
+    for fmt in ['%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%SZ', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M']:
+        try:
+            return datetime.strptime(dt_str.replace('+00:00', '').replace('Z', ''), fmt.replace('Z', ''))
+        except:
+            continue
+    return None
+
+def load_time_tracking():
+    """Load time tracking data from database"""
+    db = get_db()
+    try:
+        result = {'entries': [], 'active_sessions': {}}
+        
+        # Load entries
+        db_entries = db.query(TimeTrackingEntry).all()
+        for entry in db_entries:
+            entry_dict = {
+                'id': entry.id,
+                'user_id': entry.user_id,
+                'client_id': entry.client_id,
+                'project_id': entry.project_id,
+                'task_id': entry.task_id,
+                'start_time': entry.start_time.isoformat() if entry.start_time else None,
+                'end_time': entry.end_time.isoformat() if entry.end_time else None,
+                'duration_hours': float(entry.duration_hours) if entry.duration_hours else 0,
+                'note': entry.note or '',
+                'date': entry.date,
+                'manual_entry': entry.manual_entry or False
+            }
+            result['entries'].append(entry_dict)
+        
+        # Load active sessions
+        db_sessions = db.query(TimeTrackingActiveSession).all()
+        for session in db_sessions:
+            result['active_sessions'][session.user_id] = {
+                'id': session.session_id,
+                'user_id': session.user_id,
+                'client_id': session.client_id,
+                'project_id': session.project_id,
+                'task_id': session.task_id,
+                'start_time': session.start_time.isoformat() if session.start_time else None
+            }
+        
+        return result
+    finally:
+        db.close()
+
+def save_time_tracking(data):
+    """Save time tracking data to database"""
+    db = get_db()
+    try:
+        # Save entries
+        entries = data.get('entries', [])
+        existing_ids = set()
+        
+        for entry_data in entries:
+            entry_id = entry_data.get('id')
+            if not entry_id:
+                continue
+            existing_ids.add(entry_id)
+            
+            entry = db.query(TimeTrackingEntry).filter(TimeTrackingEntry.id == entry_id).first()
+            
+            start_time = _parse_datetime(entry_data.get('start_time'))
+            end_time = _parse_datetime(entry_data.get('end_time'))
+            
+            if entry:
+                entry.user_id = entry_data.get('user_id', entry.user_id)
+                entry.client_id = entry_data.get('client_id', entry.client_id)
+                entry.project_id = entry_data.get('project_id')
+                entry.task_id = entry_data.get('task_id')
+                entry.start_time = start_time
+                entry.end_time = end_time
+                entry.duration_hours = str(entry_data.get('duration_hours', 0))
+                entry.note = entry_data.get('note', '')
+                entry.date = entry_data.get('date')
+                entry.manual_entry = entry_data.get('manual_entry', False)
+            else:
+                entry = TimeTrackingEntry(
+                    id=entry_id,
+                    user_id=entry_data.get('user_id'),
+                    client_id=entry_data.get('client_id'),
+                    project_id=entry_data.get('project_id'),
+                    task_id=entry_data.get('task_id'),
+                    start_time=start_time,
+                    end_time=end_time,
+                    duration_hours=str(entry_data.get('duration_hours', 0)),
+                    note=entry_data.get('note', ''),
+                    date=entry_data.get('date'),
+                    manual_entry=entry_data.get('manual_entry', False)
+                )
+                db.add(entry)
+        
+        # Delete entries that are no longer in the data
+        db_entries = db.query(TimeTrackingEntry).all()
+        for db_entry in db_entries:
+            if db_entry.id not in existing_ids:
+                db.delete(db_entry)
+        
+        # Save active sessions
+        active_sessions = data.get('active_sessions', {})
+        
+        # Clear all existing sessions first
+        db.query(TimeTrackingActiveSession).delete()
+        
+        # Add current sessions
+        for user_id, session_data in active_sessions.items():
+            start_time = _parse_datetime(session_data.get('start_time'))
+            session = TimeTrackingActiveSession(
+                user_id=user_id,
+                session_id=session_data.get('id', ''),
+                client_id=session_data.get('client_id'),
+                project_id=session_data.get('project_id'),
+                task_id=session_data.get('task_id'),
+                start_time=start_time
+            )
+            db.add(session)
+        
         db.commit()
     finally:
         db.close()

@@ -45,7 +45,8 @@ if USE_DATABASE:
         load_messages, save_messages, load_events, save_events,
         load_equipment_bank, save_equipment_bank,
         load_checklist_templates, save_checklist_templates,
-        load_forms, save_forms, delete_user_record
+        load_forms, save_forms, delete_user_record,
+        load_time_tracking, save_time_tracking
     )
 
 # Import notifications module
