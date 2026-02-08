@@ -6602,6 +6602,27 @@ def api_time_tracking_report():
         for uid, data in by_user.items():
             data['user_name'] = users.get(uid, {}).get('name', 'לא ידוע')
         
+        # הוספת שמות לכל הרשומות
+        for entry in entries:
+            client = clients_dict.get(entry['client_id'], {})
+            entry['client_name'] = client.get('name', 'לא ידוע')
+            
+            # מציאת פרויקט ומשימה
+            project = None
+            task = None
+            for p in client.get('projects', []):
+                if p.get('id') == entry['project_id']:
+                    project = p
+                    for t in p.get('tasks', []):
+                        if t.get('id') == entry['task_id']:
+                            task = t
+                            break
+                    break
+            
+            entry['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
+            entry['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+            entry['user_name'] = users.get(entry['user_id'], {}).get('name', 'לא ידוע')
+        
         return jsonify({
             'success': True,
             'month': month,
@@ -6613,6 +6634,236 @@ def api_time_tracking_report():
         })
     except Exception as e:
         print(f"Error in api_time_tracking_report: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/entry/<entry_id>', methods=['PUT'])
+@login_required
+@csrf.exempt
+def api_time_tracking_update(entry_id):
+    """עדכון רשומת מדידת זמן קיימת"""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        
+        time_data = load_time_tracking()
+        entries = time_data.get('entries', [])
+        
+        # מציאת הרשומה
+        entry_index = None
+        for i, entry in enumerate(entries):
+            if entry.get('id') == entry_id:
+                entry_index = i
+                break
+        
+        if entry_index is None:
+            return jsonify({'success': False, 'error': 'רשומה לא נמצאה'}), 404
+        
+        entry = entries[entry_index]
+        
+        # בדיקת הרשאות - רק מנהלים או הבעלים יכולים לערוך
+        if current_user.role not in ['admin', 'manager'] and entry.get('user_id') != current_user.id:
+            return jsonify({'success': False, 'error': 'אין הרשאה לערוך רשומה זו'}), 403
+        
+        # עדכון השדות
+        if 'start_time' in data:
+            entry['start_time'] = data['start_time']
+        if 'end_time' in data:
+            entry['end_time'] = data['end_time']
+        if 'note' in data:
+            entry['note'] = data['note']
+        if 'duration_hours' in data:
+            entry['duration_hours'] = float(data['duration_hours'])
+        
+        # חישוב מחדש של duration_hours אם שונו הזמנים
+        if 'start_time' in data or 'end_time' in data:
+            start_dt = _parse_start_time(entry['start_time'])
+            end_dt = _parse_start_time(entry['end_time'])
+            if start_dt and end_dt:
+                duration_seconds = (end_dt - start_dt).total_seconds()
+                entry['duration_hours'] = round(duration_seconds / 3600, 2)
+                entry['date'] = start_dt.date().isoformat()
+        
+        entries[entry_index] = entry
+        time_data['entries'] = entries
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'entry': entry,
+            'message': 'הרשומה עודכנה בהצלחה'
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_update: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/entry/<entry_id>', methods=['DELETE'])
+@login_required
+@csrf.exempt
+def api_time_tracking_delete(entry_id):
+    """מחיקת רשומת מדידת זמן"""
+    try:
+        time_data = load_time_tracking()
+        entries = time_data.get('entries', [])
+        
+        # מציאת הרשומה
+        entry_index = None
+        entry_to_delete = None
+        for i, entry in enumerate(entries):
+            if entry.get('id') == entry_id:
+                entry_index = i
+                entry_to_delete = entry
+                break
+        
+        if entry_index is None:
+            return jsonify({'success': False, 'error': 'רשומה לא נמצאה'}), 404
+        
+        # בדיקת הרשאות - רק מנהלים או הבעלים יכולים למחוק
+        if current_user.role not in ['admin', 'manager'] and entry_to_delete.get('user_id') != current_user.id:
+            return jsonify({'success': False, 'error': 'אין הרשאה למחוק רשומה זו'}), 403
+        
+        # מחיקת הרשומה
+        entries.pop(entry_index)
+        time_data['entries'] = entries
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'message': 'הרשומה נמחקה בהצלחה'
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_delete: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/manual', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_time_tracking_manual():
+    """הוספת רשומת מדידת זמן ידנית"""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        
+        # בדיקת שדות חובה
+        required_fields = ['client_id', 'project_id', 'task_id', 'date', 'duration_hours']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'error': f'שדה חובה חסר: {field}'}), 400
+        
+        # אם יש user_id בנתונים ומשתמש הוא מנהל, השתמש בו. אחרת השתמש במשתמש הנוכחי
+        user_id = current_user.id
+        if data.get('user_id') and current_user.role in ['admin', 'manager']:
+            user_id = data['user_id']
+        
+        duration_hours = float(data['duration_hours'])
+        date_str = data['date']  # בפורמט YYYY-MM-DD
+        
+        # יצירת זמני התחלה וסיום
+        if data.get('start_time') and data.get('end_time'):
+            start_time = data['start_time']
+            end_time = data['end_time']
+        else:
+            # אם לא סופקו זמנים, יצירת זמנים לפי התאריך ומשך הזמן
+            start_dt = datetime.strptime(date_str, '%Y-%m-%d').replace(hour=9, minute=0, second=0)
+            end_dt = start_dt + timedelta(hours=duration_hours)
+            start_time = start_dt.isoformat() + 'Z'
+            end_time = end_dt.isoformat() + 'Z'
+        
+        # יצירת הרשומה
+        entry = {
+            'id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'client_id': data['client_id'],
+            'project_id': data['project_id'],
+            'task_id': data['task_id'],
+            'start_time': start_time,
+            'end_time': end_time,
+            'duration_hours': duration_hours,
+            'note': data.get('note', 'הוספה ידנית'),
+            'date': date_str,
+            'manual_entry': True  # סימון שזו רשומה ידנית
+        }
+        
+        time_data = load_time_tracking()
+        time_data.setdefault('entries', []).append(entry)
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'entry': entry,
+            'message': 'הרשומה נוספה בהצלחה'
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_manual: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/time_tracking/adjust/<entry_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_time_tracking_adjust(entry_id):
+    """הוספה או הורדה של שעות מרשומה קיימת"""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        
+        adjustment_hours = data.get('adjustment_hours')
+        if adjustment_hours is None:
+            return jsonify({'success': False, 'error': 'חסר פרמטר adjustment_hours'}), 400
+        
+        adjustment_hours = float(adjustment_hours)
+        
+        time_data = load_time_tracking()
+        entries = time_data.get('entries', [])
+        
+        # מציאת הרשומה
+        entry_index = None
+        for i, entry in enumerate(entries):
+            if entry.get('id') == entry_id:
+                entry_index = i
+                break
+        
+        if entry_index is None:
+            return jsonify({'success': False, 'error': 'רשומה לא נמצאה'}), 404
+        
+        entry = entries[entry_index]
+        
+        # בדיקת הרשאות
+        if current_user.role not in ['admin', 'manager'] and entry.get('user_id') != current_user.id:
+            return jsonify({'success': False, 'error': 'אין הרשאה לערוך רשומה זו'}), 403
+        
+        # עדכון השעות
+        old_hours = entry.get('duration_hours', 0)
+        new_hours = max(0, old_hours + adjustment_hours)  # לא מאפשר שעות שליליות
+        entry['duration_hours'] = round(new_hours, 2)
+        
+        # עדכון זמן הסיום בהתאם
+        start_dt = _parse_start_time(entry['start_time'])
+        if start_dt:
+            end_dt = start_dt + timedelta(hours=new_hours)
+            entry['end_time'] = end_dt.isoformat().replace('+00:00', 'Z') if end_dt.tzinfo else end_dt.isoformat() + 'Z'
+        
+        # הוספת הערה על ההתאמה
+        adjustment_note = f"התאמה ידנית: {'+' if adjustment_hours > 0 else ''}{adjustment_hours} שעות"
+        if entry.get('note'):
+            entry['note'] = f"{entry['note']} | {adjustment_note}"
+        else:
+            entry['note'] = adjustment_note
+        
+        entries[entry_index] = entry
+        time_data['entries'] = entries
+        save_time_tracking(time_data)
+        
+        return jsonify({
+            'success': True,
+            'entry': entry,
+            'message': f'השעות עודכנו: {old_hours} → {new_hours}'
+        })
+    except Exception as e:
+        print(f"Error in api_time_tracking_adjust: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
