@@ -201,9 +201,11 @@ export function Finance() {
   };
 
   const filteredClients =
-    data?.clients.filter((client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    data?.clients
+      .filter((client) =>
+        client.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => b.calculated_open_charges - a.calculated_open_charges) || [];
 
   const months = [
     { value: 'all', label: 'כל החודשים' },
