@@ -281,14 +281,20 @@ export function Finance() {
       .filter((client) =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .map(client => ({
-        ...client,
-        filtered_charges: filterChargesByMonth(client.extra_charges),
-        filtered_open_charges: filterChargesByMonth(client.extra_charges)
+      .map(client => {
+        const filtered_charges = filterChargesByMonth(client.extra_charges);
+        const filtered_total = filtered_charges.reduce((sum, ch) => sum + (ch.amount || 0), 0);
+        const filtered_open_charges = filtered_charges
           .filter(ch => !ch.completed && !ch.paid)
-          .reduce((sum, ch) => sum + (ch.amount || 0), 0)
-      }))
-      .sort((a, b) => b.filtered_open_charges - a.filtered_open_charges) || [];
+          .reduce((sum, ch) => sum + (ch.amount || 0), 0);
+        return {
+          ...client,
+          filtered_charges,
+          filtered_total,
+          filtered_open_charges
+        };
+      })
+      .sort((a, b) => b.filtered_total - a.filtered_total) || [];
 
   const months = [
     { value: 'all', label: 'כל החודשים' },
