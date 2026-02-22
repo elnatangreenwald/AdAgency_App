@@ -113,7 +113,7 @@ def quick_add_charge():
 @login_required
 @csrf.exempt
 def toggle_charge_status(client_id, charge_id):
-    """Toggle charge paid status"""
+    """Toggle charge paid/completed status"""
     try:
         data = load_data()
         client = next((c for c in data if c['id'] == client_id), None)
@@ -126,10 +126,13 @@ def toggle_charge_status(client_id, charge_id):
         if not charge:
             return jsonify({'success': False, 'error': 'Charge not found'}), 404
         
-        charge['paid'] = not charge.get('paid', False)
+        current_status = charge.get('paid', False) or charge.get('completed', False)
+        new_status = not current_status
+        charge['paid'] = new_status
+        charge['completed'] = new_status
         save_data(data)
         
-        return jsonify({'success': True, 'paid': charge['paid']})
+        return jsonify({'success': True, 'paid': new_status, 'completed': new_status})
     except Exception as e:
         print(f"Error in toggle_charge_status: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

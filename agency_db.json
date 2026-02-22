@@ -450,7 +450,8 @@
                 "our_cost": 0.0,
                 "date": "22/01/26",
                 "completed": false,
-                "charge_number": "0180010"
+                "charge_number": "0180010",
+                "paid": false
             },
             {
                 "id": "6fed415c-44d3-41bc-a403-cae9775adc9b",
@@ -1036,8 +1037,9 @@
                 "amount": 50,
                 "our_cost": 0.0,
                 "date": "22/01/26",
-                "completed": false,
-                "charge_number": "0330001"
+                "completed": true,
+                "charge_number": "0330001",
+                "paid": true
             }
         ],
         "projects": [

@@ -1,34 +1,68 @@
-# מיון טבלת כספים לפי חיובים פתוחים
+# שדרוג עמוד כספים - Finance Page Upgrade
 
 ## תאריך: 08/02/2026
 
-## תיאור השינוי
-הטבלה בעמוד כספים (`Finance.tsx`) ממוינת כעת לפי סכום החיובים הפתוחים מהגבוה לנמוך.
+## תיאור השינויים
+עמוד הכספים (`Finance.tsx`) שודרג עם פיצ'רים חדשים לניהול חיובים.
 
 ## קובץ שהשתנה
 - `src/pages/Finance.tsx`
 
-## פרטי השינוי
+---
 
-### לפני השינוי
+## פיצ'רים חדשים
+
+### 1. פירוט חיובים בלחיצה על שם הלקוח
+- לחיצה על שם הלקוח פותחת/סוגרת פירוט של כל החיובים שלו
+- הפירוט מוצג באותו מסך (ללא מעבר לעמוד הלקוח)
+- מוצג מספר החיובים ליד שם הלקוח
+
+### 2. סוויצ'ר לסטטוס תשלום
+- לכל חיוב יש סוויצ'ר (Switch) לסימון האם שולם או לא
+- חיובים ששולמו מסומנים בירוק עם קו חוצה
+- עדכון הסטטוס נשמר מיידית לשרת
+
+### 3. תצוגת תאריך חיוב
+- כל חיוב מציג את התאריך שבו הוזן
+- התאריך מוצג בפורמט DD/MM/YYYY
+
+### 4. סינון חיובים לפי חודש
+- בחירת חודש מסנן את החיובים המוצגים בפירוט
+- רק חיובים מהחודש הנבחר יוצגו
+- סכום "חיובים פתוחים" מתעדכן בהתאם לסינון
+- הכרטיס "כמה חייבים לנו?" מציג את הסכום המסונן
+
+---
+
+## מבנה הנתונים
+
+### Charge Interface
 ```typescript
-const filteredClients =
-  data?.clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+interface Charge {
+  id: string;
+  title?: string;
+  description?: string;
+  amount: number;
+  our_cost?: number;
+  date: string;
+  completed?: boolean;
+  paid?: boolean;
+  charge_number?: string;
+}
 ```
 
-### אחרי השינוי
-```typescript
-const filteredClients =
-  data?.clients
-    .filter((client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => b.calculated_open_charges - a.calculated_open_charges) || [];
-```
+---
 
-## התנהגות
-- לקוחות עם חיובים פתוחים גבוהים יותר יופיעו בראש הטבלה
-- לקוחות ללא חיובים פתוחים (0) יופיעו בתחתית הטבלה
-- המיון מתבצע אוטומטית לאחר סינון לפי שם הלקוח
+## API Endpoints בשימוש
+
+| Endpoint | Method | תיאור |
+|----------|--------|-------|
+| `/api/finance` | GET | טעינת נתוני כספים |
+| `/toggle_charge_status/{client_id}/{charge_id}` | POST | עדכון סטטוס תשלום |
+| `/update_finance/{client_id}` | POST | הוספת חיוב / עדכון רטינר |
+
+---
+
+## התנהגות המיון
+- לקוחות ממוינים לפי סכום חיובים פתוחים (מהגבוה לנמוך)
+- המיון מתעדכן בהתאם לסינון החודש הנבחר

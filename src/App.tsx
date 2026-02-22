@@ -21,7 +21,7 @@ import { Toaster } from './components/ui/toaster';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/app">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Layout />}>

@@ -3139,21 +3139,24 @@ def generate_invoice(client_id):
 
 @app.route('/toggle_charge_status/<client_id>/<charge_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def toggle_charge_status(client_id, charge_id):
-    """עדכון סטטוס חיוב (completed/uncompleted)"""
+    """עדכון סטטוס חיוב (completed/paid)"""
     try:
         data = load_data()
         for c in data:
             if c['id'] == client_id:
                 for charge in c.get('extra_charges', []):
                     if charge.get('id') == charge_id:
-                        # החלפת סטטוס
-                        charge['completed'] = not charge.get('completed', False)
+                        current_status = charge.get('paid', False) or charge.get('completed', False)
+                        new_status = not current_status
+                        charge['completed'] = new_status
+                        charge['paid'] = new_status
                         save_data(data)
-                        return jsonify({'status': 'success', 'completed': charge['completed']})
-        return jsonify({'status': 'error', 'error': 'חיוב לא נמצא'}), 404
+                        return jsonify({'success': True, 'completed': new_status, 'paid': new_status})
+        return jsonify({'success': False, 'error': 'חיוב לא נמצא'}), 404
     except Exception as e:
-        return jsonify({'status': 'error', 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/update_charge_our_cost/<client_id>/<charge_id>', methods=['POST'])
 @login_required
@@ -6894,14 +6897,23 @@ def serve_react_assets(filename):
     """Serve React static assets (JS, CSS, etc.)"""
     return send_from_directory(os.path.join(REACT_BUILD_DIR, 'assets'), filename)
 
+@app.route('/app/assets/<path:filename>')
+def serve_react_app_assets(filename):
+    """Serve React static assets under /app/assets/ path"""
+    return send_from_directory(os.path.join(REACT_BUILD_DIR, 'assets'), filename)
+
 # React SPA catch-all routes - serve index.html for client-side routing
 REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers', 
                 '/quotes', '/forms', '/admin', '/archive', '/my_tasks', '/time_tracking']
 
 @app.route('/app')
+@app.route('/app/')
 @app.route('/app/<path:path>')
 def serve_react_app(path=''):
-    """Serve React SPA for /app routes - React handles its own auth"""
+    """Serve React SPA for /app routes - React handles its own auth
+    This catch-all ensures that page refresh on any /app/* route
+    returns the React app, allowing React Router to handle the routing.
+    """
     react_index = os.path.join(REACT_BUILD_DIR, 'index.html')
     if os.path.exists(react_index):
         return send_from_directory(REACT_BUILD_DIR, 'index.html')
@@ -6911,22 +6923,12 @@ def serve_react_app(path=''):
 @app.route('/dashboard')
 @login_required  
 def dashboard_redirect():
-    return redirect('/app/dashboard')
+    return redirect('/app/')
 
 @app.route('/time_tracking')
 @login_required  
 def time_tracking_redirect():
     return redirect('/app/time_tracking')
-
-# Catch-all route for React SPA - must be last
-@app.route('/app/time_tracking')
-@login_required
-def serve_time_tracking():
-    """Serve React SPA for time tracking page"""
-    react_index = os.path.join(REACT_BUILD_DIR, 'index.html')
-    if os.path.exists(react_index):
-        return send_from_directory(REACT_BUILD_DIR, 'index.html')
-    return "React build not found. Run 'npm run build' first.", 404
 
 if __name__ == '__main__':
     # Railway deployment configuration

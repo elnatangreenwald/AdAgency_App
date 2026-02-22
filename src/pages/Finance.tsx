@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -21,15 +21,17 @@ import {
 } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Plus } from 'lucide-react';
+import { Search, Download, Plus, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 
 interface Charge {
   id: string;
-  title: string;
+  title?: string;
+  description?: string;
   amount: number;
   our_cost?: number;
   date: string;
-  completed: boolean;
+  completed?: boolean;
+  paid?: boolean;
   charge_number?: string;
 }
 
@@ -61,6 +63,7 @@ export function Finance() {
   const [addChargeOpen, setAddChargeOpen] = useState(false);
   const [editRetainerOpen, setEditRetainerOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [chargeForm, setChargeForm] = useState({
     title: '',
     amount: '',
@@ -189,15 +192,88 @@ export function Finance() {
     }
   };
 
+  const handleToggleChargeStatus = async (clientId: string, chargeId: string) => {
+    try {
+      const response = await apiClient.post(`/toggle_charge_status/${clientId}/${chargeId}`);
+      if (response.data.success) {
+        toast({
+          title: 'הצלחה',
+          description: 'סטטוס החיוב עודכן',
+          variant: 'success',
+        });
+        fetchFinanceData();
+      }
+    } catch (error: any) {
+      toast({
+        title: 'שגיאה',
+        description: error.response?.data?.error || 'שגיאה בעדכון סטטוס החיוב',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleExportOpenCharges = () => {
     window.location.href = '/export_open_charges';
   };
 
   const handleGenerateInvoice = (clientId: string) => {
-    const url = monthFilter
+    const url = monthFilter && monthFilter !== 'all'
       ? `/generate_invoice/${clientId}?month=${monthFilter}`
       : `/generate_invoice/${clientId}`;
     window.location.href = url;
+  };
+
+  const toggleClientExpanded = (clientId: string) => {
+    setExpandedClients(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(clientId)) {
+        newSet.delete(clientId);
+      } else {
+        newSet.add(clientId);
+      }
+      return newSet;
+    });
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    if (dateStr.includes('/')) {
+      return dateStr;
+    }
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+    }
+    return dateStr;
+  };
+
+  const getChargeMonth = (dateStr: string): string => {
+    if (!dateStr) return '';
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length >= 2) {
+        return parts[1].padStart(2, '0');
+      }
+    }
+    if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length >= 2) {
+        return parts[1].padStart(2, '0');
+      }
+    }
+    return '';
+  };
+
+  const filterChargesByMonth = (charges: Charge[]): Charge[] => {
+    if (!monthFilter || monthFilter === 'all') {
+      return charges;
+    }
+    return charges.filter(charge => {
+      const chargeMonth = getChargeMonth(charge.date);
+      return chargeMonth === monthFilter;
+    });
   };
 
   const filteredClients =
@@ -205,7 +281,14 @@ export function Finance() {
       .filter((client) =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .sort((a, b) => b.calculated_open_charges - a.calculated_open_charges) || [];
+      .map(client => ({
+        ...client,
+        filtered_charges: filterChargesByMonth(client.extra_charges),
+        filtered_open_charges: filterChargesByMonth(client.extra_charges)
+          .filter(ch => !ch.completed && !ch.paid)
+          .reduce((sum, ch) => sum + (ch.amount || 0), 0)
+      }))
+      .sort((a, b) => b.filtered_open_charges - a.filtered_open_charges) || [];
 
   const months = [
     { value: 'all', label: 'כל החודשים' },
@@ -239,6 +322,10 @@ export function Finance() {
     );
   }
 
+  const totalFilteredOpenCharges = filteredClients.reduce(
+    (sum, client) => sum + client.filtered_open_charges, 0
+  );
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] mb-6 sm:mb-8">
@@ -251,7 +338,7 @@ export function Finance() {
           <CardContent className="p-5 sm:p-8">
             <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-5">כמה חייבים לנו?</h2>
             <div className="text-3xl sm:text-5xl font-bold mb-3 sm:mb-5">
-              ₪{data.total_open_charges.toLocaleString()}
+              ₪{(monthFilter === 'all' ? data.total_open_charges : totalFilteredOpenCharges).toLocaleString()}
             </div>
             <Button
               onClick={handleExportOpenCharges}
@@ -327,72 +414,153 @@ export function Finance() {
               </thead>
               <tbody>
                 {filteredClients.map((client) => (
-                  <tr
-                    key={client.id}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="p-3">
-                      <Link
-                        to={`/client/${client.id}`}
-                        className="text-[#0073ea] hover:underline font-semibold"
-                      >
-                        {client.name}
-                      </Link>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        ₪{client.calculated_retainer.toLocaleString()}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setRetainerAmount(client.retainer.toString());
-                            setEditRetainerOpen(true);
-                          }}
-                          className="h-6 px-2 text-xs"
+                  <>
+                    <tr
+                      key={client.id}
+                      className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="p-3">
+                        <button
+                          onClick={() => toggleClientExpanded(client.id)}
+                          className="flex items-center gap-2 text-[#0073ea] hover:underline font-semibold cursor-pointer text-right"
                         >
-                          ערוך
-                        </Button>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      ₪{client.calculated_extra.toLocaleString()}
-                    </td>
-                    <td className="p-3 font-bold">
-                      ₪{client.calculated_total.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-[#d66b74] font-semibold">
-                      ₪{client.calculated_open_charges.toLocaleString()}
-                    </td>
-                    <td className="p-3 text-[#28a745] font-semibold">
-                      ₪{client.calculated_monthly_revenue.toLocaleString()}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setChargeForm({ title: '', amount: '', our_cost: '' });
-                            setAddChargeOpen(true);
-                          }}
-                        >
-                          <Plus className="w-3 h-3 ml-1" />
-                          חיוב
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleGenerateInvoice(client.id)}
-                        >
-                          <Download className="w-3 h-3 ml-1" />
-                          חשבונית
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                          {expandedClients.has(client.id) ? (
+                            <ChevronUp className="w-4 h-4 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                          )}
+                          {client.name}
+                          {client.filtered_charges.length > 0 && (
+                            <span className="text-xs text-gray-500 font-normal">
+                              ({client.filtered_charges.length} חיובים)
+                            </span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          ₪{client.calculated_retainer.toLocaleString()}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setRetainerAmount(client.retainer.toString());
+                              setEditRetainerOpen(true);
+                            }}
+                            className="h-6 px-2 text-xs"
+                          >
+                            ערוך
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        ₪{client.calculated_extra.toLocaleString()}
+                      </td>
+                      <td className="p-3 font-bold">
+                        ₪{client.calculated_total.toLocaleString()}
+                      </td>
+                      <td className="p-3 text-[#d66b74] font-semibold">
+                        ₪{client.filtered_open_charges.toLocaleString()}
+                      </td>
+                      <td className="p-3 text-[#28a745] font-semibold">
+                        ₪{client.calculated_monthly_revenue.toLocaleString()}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setChargeForm({ title: '', amount: '', our_cost: '' });
+                              setAddChargeOpen(true);
+                            }}
+                          >
+                            <Plus className="w-3 h-3 ml-1" />
+                            חיוב
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateInvoice(client.id)}
+                          >
+                            <Download className="w-3 h-3 ml-1" />
+                            חשבונית
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedClients.has(client.id) && (
+                      <tr key={`${client.id}-charges`} className="bg-gray-50">
+                        <td colSpan={7} className="p-0">
+                          <div className="p-4 border-b-2 border-gray-200">
+                            <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              פירוט חיובים - {client.name}
+                              {monthFilter !== 'all' && (
+                                <span className="text-sm font-normal text-gray-500">
+                                  (מסונן לחודש {months.find(m => m.value === monthFilter)?.label})
+                                </span>
+                              )}
+                            </h4>
+                            {client.filtered_charges.length === 0 ? (
+                              <p className="text-gray-500 text-sm">אין חיובים להצגה</p>
+                            ) : (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="bg-gray-100">
+                                      <th className="p-2 text-right font-semibold">תיאור</th>
+                                      <th className="p-2 text-right font-semibold">תאריך</th>
+                                      <th className="p-2 text-right font-semibold">סכום</th>
+                                      <th className="p-2 text-right font-semibold">עלות פנימית</th>
+                                      <th className="p-2 text-right font-semibold">שולם</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {client.filtered_charges.map((charge) => {
+                                      const isPaid = charge.completed || charge.paid;
+                                      return (
+                                        <tr
+                                          key={charge.id}
+                                          className={`border-b border-gray-100 ${isPaid ? 'bg-green-50' : ''}`}
+                                        >
+                                          <td className={`p-2 ${isPaid ? 'line-through text-gray-400' : ''}`}>
+                                            {charge.title || charge.description || '-'}
+                                          </td>
+                                          <td className={`p-2 ${isPaid ? 'text-gray-400' : ''}`}>
+                                            {formatDate(charge.date)}
+                                          </td>
+                                          <td className={`p-2 font-semibold ${isPaid ? 'text-gray-400' : ''}`}>
+                                            ₪{(charge.amount || 0).toLocaleString()}
+                                          </td>
+                                          <td className={`p-2 ${isPaid ? 'text-gray-400' : ''}`}>
+                                            {charge.our_cost ? `₪${charge.our_cost.toLocaleString()}` : '-'}
+                                          </td>
+                                          <td className="p-2">
+                                            <div className="flex items-center gap-2">
+                                              <Switch
+                                                checked={isPaid}
+                                                onCheckedChange={() => handleToggleChargeStatus(client.id, charge.id)}
+                                              />
+                                              <span className={`text-xs ${isPaid ? 'text-green-600' : 'text-red-500'}`}>
+                                                {isPaid ? 'שולם' : 'לא שולם'}
+                                              </span>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
