@@ -82,6 +82,7 @@ export function Dashboard() {
 
   const [chargeForm, setChargeForm] = useState({
     charge_title: '',
+    charge_description: '',
     charge_amount: '',
     charge_our_cost: '',
   });
@@ -310,6 +311,9 @@ export function Dashboard() {
       params.append('client_id', selectedClientId);
       params.append('charge_title', chargeForm.charge_title);
       params.append('charge_amount', chargeForm.charge_amount);
+      if (chargeForm.charge_description) {
+        params.append('charge_description', chargeForm.charge_description);
+      }
       if (chargeForm.charge_our_cost) {
         params.append('charge_our_cost', chargeForm.charge_our_cost);
       }
@@ -330,6 +334,7 @@ export function Dashboard() {
         setAddChargeOpen(false);
         setChargeForm({
           charge_title: '',
+          charge_description: '',
           charge_amount: '',
           charge_our_cost: '',
         });
@@ -757,14 +762,26 @@ export function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label>כותרת החיוב:</Label>
+              <Label>שם החיוב:</Label>
               <Input
                 value={chargeForm.charge_title}
                 onChange={(e) =>
                   setChargeForm({ ...chargeForm, charge_title: e.target.value })
                 }
-                placeholder="לדוגמה: עבודת עיצוב..."
+                placeholder="למשל: משלוחים, עיצוב, פרסום..."
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>תיאור (אופציונלי):</Label>
+              <Textarea
+                value={chargeForm.charge_description}
+                onChange={(e) =>
+                  setChargeForm({ ...chargeForm, charge_description: e.target.value })
+                }
+                placeholder="פירוט נוסף על החיוב..."
+                rows={2}
               />
             </div>
 

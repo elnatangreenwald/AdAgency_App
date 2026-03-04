@@ -1499,13 +1499,15 @@ def quick_add_charge():
                     c['extra_charges'] = []
                 charge_number = get_next_charge_number(c)
                 our_cost = float(request.form.get('charge_our_cost', 0) or 0)
+                description = request.form.get('charge_description', '')
                 c['extra_charges'].append({
                     'id': str(uuid.uuid4()),
                     'title': charge_title,
+                    'description': description,
                     'amount': int(float(charge_amount)),
                     'our_cost': our_cost,
                     'date': datetime.now().strftime("%d/%m/%y"),
-                    'completed': False,  # ברירת מחדל: לא הושלם
+                    'completed': False,
                     'charge_number': charge_number
                 })
                 save_data(data)
@@ -2981,13 +2983,15 @@ def update_finance(client_id):
             elif action == 'extra':
                 charge_number = get_next_charge_number(c)
                 our_cost = float(request.form.get('our_cost', 0) or 0)
+                description = request.form.get('description', '')
                 c.setdefault('extra_charges', []).append({
-                    'id': str(uuid.uuid4()), 
-                    'title': request.form.get('title'), 
-                    'amount': int(request.form.get('amount', 0)), 
+                    'id': str(uuid.uuid4()),
+                    'title': request.form.get('title'),
+                    'description': description,
+                    'amount': int(request.form.get('amount', 0)),
                     'our_cost': our_cost,
                     'date': datetime.now().strftime("%d/%m/%y"),
-                    'completed': False,  # ברירת מחדל: לא הושלם
+                    'completed': False,
                     'charge_number': charge_number
                 })
     save_data(data)
