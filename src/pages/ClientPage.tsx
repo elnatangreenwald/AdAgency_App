@@ -163,6 +163,7 @@ export function ClientPage() {
   });
   const [chargeForm, setChargeForm] = useState({
     title: '',
+    description: '',
     amount: '',
     our_cost: '',
   });
@@ -609,6 +610,9 @@ export function ClientPage() {
       params.append('action', 'extra');
       params.append('title', chargeForm.title);
       params.append('amount', chargeForm.amount);
+      if (chargeForm.description) {
+        params.append('description', chargeForm.description);
+      }
       if (chargeForm.our_cost) {
         params.append('our_cost', chargeForm.our_cost);
       }
@@ -626,7 +630,7 @@ export function ClientPage() {
           description: 'החיוב נוסף בהצלחה',
           variant: 'success',
         });
-        setChargeForm({ title: '', amount: '', our_cost: '' });
+        setChargeForm({ title: '', description: '', amount: '', our_cost: '' });
         fetchClient();
       }
     } catch (error: any) {
@@ -1460,14 +1464,22 @@ export function ClientPage() {
           </form>
 
           {/* Add Charge */}
-          <form onSubmit={handleAddCharge} className="grid grid-cols-4 gap-4 items-end">
+          <form onSubmit={handleAddCharge} className="grid grid-cols-5 gap-4 items-end">
             <div>
-              <Label>תיאור חיוב:</Label>
+              <Label>שם החיוב:</Label>
               <Input
                 value={chargeForm.title}
                 onChange={(e) => setChargeForm({ ...chargeForm, title: e.target.value })}
-                placeholder="תיאור חיוב"
+                placeholder="למשל: משלוחים"
                 required
+              />
+            </div>
+            <div>
+              <Label>תיאור (אופציונלי):</Label>
+              <Input
+                value={chargeForm.description}
+                onChange={(e) => setChargeForm({ ...chargeForm, description: e.target.value })}
+                placeholder="פירוט נוסף..."
               />
             </div>
             <div>
