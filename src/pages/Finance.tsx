@@ -69,9 +69,9 @@ export function Finance() {
   const [showArchive, setShowArchive] = useState(false);
   const [chargeForm, setChargeForm] = useState({
     title: '',
+    description: '',
     amount: '',
     our_cost: '',
-    notes: '',
   });
   const [retainerAmount, setRetainerAmount] = useState('');
   const { toast } = useToast();
@@ -116,11 +116,11 @@ export function Finance() {
       formData.append('action', 'extra');
       formData.append('title', chargeForm.title);
       formData.append('amount', chargeForm.amount);
+      if (chargeForm.description) {
+        formData.append('description', chargeForm.description);
+      }
       if (chargeForm.our_cost) {
         formData.append('our_cost', chargeForm.our_cost);
-      }
-      if (chargeForm.notes) {
-        formData.append('notes', chargeForm.notes);
       }
 
       const response = await apiClient.post(
@@ -140,7 +140,7 @@ export function Finance() {
           variant: 'success',
         });
         setAddChargeOpen(false);
-        setChargeForm({ title: '', amount: '', our_cost: '', notes: '' });
+        setChargeForm({ title: '', description: '', amount: '', our_cost: '' });
         setSelectedClient(null);
         fetchFinanceData();
       }
@@ -505,7 +505,7 @@ export function Finance() {
                             size="sm"
                             onClick={() => {
                               setSelectedClient(client);
-                              setChargeForm({ title: '', amount: '', our_cost: '', notes: '' });
+                              setChargeForm({ title: '', description: '', amount: '', our_cost: '' });
                               setAddChargeOpen(true);
                             }}
                           >
@@ -689,14 +689,25 @@ export function Finance() {
           </DialogHeader>
           <form onSubmit={handleAddCharge} className="space-y-4">
             <div className="space-y-2">
-              <Label>כותרת החיוב:</Label>
+              <Label>שם החיוב:</Label>
               <Input
                 value={chargeForm.title}
                 onChange={(e) =>
                   setChargeForm({ ...chargeForm, title: e.target.value })
                 }
-                placeholder="הזן כותרת..."
+                placeholder="למשל: משלוחים, עיצוב, פרסום..."
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>תיאור (אופציונלי):</Label>
+              <Textarea
+                value={chargeForm.description}
+                onChange={(e) =>
+                  setChargeForm({ ...chargeForm, description: e.target.value })
+                }
+                placeholder="פירוט נוסף על החיוב..."
+                rows={2}
               />
             </div>
             <div className="space-y-2">
@@ -722,17 +733,6 @@ export function Finance() {
                 }
                 placeholder="הזן עלות פנימית..."
                 min="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>הערות (אופציונלי):</Label>
-              <Textarea
-                value={chargeForm.notes}
-                onChange={(e) =>
-                  setChargeForm({ ...chargeForm, notes: e.target.value })
-                }
-                placeholder="הוסף הערות או פירוט נוסף על החיוב..."
-                rows={3}
               />
             </div>
             <DialogFooter>
