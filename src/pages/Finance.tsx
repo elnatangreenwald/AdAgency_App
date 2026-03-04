@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Plus, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, Download, Plus, ChevronDown, ChevronUp, Calendar, Archive } from 'lucide-react';
 
 interface Charge {
   id: string;
@@ -33,6 +34,7 @@ interface Charge {
   completed?: boolean;
   paid?: boolean;
   charge_number?: string;
+  notes?: string;
 }
 
 interface Client {
@@ -64,10 +66,12 @@ export function Finance() {
   const [editRetainerOpen, setEditRetainerOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [showArchive, setShowArchive] = useState(false);
   const [chargeForm, setChargeForm] = useState({
     title: '',
     amount: '',
     our_cost: '',
+    notes: '',
   });
   const [retainerAmount, setRetainerAmount] = useState('');
   const { toast } = useToast();
@@ -115,6 +119,9 @@ export function Finance() {
       if (chargeForm.our_cost) {
         formData.append('our_cost', chargeForm.our_cost);
       }
+      if (chargeForm.notes) {
+        formData.append('notes', chargeForm.notes);
+      }
 
       const response = await apiClient.post(
         `/update_finance/${selectedClient.id}`,
@@ -133,7 +140,7 @@ export function Finance() {
           variant: 'success',
         });
         setAddChargeOpen(false);
-        setChargeForm({ title: '', amount: '', our_cost: '' });
+        setChargeForm({ title: '', amount: '', our_cost: '', notes: '' });
         setSelectedClient(null);
         fetchFinanceData();
       }
@@ -282,19 +289,38 @@ export function Finance() {
         client.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .map(client => {
-        const filtered_charges = filterChargesByMonth(client.extra_charges);
-        const filtered_total = filtered_charges.reduce((sum, ch) => sum + (ch.amount || 0), 0);
-        const filtered_open_charges = filtered_charges
-          .filter(ch => !ch.completed && !ch.paid)
-          .reduce((sum, ch) => sum + (ch.amount || 0), 0);
+        const all_filtered_charges = filterChargesByMonth(client.extra_charges);
+        const open_charges = all_filtered_charges.filter(ch => !ch.completed && !ch.paid);
+        const archived_charges = all_filtered_charges.filter(ch => ch.completed || ch.paid);
+        const filtered_total = all_filtered_charges.reduce((sum, ch) => sum + (ch.amount || 0), 0);
+        const filtered_open_charges = open_charges.reduce((sum, ch) => sum + (ch.amount || 0), 0);
         return {
           ...client,
-          filtered_charges,
+          filtered_charges: open_charges,
+          archived_charges,
           filtered_total,
           filtered_open_charges
         };
       })
       .sort((a, b) => b.filtered_total - a.filtered_total) || [];
+
+  const totalArchivedCharges = filteredClients.reduce(
+    (sum, client) => sum + client.archived_charges.length, 0
+  );
+
+  const allArchivedCharges = filteredClients
+    .flatMap(client => 
+      client.archived_charges.map(charge => ({
+        ...charge,
+        clientId: client.id,
+        clientName: client.name
+      }))
+    )
+    .sort((a, b) => {
+      const dateA = a.date || '';
+      const dateB = b.date || '';
+      return dateB.localeCompare(dateA);
+    });
 
   const months = [
     { value: 'all', label: 'כל החודשים' },
@@ -479,7 +505,7 @@ export function Finance() {
                             size="sm"
                             onClick={() => {
                               setSelectedClient(client);
-                              setChargeForm({ title: '', amount: '', our_cost: '' });
+                              setChargeForm({ title: '', amount: '', our_cost: '', notes: '' });
                               setAddChargeOpen(true);
                             }}
                           >
@@ -525,39 +551,43 @@ export function Finance() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {client.filtered_charges.map((charge) => {
-                                      const isPaid = charge.completed || charge.paid;
-                                      return (
-                                        <tr
-                                          key={charge.id}
-                                          className={`border-b border-gray-100 ${isPaid ? 'bg-green-50' : ''}`}
-                                        >
-                                          <td className={`p-2 ${isPaid ? 'line-through text-gray-400' : ''}`}>
+                                    {client.filtered_charges.map((charge) => (
+                                      <tr
+                                        key={charge.id}
+                                        className="border-b border-gray-100"
+                                      >
+                                        <td className="p-2">
+                                          <div>
                                             {charge.title || charge.description || '-'}
-                                          </td>
-                                          <td className={`p-2 ${isPaid ? 'text-gray-400' : ''}`}>
-                                            {formatDate(charge.date)}
-                                          </td>
-                                          <td className={`p-2 font-semibold ${isPaid ? 'text-gray-400' : ''}`}>
-                                            ₪{(charge.amount || 0).toLocaleString()}
-                                          </td>
-                                          <td className={`p-2 ${isPaid ? 'text-gray-400' : ''}`}>
-                                            {charge.our_cost ? `₪${charge.our_cost.toLocaleString()}` : '-'}
-                                          </td>
-                                          <td className="p-2">
-                                            <div className="flex items-center gap-2">
-                                              <Switch
-                                                checked={isPaid}
-                                                onCheckedChange={() => handleToggleChargeStatus(client.id, charge.id)}
-                                              />
-                                              <span className={`text-xs ${isPaid ? 'text-green-600' : 'text-red-500'}`}>
-                                                {isPaid ? 'שולם' : 'לא שולם'}
-                                              </span>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
+                                            {charge.notes && (
+                                              <div className="text-xs text-gray-500 mt-1">
+                                                {charge.notes}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="p-2">
+                                          {formatDate(charge.date)}
+                                        </td>
+                                        <td className="p-2 font-semibold">
+                                          ₪{(charge.amount || 0).toLocaleString()}
+                                        </td>
+                                        <td className="p-2">
+                                          {charge.our_cost ? `₪${charge.our_cost.toLocaleString()}` : '-'}
+                                        </td>
+                                        <td className="p-2">
+                                          <div className="flex items-center gap-2">
+                                            <Switch
+                                              checked={false}
+                                              onCheckedChange={() => handleToggleChargeStatus(client.id, charge.id)}
+                                            />
+                                            <span className="text-xs text-red-500">
+                                              לא שולם
+                                            </span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
                                   </tbody>
                                 </table>
                               </div>
@@ -573,6 +603,80 @@ export function Finance() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Archive Section */}
+      {totalArchivedCharges > 0 && (
+        <Card>
+          <CardContent className="p-0">
+            <button
+              onClick={() => setShowArchive(!showArchive)}
+              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-2 text-gray-700 font-bold">
+                <Archive className="w-5 h-5" />
+                ארכיון חיובים ששולמו ({totalArchivedCharges} חיובים)
+              </div>
+              {showArchive ? (
+                <ChevronUp className="w-5 h-5 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              )}
+            </button>
+            {showArchive && (
+              <div className="border-t border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-3 text-right font-semibold">לקוח</th>
+                        <th className="p-3 text-right font-semibold">תיאור</th>
+                        <th className="p-3 text-right font-semibold">תאריך</th>
+                        <th className="p-3 text-right font-semibold">סכום</th>
+                        <th className="p-3 text-right font-semibold">הערות</th>
+                        <th className="p-3 text-right font-semibold">פעולות</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allArchivedCharges.map((charge) => (
+                        <tr
+                          key={charge.id}
+                          className="border-b border-gray-100 bg-green-50"
+                        >
+                          <td className="p-3 font-semibold text-gray-600">
+                            {charge.clientName}
+                          </td>
+                          <td className="p-3 text-gray-500 line-through">
+                            {charge.title || charge.description || '-'}
+                          </td>
+                          <td className="p-3 text-gray-500">
+                            {formatDate(charge.date)}
+                          </td>
+                          <td className="p-3 text-gray-500">
+                            ₪{(charge.amount || 0).toLocaleString()}
+                          </td>
+                          <td className="p-3 text-gray-500 text-xs max-w-[200px] truncate">
+                            {charge.notes || '-'}
+                          </td>
+                          <td className="p-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleChargeStatus(charge.clientId, charge.id)}
+                              className="text-xs"
+                            >
+                              החזר לפתוחים
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add Charge Modal */}
       <Dialog open={addChargeOpen} onOpenChange={setAddChargeOpen}>
@@ -618,6 +722,17 @@ export function Finance() {
                 }
                 placeholder="הזן עלות פנימית..."
                 min="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>הערות (אופציונלי):</Label>
+              <Textarea
+                value={chargeForm.notes}
+                onChange={(e) =>
+                  setChargeForm({ ...chargeForm, notes: e.target.value })
+                }
+                placeholder="הוסף הערות או פירוט נוסף על החיוב..."
+                rows={3}
               />
             </div>
             <DialogFooter>
