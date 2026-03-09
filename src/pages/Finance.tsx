@@ -543,7 +543,7 @@ export function Finance() {
                                 <table className="w-full text-sm">
                                   <thead>
                                     <tr className="bg-gray-100">
-                                      <th className="p-2 text-right font-semibold">תיאור</th>
+                                      <th className="p-2 text-right font-semibold">שם / תיאור</th>
                                       <th className="p-2 text-right font-semibold">תאריך</th>
                                       <th className="p-2 text-right font-semibold">סכום</th>
                                       <th className="p-2 text-right font-semibold">עלות פנימית</th>

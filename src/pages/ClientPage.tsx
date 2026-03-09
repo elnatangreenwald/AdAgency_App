@@ -1513,7 +1513,7 @@ export function ClientPage() {
               <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
                 <thead>
                   <tr className="bg-[#043841] text-white">
-                    <th className="p-3 text-right font-bold">תיאור</th>
+                    <th className="p-3 text-right font-bold">שם / תיאור</th>
                     <th className="p-3 text-center font-bold">סכום לחיוב</th>
                     <th className="p-3 text-center font-bold">עלות פנימית</th>
                     <th className="p-3 text-center font-bold">תאריך</th>
