@@ -1523,13 +1523,20 @@ export function ClientPage() {
                 <tbody>
                   {client.extra_charges.map((charge) => (
                     <tr key={charge.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="p-3 font-medium">
-                        {charge.charge_number && (
-                          <span className="text-xs text-gray-500 font-mono mr-2">
-                            #{charge.charge_number}
-                          </span>
-                        )}
-                        {charge.title}
+                      <td className="p-3">
+                        <div>
+                          {charge.charge_number && (
+                            <span className="text-xs text-gray-500 font-mono mr-2">
+                              #{charge.charge_number}
+                            </span>
+                          )}
+                          <span className="font-medium">{charge.title}</span>
+                          {charge.description && (
+                            <div className="text-sm text-gray-600 mt-1">
+                              {charge.description}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="p-3 text-center text-green-600 font-bold text-lg">
                         ₪{charge.amount.toLocaleString()}

@@ -558,10 +558,10 @@ export function Finance() {
                                       >
                                         <td className="p-2">
                                           <div>
-                                            {charge.title || charge.description || '-'}
-                                            {charge.notes && (
-                                              <div className="text-xs text-gray-500 mt-1">
-                                                {charge.notes}
+                                            <div className="font-medium">{charge.title || '-'}</div>
+                                            {charge.description && (
+                                              <div className="text-sm text-gray-600">
+                                                {charge.description}
                                               </div>
                                             )}
                                           </div>
@@ -646,7 +646,12 @@ export function Finance() {
                             {charge.clientName}
                           </td>
                           <td className="p-3 text-gray-500 line-through">
-                            {charge.title || charge.description || '-'}
+                            <div>
+                              <div>{charge.title || '-'}</div>
+                              {charge.description && (
+                                <div className="text-sm">{charge.description}</div>
+                              )}
+                            </div>
                           </td>
                           <td className="p-3 text-gray-500">
                             {formatDate(charge.date)}
