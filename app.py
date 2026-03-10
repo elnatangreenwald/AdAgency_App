@@ -2887,6 +2887,7 @@ def api_finance():
                 'calculated_total': calculated_total,
                 'calculated_open_charges': calculated_open_charges,
                 'calculated_monthly_revenue': monthly_revenue,
+                'retainer_payments': c.get('retainer_payments', {}),
             })
         
         return jsonify({
@@ -3159,6 +3160,27 @@ def toggle_charge_status(client_id, charge_id):
                         save_data(data)
                         return jsonify({'success': True, 'completed': new_status, 'paid': new_status})
         return jsonify({'success': False, 'error': 'חיוב לא נמצא'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/toggle_retainer_status/<client_id>/<month>', methods=['POST'])
+@login_required
+@csrf.exempt
+def toggle_retainer_status(client_id, month):
+    """עדכון סטטוס תשלום ריטיינר חודשי"""
+    try:
+        data = load_data()
+        for c in data:
+            if c['id'] == client_id:
+                if 'retainer_payments' not in c:
+                    c['retainer_payments'] = {}
+                
+                current_status = c['retainer_payments'].get(month, False)
+                new_status = not current_status
+                c['retainer_payments'][month] = new_status
+                save_data(data)
+                return jsonify({'success': True, 'paid': new_status, 'month': month})
+        return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
