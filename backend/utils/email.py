@@ -69,6 +69,113 @@ def send_password_reset_email(user_email, reset_token):
         return False
 
 
+def send_charge_notification_email(client_name: str, charge_data: dict) -> bool:
+    """
+    Send email notification when a new charge is created.
+    
+    Args:
+        client_name: Name of the client
+        charge_data: Dictionary containing charge details (title, description, amount, date, charge_number)
+    
+    Returns:
+        True on success, False on failure
+    """
+    from datetime import datetime
+    
+    try:
+        smtp = get_smtp_config()
+        
+        if not smtp['username'] or not smtp['password']:
+            print("[WARNING] Email disabled - no SMTP configuration")
+            return False
+        
+        recipient = "nerya@vatkin.co.il"
+        
+        description = charge_data.get('title') or charge_data.get('description', '')
+        amount = charge_data.get('amount', 0)
+        date = charge_data.get('date', '')
+        charge_number = charge_data.get('charge_number', '')
+        our_cost = charge_data.get('our_cost', 0)
+        
+        current_time = datetime.now().strftime('%d/%m/%Y %H:%M')
+        
+        email_body = f"""
+        <html dir='rtl'>
+        <head>
+            <style>
+                body {{ font-family: Heebo, Arial, sans-serif; direction: rtl; }}
+                .container {{ max-width: 500px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }}
+                .content {{ background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .field {{ padding: 12px 0; border-bottom: 1px solid #e2e8f0; }}
+                .field:last-child {{ border-bottom: none; }}
+                .label {{ color: #64748b; font-size: 14px; margin-bottom: 4px; }}
+                .value {{ color: #1e293b; font-size: 16px; font-weight: 500; }}
+                .amount {{ font-size: 24px; color: #10b981; font-weight: bold; }}
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h1 style='margin: 0; font-size: 22px;'>💰 חיוב חדש נוסף</h1>
+                </div>
+                <div class='content'>
+                    <div class='field'>
+                        <div class='label'>לקוח</div>
+                        <div class='value'>{client_name}</div>
+                    </div>
+                    <div class='field'>
+                        <div class='label'>תיאור</div>
+                        <div class='value'>{description or 'לא צוין'}</div>
+                    </div>
+                    <div class='field'>
+                        <div class='label'>סכום</div>
+                        <div class='value amount'>₪{amount:,.0f}</div>
+                    </div>
+                    <div class='field'>
+                        <div class='label'>עלות שלנו</div>
+                        <div class='value'>₪{our_cost:,.0f}</div>
+                    </div>
+                    <div class='field'>
+                        <div class='label'>תאריך חיוב</div>
+                        <div class='value'>{date}</div>
+                    </div>
+                    <div class='field'>
+                        <div class='label'>מספר חיוב</div>
+                        <div class='value'>{charge_number}</div>
+                    </div>
+                    <div style='margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px; text-align: center;'>
+                        נשלח אוטומטית ב-{current_time}
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart('alternative')
+        msg['From'] = smtp['username']
+        msg['To'] = recipient
+        msg['Subject'] = f'חיוב חדש - {client_name} - ₪{amount:,.0f}'
+        
+        html_part = MIMEText(email_body, 'html', 'utf-8')
+        msg.attach(html_part)
+        
+        server = smtplib.SMTP(smtp['server'], smtp['port'])
+        server.starttls()
+        server.login(smtp['username'], smtp['password'])
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"[SUCCESS] Charge notification email sent to {recipient} for client {client_name}")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Error sending charge notification email: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def send_form_email(form_title, client_name, form_submission, uploaded_files, form_token, forms_list=None):
     """
     Send email with form details

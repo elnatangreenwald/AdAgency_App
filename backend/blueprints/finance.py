@@ -14,6 +14,7 @@ from openpyxl.utils import get_column_letter
 from backend.extensions import csrf, limiter
 from backend.utils.helpers import load_data, save_data, load_users, get_next_charge_number
 from backend.utils.permissions import get_user_role, can_user_access_client, is_manager_or_admin, filter_active_clients
+from backend.utils.email import send_charge_notification_email
 
 # Create blueprint
 finance_bp = Blueprint('finance', __name__)
@@ -102,6 +103,12 @@ def quick_add_charge():
         
         client['extra_charges'].append(new_charge)
         save_data(data)
+        
+        # Send email notification for new charge
+        try:
+            send_charge_notification_email(client.get('name', ''), new_charge)
+        except Exception as e:
+            print(f"[WARNING] Failed to send charge notification email: {e}")
         
         return jsonify({'success': True, 'charge': new_charge})
     except Exception as e:

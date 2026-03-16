@@ -51,6 +51,7 @@ if USE_DATABASE:
 
 # Import notifications module
 from backend.utils.notifications import create_notification
+from backend.utils.email import send_charge_notification_email
 
 app = Flask(__name__)
 # SECRET_KEY מ-environment variable (חובה בפרודקשן!)
@@ -2985,7 +2986,7 @@ def update_finance(client_id):
                 charge_number = get_next_charge_number(c)
                 our_cost = float(request.form.get('our_cost', 0) or 0)
                 description = request.form.get('description', '')
-                c.setdefault('extra_charges', []).append({
+                new_charge = {
                     'id': str(uuid.uuid4()),
                     'title': request.form.get('title'),
                     'description': description,
@@ -2994,7 +2995,14 @@ def update_finance(client_id):
                     'date': datetime.now().strftime("%d/%m/%y"),
                     'completed': False,
                     'charge_number': charge_number
-                })
+                }
+                c.setdefault('extra_charges', []).append(new_charge)
+                
+                # Send email notification for new charge
+                try:
+                    send_charge_notification_email(c.get('name', ''), new_charge)
+                except Exception as e:
+                    print(f"[WARNING] Failed to send charge notification email: {e}")
     save_data(data)
     
     if wants_json:
