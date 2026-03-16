@@ -100,49 +100,50 @@ def send_charge_notification_email(client_name: str, charge_data: dict) -> bool:
         current_time = datetime.now().strftime('%d/%m/%Y %H:%M')
         
         email_body = f"""
-        <html dir='rtl'>
+        <html dir='rtl' lang='he'>
         <head>
+            <meta charset='UTF-8'>
             <style>
-                body {{ font-family: Heebo, Arial, sans-serif; direction: rtl; }}
-                .container {{ max-width: 500px; margin: 0 auto; padding: 20px; }}
+                body {{ font-family: Heebo, Arial, sans-serif; direction: rtl; text-align: right; margin: 0; padding: 0; background-color: #f5f5f5; }}
+                .container {{ max-width: 500px; margin: 0 auto; padding: 20px; direction: rtl; text-align: right; }}
                 .header {{ background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }}
-                .content {{ background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                .field {{ padding: 12px 0; border-bottom: 1px solid #e2e8f0; }}
+                .content {{ background: white; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); direction: rtl; text-align: right; }}
+                .field {{ padding: 12px 0; border-bottom: 1px solid #e2e8f0; text-align: right; }}
                 .field:last-child {{ border-bottom: none; }}
-                .label {{ color: #64748b; font-size: 14px; margin-bottom: 4px; }}
-                .value {{ color: #1e293b; font-size: 16px; font-weight: 500; }}
-                .amount {{ font-size: 24px; color: #10b981; font-weight: bold; }}
+                .label {{ color: #64748b; font-size: 14px; margin-bottom: 4px; text-align: right; }}
+                .value {{ color: #1e293b; font-size: 16px; font-weight: 500; text-align: right; }}
+                .amount {{ font-size: 24px; color: #10b981; font-weight: bold; text-align: right; }}
             </style>
         </head>
-        <body>
-            <div class='container'>
+        <body style='direction: rtl; text-align: right;'>
+            <div class='container' style='direction: rtl; text-align: right;'>
                 <div class='header'>
                     <h1 style='margin: 0; font-size: 22px;'>💰 חיוב חדש נוסף</h1>
                 </div>
-                <div class='content'>
-                    <div class='field'>
-                        <div class='label'>לקוח</div>
-                        <div class='value'>{client_name}</div>
+                <div class='content' style='direction: rtl; text-align: right;'>
+                    <div class='field' style='text-align: right;'>
+                        <div class='label' style='text-align: right;'>לקוח</div>
+                        <div class='value' style='text-align: right;'>{client_name}</div>
                     </div>
-                    <div class='field'>
-                        <div class='label'>תיאור</div>
-                        <div class='value'>{description or 'לא צוין'}</div>
+                    <div class='field' style='text-align: right;'>
+                        <div class='label' style='text-align: right;'>תיאור</div>
+                        <div class='value' style='text-align: right;'>{description or 'לא צוין'}</div>
                     </div>
-                    <div class='field'>
-                        <div class='label'>סכום</div>
-                        <div class='value amount'>₪{amount:,.0f}</div>
+                    <div class='field' style='text-align: right;'>
+                        <div class='label' style='text-align: right;'>סכום</div>
+                        <div class='value amount' style='text-align: right;'>₪{amount:,.0f}</div>
                     </div>
-                    <div class='field'>
-                        <div class='label'>עלות שלנו</div>
-                        <div class='value'>₪{our_cost:,.0f}</div>
+                    <div class='field' style='text-align: right;'>
+                        <div class='label' style='text-align: right;'>עלות שלנו</div>
+                        <div class='value' style='text-align: right;'>₪{our_cost:,.0f}</div>
                     </div>
-                    <div class='field'>
-                        <div class='label'>תאריך חיוב</div>
-                        <div class='value'>{date}</div>
+                    <div class='field' style='text-align: right;'>
+                        <div class='label' style='text-align: right;'>תאריך חיוב</div>
+                        <div class='value' style='text-align: right;'>{date}</div>
                     </div>
-                    <div class='field'>
-                        <div class='label'>מספר חיוב</div>
-                        <div class='value'>{charge_number}</div>
+                    <div class='field' style='text-align: right;'>
+                        <div class='label' style='text-align: right;'>מספר חיוב</div>
+                        <div class='value' style='text-align: right;'>{charge_number}</div>
                     </div>
                     <div style='margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px; text-align: center;'>
                         נשלח אוטומטית ב-{current_time}
