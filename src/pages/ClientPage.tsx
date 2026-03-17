@@ -596,7 +596,7 @@ export function ClientPage() {
 
   const handleAddCharge = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chargeForm.title || !chargeForm.amount) {
+    if (!chargeForm.title) {
       toast({
         title: 'שגיאה',
         description: 'אנא מלא את כל השדות הנדרשים',
@@ -1483,13 +1483,12 @@ export function ClientPage() {
               />
             </div>
             <div>
-              <Label>סכום לחיוב:</Label>
+              <Label>סכום לחיוב (אופציונלי):</Label>
               <Input
                 type="number"
                 value={chargeForm.amount}
                 onChange={(e) => setChargeForm({ ...chargeForm, amount: e.target.value })}
                 placeholder="סכום"
-                required
               />
             </div>
             <div>

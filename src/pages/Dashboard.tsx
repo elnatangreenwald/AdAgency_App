@@ -297,7 +297,7 @@ export function Dashboard() {
 
   const handleAddCharge = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedClientId || !chargeForm.charge_title || !chargeForm.charge_amount) {
+    if (!selectedClientId || !chargeForm.charge_title) {
       toast({
         title: 'שגיאה',
         description: 'אנא מלא את כל השדות הנדרשים',
@@ -786,7 +786,7 @@ export function Dashboard() {
             </div>
 
             <div className="space-y-2">
-              <Label>סכום לחיוב:</Label>
+              <Label>סכום לחיוב (אופציונלי):</Label>
               <Input
                 type="number"
                 value={chargeForm.charge_amount}
@@ -796,7 +796,6 @@ export function Dashboard() {
                 placeholder="הזן סכום..."
                 min="0"
                 step="0.01"
-                required
               />
             </div>
 
