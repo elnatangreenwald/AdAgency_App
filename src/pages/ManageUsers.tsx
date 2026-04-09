@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,12 +29,6 @@ interface User {
   name: string;
   email?: string;
   role: string;
-}
-
-interface Client {
-  id: string;
-  name: string;
-  assigned_user?: string | string[];
 }
 
 interface Permission {
@@ -51,7 +44,6 @@ interface Page {
 export function ManageUsers() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const [permissions, setPermissions] = useState<Record<string, string>>({});
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +51,6 @@ export function ManageUsers() {
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [deleteUserOpen, setDeleteUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedClient, setSelectedClient] = useState<string>('');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [newPassword, setNewPassword] = useState('');
   const [userForm, setUserForm] = useState({
     username: '',
@@ -90,7 +80,6 @@ export function ManageUsers() {
       const response = await apiClient.get('/api/admin/users');
       if (response.data.success) {
         setUsers(response.data.users);
-        setClients(response.data.clients);
         setPermissions(response.data.permissions || {});
         setPages(response.data.pages || []);
       }
@@ -145,50 +134,6 @@ export function ManageUsers() {
       toast({
         title: 'שגיאה',
         description: error.response?.data?.error || 'שגיאה בהוספת המשתמש',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleAssignClient = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedClient || selectedUsers.length === 0) {
-      toast({
-        title: 'שגיאה',
-        description: 'אנא בחר לקוח ועובדים',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('action', 'assign');
-      formData.append('client_id', selectedClient);
-      selectedUsers.forEach((uid) => {
-        formData.append('user_ids', uid);
-      });
-
-      const response = await apiClient.post('/admin/users', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-
-      if (response.status === 200) {
-        toast({
-          title: 'הצלחה',
-          description: 'השיוך בוצע בהצלחה',
-          variant: 'success',
-        });
-        setSelectedClient('');
-        setSelectedUsers([]);
-        fetchData();
-      }
-    } catch (error: any) {
-      toast({
-        title: 'שגיאה',
-        description: error.response?.data?.error || 'שגיאה בביצוע השיוך',
         variant: 'destructive',
       });
     }
@@ -389,20 +334,6 @@ export function ManageUsers() {
     }
   };
 
-  const getClientAssignedUsers = (clientId: string): string[] => {
-    const client = clients.find((c) => c.id === clientId);
-    if (!client || !client.assigned_user) return [];
-    return Array.isArray(client.assigned_user)
-      ? client.assigned_user
-      : [client.assigned_user];
-  };
-
-  useEffect(() => {
-    if (selectedClient) {
-      setSelectedUsers(getClientAssignedUsers(selectedClient));
-    }
-  }, [selectedClient, clients]);
-
   if (currentUser?.id !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -498,73 +429,6 @@ export function ManageUsers() {
               <Plus className="w-4 h-4 ml-2" />
               צור משתמש
             </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Assign Client */}
-      <Card>
-        <CardHeader>
-          <CardTitle>🔗 שיוך לקוח</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAssignClient} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>בחר לקוח:</Label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="-- בחר לקוח --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>שייך לעובדים (ניתן לבחור כמה):</Label>
-                <div className="border rounded-lg p-4 max-h-[200px] overflow-y-auto space-y-2">
-                  {users
-                    .filter((u) => u.id !== 'admin')
-                    .map((user) => (
-                      <div key={user.id} className="flex items-center space-x-2 space-x-reverse">
-                        <Checkbox
-                          id={`user-${user.id}`}
-                          checked={selectedUsers.includes(user.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedUsers([...selectedUsers, user.id]);
-                            } else {
-                              setSelectedUsers(selectedUsers.filter((id) => id !== user.id));
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`user-${user.id}`}
-                          className="cursor-pointer flex-1"
-                        >
-                          {user.name}
-                        </Label>
-                      </div>
-                    ))}
-                </div>
-                {selectedClient && getClientAssignedUsers(selectedClient).length > 0 && (
-                  <div className="mt-2 p-2 bg-gray-100 rounded text-sm text-gray-600">
-                    <strong>שויך כרגע ל:</strong>{' '}
-                    {getClientAssignedUsers(selectedClient)
-                      .map(
-                        (uid) => users.find((u) => u.id === uid)?.name || uid
-                      )
-                      .join(', ')}
-                  </div>
-                )}
-              </div>
-            </div>
-            <Button type="submit">בצע שיוך</Button>
           </form>
         </CardContent>
       </Card>

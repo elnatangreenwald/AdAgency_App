@@ -14,6 +14,7 @@ import { Quotes } from './pages/Quotes';
 import { Forms } from './pages/Forms';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { ManageUsers } from './pages/ManageUsers';
+import { ClientAssignmentPage } from './pages/ClientAssignmentPage';
 import { Archive } from './pages/Archive';
 import { TimeTrackingReports } from './pages/TimeTrackingReports';
 import { Toaster } from './components/ui/toaster';
@@ -35,6 +36,7 @@ function App() {
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="quotes" element={<Quotes />} />
             <Route path="forms" element={<Forms />} />
+            <Route path="client_assignment" element={<ClientAssignmentPage />} />
             <Route path="admin/dashboard" element={<AdminDashboard />} />
             <Route path="admin/users" element={<ManageUsers />} />
             <Route path="archive" element={<Archive />} />

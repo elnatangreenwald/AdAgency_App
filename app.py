@@ -1483,10 +1483,10 @@ def quick_add_charge():
     """Route להוספת חיוב מהיר מהדשבורד"""
     try:
         client_id = request.form.get('client_id')
-        charge_title = request.form.get('charge_title')
+        charge_title = request.form.get('charge_title', '').strip()
         charge_amount = request.form.get('charge_amount')
         
-        if not client_id or not charge_title or not charge_amount:
+        if not client_id or not charge_title:
             wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                         request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             if wants_json:
@@ -1505,7 +1505,7 @@ def quick_add_charge():
                     'id': str(uuid.uuid4()),
                     'title': charge_title,
                     'description': description,
-                    'amount': int(float(charge_amount)),
+                    'amount': float(charge_amount or 0),
                     'our_cost': our_cost,
                     'date': datetime.now().strftime("%d/%m/%y"),
                     'completed': False,
@@ -2986,11 +2986,16 @@ def update_finance(client_id):
                 charge_number = get_next_charge_number(c)
                 our_cost = float(request.form.get('our_cost', 0) or 0)
                 description = request.form.get('description', '')
+                title = request.form.get('title', '').strip()
+                if not title:
+                    if wants_json:
+                        return jsonify({'success': False, 'error': 'חסרים שדות נדרשים'}), 400
+                    return redirect(request.referrer)
                 new_charge = {
                     'id': str(uuid.uuid4()),
-                    'title': request.form.get('title'),
+                    'title': title,
                     'description': description,
-                    'amount': int(request.form.get('amount', 0)),
+                    'amount': float(request.form.get('amount', 0) or 0),
                     'our_cost': our_cost,
                     'date': datetime.now().strftime("%d/%m/%y"),
                     'completed': False,
@@ -5094,6 +5099,7 @@ def load_permissions():
             '/suppliers': 'עובד',
             '/quotes': 'עובד',
             '/forms': 'עובד',
+            '/client_assignment': 'עובד',
             '/admin/dashboard': 'מנהל',
             '/admin/users': 'אדמין'
         }
@@ -5185,6 +5191,82 @@ def check_permission(route_path, user_role):
     return False
 
 
+@app.route('/api/client_assignment')
+@login_required
+def api_client_assignment():
+    """API endpoint להחזרת נתונים לשיוך לקוחות - פתוח לכל המשתמשים"""
+    try:
+        users = load_users()
+        clients = load_data()
+        clients = filter_active_clients(clients)
+        
+        users_list = [
+            {'id': uid, 'name': info.get('name', '')}
+            for uid, info in users.items()
+            if uid != 'admin'
+        ]
+        
+        clients_list = [
+            {
+                'id': c['id'],
+                'name': c.get('name', ''),
+                'assigned_user': c.get('assigned_user', []),
+            }
+            for c in clients
+        ]
+        
+        return jsonify({
+            'success': True,
+            'users': users_list,
+            'clients': sorted(clients_list, key=lambda x: x.get('name', '').lower()),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/client_assignment/assign', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_client_assignment_assign():
+    """API endpoint לביצוע שיוך לקוח - פתוח לכל המשתמשים"""
+    try:
+        data = request.get_json() if request.is_json else None
+        if data:
+            client_id = data.get('client_id')
+            user_ids = data.get('user_ids', [])
+        else:
+            client_id = request.form.get('client_id')
+            user_ids = request.form.getlist('user_ids')
+        
+        if not client_id:
+            return jsonify({'success': False, 'error': 'לא נבחר לקוח'}), 400
+        
+        clients = load_data()
+        users = load_users()
+        client_found = False
+        client_name = None
+        
+        for c in clients:
+            if c['id'] == client_id:
+                client_found = True
+                client_name = c.get('name', 'Unknown')
+                c['assigned_user'] = user_ids
+                break
+        
+        if not client_found:
+            return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
+        
+        save_data(clients)
+        
+        if user_ids:
+            user_names = [users.get(uid, {}).get('name', uid) for uid in user_ids if uid in users]
+            msg = f'הלקוח "{client_name}" שויך בהצלחה לעובדים: {", ".join(user_names)}'
+        else:
+            msg = f'השיוך של הלקוח "{client_name}" הוסר'
+        
+        return jsonify({'success': True, 'message': msg})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/admin/users')
 @login_required
 def api_admin_users():
@@ -5206,6 +5288,7 @@ def api_admin_users():
             {'route': '/suppliers', 'name': 'ספקים'},
             {'route': '/quotes', 'name': 'הצעות מחיר'},
             {'route': '/forms', 'name': 'טפסים'},
+            {'route': '/client_assignment', 'name': 'שיוך לקוחות'},
             {'route': '/admin/dashboard', 'name': 'דוח מנהלים'},
             {'route': '/admin/users', 'name': 'ניהול צוות'},
         ]
@@ -6938,7 +7021,8 @@ def serve_react_app_assets(filename):
 
 # React SPA catch-all routes - serve index.html for client-side routing
 REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers', 
-                '/quotes', '/forms', '/admin', '/archive', '/my_tasks', '/time_tracking']
+                '/quotes', '/forms', '/admin', '/archive', '/my_tasks', '/time_tracking',
+                '/client_assignment']
 
 @app.route('/app')
 @app.route('/app/')

@@ -11,7 +11,8 @@ import {
   Settings,
   LogOut,
   Archive,
-  Clock
+  Clock,
+  Link2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,6 +68,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/quotes', icon: FileText, label: 'הצעות מחיר' },
     { path: '/forms', icon: ClipboardList, label: 'טפסים' },
     { path: '/time_tracking', icon: Clock, label: 'דוחות שעות עבודה' },
+    { path: '/client_assignment', icon: Link2, label: 'שיוך לקוחות' },
     { path: '/admin/dashboard', icon: BarChart3, label: 'דוח מנהלים' },
   ];
 
