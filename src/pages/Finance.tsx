@@ -48,6 +48,8 @@ interface Client {
   calculated_open_charges: number;
   calculated_monthly_revenue: number;
   retainer_payments?: Record<string, boolean>;
+  /** מלא רק במיפוי לתצוגה: חודשים פתוחים (מפתחות "01"–"12") בתצוגת כל החודשים */
+  open_retainer_month_keys?: string[];
 }
 
 interface FinanceData {
@@ -56,6 +58,48 @@ interface FinanceData {
   total_monthly_revenue: number;
   current_month: string;
   current_year: string;
+}
+
+const HEBREW_MONTH_NAMES = [
+  'ינואר',
+  'פברואר',
+  'מרץ',
+  'אפריל',
+  'מאי',
+  'יוני',
+  'יולי',
+  'אוגוסט',
+  'ספטמבר',
+  'אוקטובר',
+  'נובמבר',
+  'דצמבר',
+];
+
+/** מפתח חודש "01"–"12" → שם בעברית */
+function hebrewMonthName(monthKey: string): string {
+  const idx = parseInt(monthKey, 10) - 1;
+  if (idx < 0 || idx > 11) return monthKey;
+  return HEBREW_MONTH_NAMES[idx];
+}
+
+/**
+ * בתצוגת "כל החודשים": כל חודש מתחילת השנה עד החודש הנוכחי שבו הרטיינר לא סומן כשולם.
+ */
+function getOpenRetainerMonthKeysYtd(
+  retainer: number,
+  retainerPayments: Record<string, boolean> | undefined,
+  reference: Date
+): string[] {
+  if (retainer <= 0) return [];
+  const currentMonth = reference.getMonth() + 1;
+  const open: string[] = [];
+  for (let m = 1; m <= currentMonth; m++) {
+    const key = String(m).padStart(2, '0');
+    if (retainerPayments?.[key] !== true) {
+      open.push(key);
+    }
+  }
+  return open;
 }
 
 export function Finance() {
@@ -241,9 +285,9 @@ export function Finance() {
   };
 
   const getCurrentMonthName = () => {
-    const monthNames = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
-    const currentMonth = monthFilter !== 'all' ? parseInt(monthFilter) - 1 : new Date().getMonth();
-    return monthNames[currentMonth];
+    const currentMonth =
+      monthFilter !== 'all' ? parseInt(monthFilter, 10) - 1 : new Date().getMonth();
+    return HEBREW_MONTH_NAMES[currentMonth] ?? '';
   };
 
   const getDisplayMonth = () => {
@@ -328,17 +372,34 @@ export function Finance() {
         const archived_charges = all_filtered_charges.filter(ch => ch.completed || ch.paid);
         const filtered_total = all_filtered_charges.reduce((sum, ch) => sum + (ch.amount || 0), 0);
         const filtered_open_charges = open_charges.reduce((sum, ch) => sum + (ch.amount || 0), 0);
-        
-        const displayMonth = monthFilter !== 'all' ? monthFilter : String(new Date().getMonth() + 1).padStart(2, '0');
-        const isRetainerPaid = client.retainer_payments?.[displayMonth] || false;
-        const retainerOpenAmount = (client.retainer > 0 && !isRetainerPaid) ? client.retainer : 0;
-        
+
+        const now = new Date();
+        const openRetainerMonthKeys =
+          monthFilter === 'all'
+            ? getOpenRetainerMonthKeysYtd(
+                client.retainer,
+                client.retainer_payments,
+                now
+              )
+            : [];
+
+        let retainerOpenAmount = 0;
+        if (monthFilter === 'all') {
+          retainerOpenAmount = openRetainerMonthKeys.length * client.retainer;
+        } else if (monthFilter && client.retainer > 0) {
+          const isPaid = client.retainer_payments?.[monthFilter] === true;
+          if (!isPaid) {
+            retainerOpenAmount = client.retainer;
+          }
+        }
+
         return {
           ...client,
           filtered_charges: open_charges,
           archived_charges,
           filtered_total,
-          filtered_open_charges: filtered_open_charges + retainerOpenAmount
+          filtered_open_charges: filtered_open_charges + retainerOpenAmount,
+          open_retainer_month_keys: openRetainerMonthKeys,
         };
       })
       .sort((a, b) => b.filtered_total - a.filtered_total) || [];
@@ -564,11 +625,23 @@ export function Finance() {
                           <div className="p-4 border-b-2 border-gray-200">
                             <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
                               <Calendar className="w-4 h-4" />
-                              פירוט חיובים - {client.name} - {getCurrentMonthName()}
+                              פירוט חיובים - {client.name} -{' '}
+                              {monthFilter === 'all'
+                                ? `כל החודשים (${new Date().getFullYear()}, רטיינרים פתוחים מתחילת השנה)`
+                                : getCurrentMonthName()}
                             </h4>
-                            {client.retainer === 0 && client.filtered_charges.length === 0 ? (
-                              <p className="text-gray-500 text-sm">אין חיובים להצגה</p>
-                            ) : (
+                            {(() => {
+                              const showRetainerDetail =
+                                monthFilter === 'all'
+                                  ? (client.open_retainer_month_keys?.length ?? 0) > 0
+                                  : client.retainer > 0;
+                              const noChargesToShow = client.filtered_charges.length === 0;
+                              if (!showRetainerDetail && noChargesToShow) {
+                                return (
+                                  <p className="text-gray-500 text-sm">אין חיובים להצגה</p>
+                                );
+                              }
+                              return (
                               <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                   <thead>
@@ -581,8 +654,51 @@ export function Finance() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {/* Retainer Row */}
-                                    {client.retainer > 0 && (
+                                    {monthFilter === 'all' &&
+                                      client.retainer > 0 &&
+                                      (client.open_retainer_month_keys ?? []).map((monthKey) => (
+                                        <tr
+                                          key={`retainer-${client.id}-${monthKey}`}
+                                          className="border-b border-gray-100 bg-blue-50"
+                                        >
+                                          <td className="p-2">
+                                            <div className="font-medium text-blue-700">
+                                              ריטיינר חודשי - {hebrewMonthName(monthKey)}
+                                            </div>
+                                          </td>
+                                          <td className="p-2 text-blue-700">
+                                            {hebrewMonthName(monthKey)}
+                                          </td>
+                                          <td className="p-2 font-semibold text-blue-700">
+                                            ₪{client.retainer.toLocaleString()}
+                                          </td>
+                                          <td className="p-2 text-blue-700">-</td>
+                                          <td className="p-2">
+                                            <div className="flex items-center gap-2">
+                                              <Switch
+                                                checked={
+                                                  client.retainer_payments?.[monthKey] || false
+                                                }
+                                                onCheckedChange={() =>
+                                                  handleToggleRetainerStatus(client.id, monthKey)
+                                                }
+                                              />
+                                              <span
+                                                className={`text-xs ${
+                                                  client.retainer_payments?.[monthKey]
+                                                    ? 'text-green-500'
+                                                    : 'text-red-500'
+                                                }`}
+                                              >
+                                                {client.retainer_payments?.[monthKey]
+                                                  ? 'שולם'
+                                                  : 'לא שולם'}
+                                              </span>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    {monthFilter !== 'all' && client.retainer > 0 && (
                                       <tr className="border-b border-gray-100 bg-blue-50">
                                         <td className="p-2">
                                           <div className="font-medium text-blue-700">
@@ -599,11 +715,27 @@ export function Finance() {
                                         <td className="p-2">
                                           <div className="flex items-center gap-2">
                                             <Switch
-                                              checked={client.retainer_payments?.[getDisplayMonth()] || false}
-                                              onCheckedChange={() => handleToggleRetainerStatus(client.id, getDisplayMonth())}
+                                              checked={
+                                                client.retainer_payments?.[getDisplayMonth()] ||
+                                                false
+                                              }
+                                              onCheckedChange={() =>
+                                                handleToggleRetainerStatus(
+                                                  client.id,
+                                                  getDisplayMonth()
+                                                )
+                                              }
                                             />
-                                            <span className={`text-xs ${client.retainer_payments?.[getDisplayMonth()] ? 'text-green-500' : 'text-red-500'}`}>
-                                              {client.retainer_payments?.[getDisplayMonth()] ? 'שולם' : 'לא שולם'}
+                                            <span
+                                              className={`text-xs ${
+                                                client.retainer_payments?.[getDisplayMonth()]
+                                                  ? 'text-green-500'
+                                                  : 'text-red-500'
+                                              }`}
+                                            >
+                                              {client.retainer_payments?.[getDisplayMonth()]
+                                                ? 'שולם'
+                                                : 'לא שולם'}
                                             </span>
                                           </div>
                                         </td>
@@ -650,7 +782,8 @@ export function Finance() {
                                   </tbody>
                                 </table>
                               </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
