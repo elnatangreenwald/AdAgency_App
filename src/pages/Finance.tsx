@@ -273,11 +273,39 @@ export function Finance() {
 
   const handleToggleRetainerStatus = async (clientId: string, month: string) => {
     try {
-      const response = await apiClient.post(`/toggle_retainer_status/${clientId}/${month}`);
+      const normalizedMonth = String(month).padStart(2, '0');
+      const response = await apiClient.post(
+        `/toggle_retainer_status/${clientId}/${normalizedMonth}`
+      );
       if (response.data.success) {
+        const returnedMonth: string =
+          typeof response.data.month === 'string'
+            ? response.data.month
+            : normalizedMonth;
+        const paid: boolean = response.data.paid === true;
+
+        // Optimistic state update: ensures UI reflects toggle immediately.
+        setData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            clients: prev.clients.map((c) => {
+              if (c.id !== clientId) return c;
+              const existing = c.retainer_payments ?? {};
+              return {
+                ...c,
+                retainer_payments: {
+                  ...existing,
+                  [returnedMonth]: paid,
+                },
+              };
+            }),
+          };
+        });
+
         toast({
           title: 'הצלחה',
-          description: response.data.paid ? 'ריטיינר סומן כשולם' : 'ריטיינר סומן כלא שולם',
+          description: paid ? 'ריטיינר סומן כשולם' : 'ריטיינר סומן כלא שולם',
           variant: 'success',
         });
         fetchFinanceData();
