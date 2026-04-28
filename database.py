@@ -62,6 +62,8 @@ class Client(Base):
     name = Column(String, nullable=False)
     client_number = Column(Integer)
     retainer = Column(Integer, default=0)
+    # Monthly retainer payment status by month key "01".."12"
+    retainer_payments = Column(JSONB, default={})
     extra_charges = Column(JSONB)  # List of charges
     projects = Column(JSONB)  # List of projects with nested tasks
     assigned_user = Column(JSONB)  # Can be string or list

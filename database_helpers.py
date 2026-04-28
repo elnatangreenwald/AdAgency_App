@@ -6,6 +6,7 @@ but use PostgreSQL instead
 import os
 import json
 from werkzeug.security import generate_password_hash
+from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
 from database import (
     get_db, User, Client, Supplier, Quote, Message, Event,
@@ -13,6 +14,27 @@ from database import (
     TimeTrackingEntry, TimeTrackingActiveSession
 )
 from datetime import datetime
+
+# Ensure DB schema has columns the app relies on (Railway/prod safety).
+def _ensure_clients_schema():
+    db = get_db()
+    try:
+        db.execute(
+            text(
+                "ALTER TABLE clients "
+                "ADD COLUMN IF NOT EXISTS retainer_payments JSONB DEFAULT '{}'::jsonb;"
+            )
+        )
+        db.commit()
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+    finally:
+        db.close()
+
+_ensure_clients_schema()
 
 # This module is only imported when USE_DATABASE=true in app.py
 # So we always use the database here
@@ -125,6 +147,7 @@ def load_data():
                 'name': client.name,
                 'client_number': client.client_number,
                 'retainer': client.retainer or 0,
+                'retainer_payments': client.retainer_payments or {},
                 'extra_charges': client.extra_charges or [],
                 'projects': client.projects or [],
                 'assigned_user': client.assigned_user,
@@ -192,6 +215,7 @@ def save_data(data):
                 client.name = client_data.get('name', client.name)
                 client.client_number = client_data.get('client_number')
                 client.retainer = client_data.get('retainer', 0)
+                client.retainer_payments = client_data.get('retainer_payments', client.retainer_payments or {})
                 client.extra_charges = client_data.get('extra_charges', [])
                 client.projects = client_data.get('projects', [])
                 client.assigned_user = client_data.get('assigned_user')
@@ -207,6 +231,7 @@ def save_data(data):
                 client.calculated_open_charges = client_data.get('calculated_open_charges', 0)
                 client.calculated_monthly_revenue = client_data.get('calculated_monthly_revenue', 0)
                 # Flag JSONB fields so SQLAlchemy detects in-place changes (e.g. deletions)
+                flag_modified(client, 'retainer_payments')
                 flag_modified(client, 'extra_charges')
                 flag_modified(client, 'projects')
                 flag_modified(client, 'assigned_user')
@@ -218,6 +243,7 @@ def save_data(data):
                     name=client_data.get('name', ''),
                     client_number=client_data.get('client_number'),
                     retainer=client_data.get('retainer', 0),
+                    retainer_payments=client_data.get('retainer_payments', {}),
                     extra_charges=client_data.get('extra_charges', []),
                     projects=client_data.get('projects', []),
                     assigned_user=client_data.get('assigned_user'),
