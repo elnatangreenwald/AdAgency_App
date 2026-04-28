@@ -95,7 +95,14 @@ function getOpenRetainerMonthKeysYtd(
   const open: string[] = [];
   for (let m = 1; m <= currentMonth; m++) {
     const key = String(m).padStart(2, '0');
-    if (retainerPayments?.[key] !== true) {
+    const legacyKey = String(m); // backward-compat: older data may store "3" not "03"
+    const paidValue = (retainerPayments as any)?.[key] ?? (retainerPayments as any)?.[legacyKey];
+    const isPaid =
+      paidValue === true ||
+      paidValue === 'true' ||
+      paidValue === 1 ||
+      paidValue === '1';
+    if (!isPaid) {
       open.push(key);
     }
   }

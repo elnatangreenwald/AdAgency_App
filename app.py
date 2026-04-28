@@ -3182,17 +3182,36 @@ def toggle_charge_status(client_id, charge_id):
 def toggle_retainer_status(client_id, month):
     """עדכון סטטוס תשלום ריטיינר חודשי"""
     try:
+        # Normalize month to "01".."12" for consistent storage & lookup
+        normalized_month = str(month).strip()
+        if normalized_month.isdigit():
+            normalized_month = normalized_month.zfill(2)
+
         data = load_data()
         for c in data:
             if c['id'] == client_id:
                 if 'retainer_payments' not in c:
                     c['retainer_payments'] = {}
                 
-                current_status = c['retainer_payments'].get(month, False)
+                # Backward-compat: some data may contain unpadded month keys (e.g. "3" instead of "03")
+                legacy_month = normalized_month.lstrip('0') or '0'
+                current_status = (
+                    c['retainer_payments'].get(normalized_month, None)
+                    if normalized_month in c['retainer_payments']
+                    else c['retainer_payments'].get(legacy_month, False)
+                )
                 new_status = not current_status
-                c['retainer_payments'][month] = new_status
+
+                # Consolidate: always store under normalized key; if legacy exists, remove it
+                c['retainer_payments'][normalized_month] = new_status
+                if legacy_month in c['retainer_payments'] and legacy_month != normalized_month:
+                    try:
+                        del c['retainer_payments'][legacy_month]
+                    except Exception:
+                        pass
+
                 save_data(data)
-                return jsonify({'success': True, 'paid': new_status, 'month': month})
+                return jsonify({'success': True, 'paid': new_status, 'month': normalized_month})
         return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
