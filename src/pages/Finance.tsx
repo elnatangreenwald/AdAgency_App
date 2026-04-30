@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -580,9 +580,8 @@ export function Finance() {
               </thead>
               <tbody>
                 {filteredClients.map((client) => (
-                  <>
+                  <Fragment key={client.id}>
                     <tr
-                      key={client.id}
                       className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                     >
                       <td className="p-3">
@@ -655,7 +654,7 @@ export function Finance() {
                       </td>
                     </tr>
                     {expandedClients.has(client.id) && (
-                      <tr key={`${client.id}-charges`} className="bg-gray-50">
+                      <tr className="bg-gray-50">
                         <td colSpan={6} className="p-0">
                           <div className="p-4 border-b-2 border-gray-200">
                             <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
@@ -777,9 +776,9 @@ export function Finance() {
                                       </tr>
                                     )}
                                     {/* Extra Charges */}
-                                    {client.filtered_charges.map((charge) => (
+                                    {client.filtered_charges.map((charge, idx) => (
                                       <tr
-                                        key={charge.id}
+                                        key={`${client.id}-${charge.id ?? `idx-${idx}`}`}
                                         className="border-b border-gray-100"
                                       >
                                         <td className="p-2">
@@ -823,7 +822,7 @@ export function Finance() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -864,9 +863,9 @@ export function Finance() {
                       </tr>
                     </thead>
                     <tbody>
-                      {allArchivedCharges.map((charge) => (
+                      {allArchivedCharges.map((charge, idx) => (
                         <tr
-                          key={charge.id}
+                          key={`${charge.clientId}-${charge.id ?? `idx-${idx}`}`}
                           className="border-b border-gray-100 bg-green-50"
                         >
                           <td className="p-3 font-semibold text-gray-600">
