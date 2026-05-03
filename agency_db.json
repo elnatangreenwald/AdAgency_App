@@ -372,24 +372,6 @@
                 "our_cost": 0
             },
             {
-                "id": "9c0f7466-247a-48d9-be0b-155f3d304373",
-                "title": "מחיאות כפיים - איפיון ראשוני",
-                "amount": 50,
-                "date": "24/12/25",
-                "charge_number": "0180002",
-                "completed": false,
-                "our_cost": 0.0
-            },
-            {
-                "id": "7271f6fb-a028-4933-8cdb-87185502fb09",
-                "title": "מחיאות כפיים - איפיון ראשוני",
-                "amount": 50,
-                "date": "24/12/25",
-                "charge_number": "0180003",
-                "completed": false,
-                "our_cost": 0
-            },
-            {
                 "id": "fa53274b-f30b-494e-b317-1df97d977276",
                 "title": "גוגל חדש",
                 "amount": 2000,

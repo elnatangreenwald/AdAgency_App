@@ -2218,19 +2218,6 @@ def update_task_status(client_id, project_id, task_id):
                                         t['done'] = False
                                         del t['completed_at']  # הסר את תאריך ההשלמה
                                 
-                                # אם עבר למצב הושלם, הוסף חיוב של מחיאות כפיים (רק למשימות לא יומיות)
-                                if new_status == 'הושלם' and old_status != 'הושלם' and not t.get('is_daily_task'):
-                                    if 'extra_charges' not in c:
-                                        c['extra_charges'] = []
-                                    charge_number = get_next_charge_number(c)
-                                    c['extra_charges'].append({
-                                        'id': str(uuid.uuid4()),
-                                        'title': 'מחיאות כפיים - ' + t.get('title', 'משימה הושלמה'),
-                                        'amount': 50,
-                                        'date': datetime.now().strftime('%d/%m/%y'),
-                                        'charge_number': charge_number,
-                                        'completed': False
-                                    })
                                 save_data(data)
                                 return jsonify({
                                     'status': 'success',
@@ -2346,20 +2333,6 @@ def update_task(client_id, project_id, task_id):
                                     
                                     if (status == 'completed' or status == 'הושלם') and old_status not in ['completed', 'הושלם']:
                                         t['completed_at'] = datetime.now().isoformat()
-                                    
-                                    # אם עבר למצב הושלם, הוסף חיוב של מחיאות כפיים
-                                    if (status == 'completed' or status == 'הושלם') and old_status not in ['completed', 'הושלם']:
-                                        if 'extra_charges' not in c:
-                                            c['extra_charges'] = []
-                                        charge_number = get_next_charge_number(c)
-                                        c['extra_charges'].append({
-                                            'id': str(uuid.uuid4()),
-                                            'title': '👏 ' + t.get('title', 'משימה הושלמה'),
-                                            'amount': 0,
-                                            'date': datetime.now().strftime('%Y-%m-%d'),
-                                            'charge_number': charge_number,
-                                            'completed': False
-                                        })
                                 
                                 if notes is not None:
                                     t['note'] = notes
