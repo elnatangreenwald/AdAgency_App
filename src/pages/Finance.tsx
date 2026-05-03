@@ -132,9 +132,11 @@ export function Finance() {
     fetchFinanceData();
   }, [monthFilter]);
 
-  const fetchFinanceData = async () => {
+  const fetchFinanceData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const url = monthFilter && monthFilter !== 'all' ? `/api/finance?month=${monthFilter}` : '/api/finance';
       const response = await apiClient.get(url);
       if (response.data.success) {
@@ -148,7 +150,9 @@ export function Finance() {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -252,6 +256,29 @@ export function Finance() {
   };
 
   const handleToggleChargeStatus = async (clientId: string, chargeId: string) => {
+    // Optimistic update - immediately update UI before API response
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        clients: prev.clients.map((c) => {
+          if (c.id !== clientId) return c;
+          return {
+            ...c,
+            extra_charges: c.extra_charges.map((charge) => {
+              if (charge.id !== chargeId) return charge;
+              const wasPaid = charge.paid || charge.completed;
+              return {
+                ...charge,
+                paid: !wasPaid,
+                completed: !wasPaid,
+              };
+            }),
+          };
+        }),
+      };
+    });
+
     try {
       const response = await apiClient.post(`/toggle_charge_status/${clientId}/${chargeId}`);
       if (response.data.success) {
@@ -260,9 +287,15 @@ export function Finance() {
           description: 'סטטוס החיוב עודכן',
           variant: 'success',
         });
-        fetchFinanceData();
+        // Silent background refresh to sync with server
+        fetchFinanceData(true);
+      } else {
+        // Revert on failure - refresh to get correct state
+        fetchFinanceData(true);
       }
     } catch (error: any) {
+      // Revert on error - refresh to get correct state
+      fetchFinanceData(true);
       toast({
         title: 'שגיאה',
         description: error.response?.data?.error || 'שגיאה בעדכון סטטוס החיוב',
@@ -308,7 +341,8 @@ export function Finance() {
           description: paid ? 'ריטיינר סומן כשולם' : 'ריטיינר סומן כלא שולם',
           variant: 'success',
         });
-        fetchFinanceData();
+        // Silent background refresh to sync with server
+        fetchFinanceData(true);
       }
     } catch (error: any) {
       toast({
