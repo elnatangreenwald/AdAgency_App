@@ -2519,8 +2519,12 @@ def upload_document(client_id):
         if not file or file.filename == '':
             return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
         
-        # יצירת שם קובץ בטוח ומניעת דריסה על ידי הוספת מזהה ייחודי
-        filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
+        # שמירת שם הקובץ המקורי להצגה
+        original_filename = file.filename
+        
+        # יצירת שם קובץ בטוח - UUID + סיומת בלבד (נמנע מבעיות עם שמות בעברית)
+        file_ext = os.path.splitext(original_filename)[1].lower() if '.' in original_filename else ''
+        filename = f"{uuid.uuid4().hex}{file_ext}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         
         # וידוא שהתיקייה קיימת
@@ -2542,7 +2546,7 @@ def upload_document(client_id):
                 
                 new_doc = {
                     'id': str(uuid.uuid4()),
-                    'display_name': doc_name if doc_name else file.filename,
+                    'display_name': doc_name if doc_name else original_filename,
                     'file_path': filename,
                     'upload_date': datetime.now().strftime("%d/%m/%y %H:%M")
                 }
