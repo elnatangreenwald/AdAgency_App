@@ -2511,45 +2511,54 @@ def delete_task(client_id, project_id, task_id):
 def upload_document(client_id):
     try:
         if 'document' not in request.files:
-            return redirect(request.referrer or url_for('client_page', client_id=client_id))
+            return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
         
         file = request.files['document']
         doc_name = request.form.get('doc_name', '')  # שם המסמך האופציונלי מהטופס
         
-        if file and file.filename != '':
-            # יצירת שם קובץ בטוח ומניעת דריסה על ידי הוספת מזהה ייחודי
-            filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            # וידוא שהתיקייה קיימת
-            if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            
-            # שמירת הקובץ
-            file.save(filepath)
-            
-            # עדכון הנתונים ב-JSON
-            data = load_data()
-            for c in data:
-                if c['id'] == client_id:
-                    # וודא שקיימת רשימת מסמכים
-                    if 'documents' not in c:
-                        c['documents'] = []
-                    
-                    c['documents'].append({
-                        'id': str(uuid.uuid4()),
-                        'display_name': doc_name if doc_name else file.filename,
-                        'file_path': filename,
-                        'upload_date': datetime.now().strftime("%d/%m/%y %H:%M")
-                    })
-                    save_data(data)
-                    print(f"Document saved: {filename} for client {client_id}")  # Debug
-                    break
+        if not file or file.filename == '':
+            return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
         
-        return redirect(request.referrer or url_for('client_page', client_id=client_id))
+        # יצירת שם קובץ בטוח ומניעת דריסה על ידי הוספת מזהה ייחודי
+        filename = secure_filename(f"{uuid.uuid4().hex}_{file.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # וידוא שהתיקייה קיימת
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        # שמירת הקובץ
+        file.save(filepath)
+        
+        # עדכון הנתונים ב-JSON
+        data = load_data()
+        client_found = False
+        for c in data:
+            if c['id'] == client_id:
+                client_found = True
+                # וודא שקיימת רשימת מסמכים
+                if 'documents' not in c:
+                    c['documents'] = []
+                
+                new_doc = {
+                    'id': str(uuid.uuid4()),
+                    'display_name': doc_name if doc_name else file.filename,
+                    'file_path': filename,
+                    'upload_date': datetime.now().strftime("%d/%m/%y %H:%M")
+                }
+                c['documents'].append(new_doc)
+                save_data(data)
+                print(f"Document saved: {filename} for client {client_id}")  # Debug
+                return jsonify({'success': True, 'document': new_doc}), 200
+        
+        if not client_found:
+            return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
+        
+        return jsonify({'success': False, 'error': 'שגיאה לא צפויה'}), 500
     
     except Exception as e:
         import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': f'שגיאה: {str(e)}'}), 500
 
 @app.route('/add_activity/<client_id>', methods=['POST'])
