@@ -22,7 +22,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 | פרמטר | ערך |
 |--------|-----|
-| **URL** | `https://YOUR-DOMAIN/api/webhook/charge` |
+| **URL** | `https://web-production-0d983.up.railway.app/api/webhook/charge` |
 | **Method** | `POST` |
 | **Header** | `X-API-Key: YOUR_SECRET_KEY` |
 | **Content-Type** | `application/json` |
