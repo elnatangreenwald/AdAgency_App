@@ -1532,6 +1532,106 @@ def quick_add_charge():
             return jsonify({'success': False, 'error': str(e)}), 500
         return redirect(url_for('home'))
 
+
+def _verify_charge_webhook_api_key():
+    """אימות מפתח API ל-webhook חיצוני (Base44 וכו')."""
+    expected = os.environ.get('CHARGE_WEBHOOK_API_KEY')
+    if not expected:
+        return False, 'Webhook לא מוגדר בשרת (CHARGE_WEBHOOK_API_KEY חסר)'
+
+    provided = request.headers.get('X-API-Key', '')
+    auth_header = request.headers.get('Authorization', '')
+    if not provided and auth_header.startswith('Bearer '):
+        provided = auth_header[7:]
+
+    if not provided or not secrets.compare_digest(provided, expected):
+        return False, 'מפתח API לא תקין או חסר'
+    return True, None
+
+
+def _parse_charge_webhook_payload():
+    """קריאת payload מ-JSON או מ-form-urlencoded."""
+    if request.is_json:
+        return request.get_json(silent=True) or {}
+    return {
+        'client_id': request.form.get('client_id'),
+        'client_name': request.form.get('client_name'),
+        'title': request.form.get('title') or request.form.get('charge_title'),
+        'amount': request.form.get('amount') or request.form.get('charge_amount'),
+        'description': request.form.get('description') or request.form.get('charge_description'),
+        'our_cost': request.form.get('our_cost') or request.form.get('charge_our_cost'),
+    }
+
+
+@app.route('/api/webhook/charge', methods=['POST'])
+@csrf.exempt
+@limiter.limit("60 per hour")
+def webhook_create_charge():
+    """יצירת חיוב חדש ממערכות חיצוניות (Base44) באמצעות API key."""
+    ok, auth_error = _verify_charge_webhook_api_key()
+    if not ok:
+        return jsonify({'success': False, 'error': auth_error}), 401
+
+    payload = _parse_charge_webhook_payload()
+    client_id = (payload.get('client_id') or '').strip()
+    client_name = (payload.get('client_name') or '').strip()
+    title = (payload.get('title') or '').strip()
+
+    if not title:
+        return jsonify({'success': False, 'error': 'חסר שדה title (כותרת החיוב)'}), 400
+    if not client_id and not client_name:
+        return jsonify({'success': False, 'error': 'חסר client_id או client_name'}), 400
+
+    try:
+        data = load_data()
+        client = None
+        if client_id:
+            client = next((c for c in data if c['id'] == client_id), None)
+        else:
+            client = next((c for c in data if c.get('name', '').strip() == client_name), None)
+            if not client:
+                client = next(
+                    (c for c in data if c.get('name', '').strip().lower() == client_name.lower()),
+                    None
+                )
+
+        if not client:
+            return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
+
+        client.setdefault('extra_charges', [])
+        new_charge = {
+            'id': str(uuid.uuid4()),
+            'title': title,
+            'description': (payload.get('description') or '').strip(),
+            'amount': float(payload.get('amount', 0) or 0),
+            'our_cost': float(payload.get('our_cost', 0) or 0),
+            'date': datetime.now().strftime("%d/%m/%y"),
+            'completed': False,
+            'charge_number': get_next_charge_number(client),
+            'created_at': datetime.now().isoformat(),
+            'source': 'webhook',
+        }
+        client['extra_charges'].append(new_charge)
+        save_data(data)
+
+        try:
+            send_charge_notification_email(client.get('name', ''), new_charge)
+        except Exception as e:
+            print(f"[WARNING] Failed to send charge notification email: {e}")
+
+        return jsonify({
+            'success': True,
+            'message': 'החיוב נוצר בהצלחה',
+            'charge': new_charge,
+            'client': {'id': client['id'], 'name': client.get('name', '')},
+        }), 201
+    except Exception as e:
+        print(f"Error in webhook_create_charge: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/all_clients')
 @login_required
 def api_all_clients():

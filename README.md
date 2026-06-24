@@ -133,6 +133,9 @@ GOOGLE_REDIRECT_URI=http://127.0.0.1:5000/auth/google/callback
 # Production - PostgreSQL
 USE_DATABASE=false
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
+
+# External webhook (Base44 charge integration)
+CHARGE_WEBHOOK_API_KEY=your-webhook-secret-key
 ```
 
 ### Running Locally
