@@ -29,4 +29,4 @@ COPY --from=build-stage /app/static/dist ./static/dist
 ENV PORT=8080
 
 # שימוש ב-sh -c לוודא הרחבת משתני סביבה
-CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:${PORT}"]
+CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:${PORT} --timeout 120 --workers 2 --graceful-timeout 30"]

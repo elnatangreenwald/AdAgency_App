@@ -25,7 +25,15 @@ if not DATABASE_URL:
     # Fallback to local PostgreSQL for development
     DATABASE_URL = os.environ.get('POSTGRES_URL', 'postgresql://localhost/adagency')
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
+# connect_timeout מבטיח שאם ה-DB לא נגיש, החיבור ייכשל מהר (10 שניות)
+# במקום להיתקע לנצח ולגרום ל-gunicorn WORKER TIMEOUT (502).
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    echo=False,
+    pool_recycle=300,
+    connect_args={"connect_timeout": 10},
+)
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
 def get_db():

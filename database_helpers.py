@@ -16,7 +16,15 @@ from database import (
 from datetime import datetime
 
 # Ensure DB schema has columns the app relies on (Railway/prod safety).
+# חשוב: לא קוראים לזה בזמן ה-import! קריאה בזמן import חוסמת את עליית
+# ה-worker ב-gunicorn, ואם ה-DB איטי/לא נגיש זה גורם ל-WORKER TIMEOUT (502).
+# במקום זה הבדיקה רצה פעם אחת, בעצלתיים, בקריאה הראשונה ל-load_data.
+_schema_checked = False
+
 def _ensure_clients_schema():
+    global _schema_checked
+    if _schema_checked:
+        return
     db = get_db()
     try:
         db.execute(
@@ -26,6 +34,7 @@ def _ensure_clients_schema():
             )
         )
         db.commit()
+        _schema_checked = True
     except Exception:
         try:
             db.rollback()
@@ -33,8 +42,6 @@ def _ensure_clients_schema():
             pass
     finally:
         db.close()
-
-_ensure_clients_schema()
 
 # This module is only imported when USE_DATABASE=true in app.py
 # So we always use the database here
@@ -137,6 +144,7 @@ def delete_user_record(user_id):
 
 def load_data():
     """Load clients data from database"""
+    _ensure_clients_schema()
     db = get_db()
     try:
         clients = []
