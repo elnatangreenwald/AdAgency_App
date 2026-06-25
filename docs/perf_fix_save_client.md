@@ -32,12 +32,25 @@
   - נוספה `save_client(client_data)` — מסלול מהיר ללקוח בודד.
 - `app.py`
   - נוסף `save_client` ל-imports (מצב DB) + מימוש מקביל למצב JSON.
-  - מסלולי המשימות החמים עברו מ-`save_data(data)` ל-`save_client(c)`:
-    - `/add_task/<client_id>/<project_id>`
-    - `/quick_add_task`
-    - `/update_task_status/<...>`
-    - `/api/task/update_dates/<...>`
-    - `/update_task/<...>`
+  - **כל** המסלולים שמשנים לקוח בודד עברו מ-`save_data(data)` ל-`save_client(...)`:
+    - **משימות:** `/add_task`, `/quick_add_task`, `/update_task_status`,
+      `/update_task`, `/update_task_note`, `/api/task/update_dates`, `/delete_task`
+    - **פרויקטים:** `/add_project`, `/delete_project`
+    - **חיובים:** `/quick_add_charge`, `/update_finance`, `/toggle_charge_status`,
+      `/update_charge_our_cost`, `/delete_charge`, `/api/webhook/charge` (Base44),
+      `/toggle_retainer_status`
+    - **אנשי קשר:** `/add_contact`, `/delete_contact`
+    - **מסמכים/לוגו:** `/upload_document`, `/delete_document`, `/upload_logo`
+    - **לקוחות:** `/add_client`, `/archive_client`, `/toggle_client_active`, שיוך עובדים
+    - **אירועים:** `/add_event_charge`, `/edit_event_charge`
+    - **טפסים:** `/submit_form`, הערת מנהל
+
+### נשאר `save_data` (מכוון - שינוי רב-לקוחות)
+
+מסלולים שמשנים **כמה לקוחות בו-זמנית** נשארו עם `save_data` כי זו ההתנהגות הנכונה:
+- חישוב מחדש של נתוני כספים לכל הלקוחות (מסך כספים)
+- מחיקת משתמש (הסרת השיוך מכל הלקוחות)
+- הקצאת מספרי לקוח
 
 ## התנהגות זהה, רק מהיר יותר
 

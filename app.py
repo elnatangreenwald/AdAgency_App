@@ -1527,7 +1527,7 @@ def quick_add_charge():
                     'completed': False,
                     'charge_number': charge_number
                 })
-                save_data(data)
+                save_client(c)
                 # בדיקה אם זה AJAX request
                 wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                             request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -1628,7 +1628,7 @@ def webhook_create_charge():
             'source': 'webhook',
         }
         client['extra_charges'].append(new_charge)
-        save_data(data)
+        save_client(client)
 
         try:
             send_charge_notification_email(client.get('name', ''), new_charge)
@@ -2041,7 +2041,8 @@ def upload_logo(client_id):
             if is_ajax:
                 return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
         
-        save_data(data)
+        if client_found:
+            save_client(c)
         
         # Return JSON for AJAX, redirect for form
         if is_ajax:
@@ -2117,7 +2118,7 @@ def add_project(client_id):
                     'is_shared': is_shared,
                     'created_by': current_user.id
                 })
-                save_data(data)
+                save_client(c)
                 
                 # בדיקה אם זה AJAX request (בדרך כלל יש Accept: application/json או X-Requested-With)
                 wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
@@ -2495,7 +2496,7 @@ def update_task_note(client_id, project_id, task_id):
                         for t in p.get('tasks', []):
                             if t['id'] == task_id:
                                 t['note'] = note
-                                save_data(data)
+                                save_client(c)
                                 return jsonify({'success': True})
         return jsonify({'success': False, 'error': 'משימה לא נמצאה'}), 404
     except Exception as e:
@@ -2525,7 +2526,7 @@ def delete_project(client_id, project_id):
                 
                 # מחק מהרשימה הפעילה
                 c['projects'] = [p for p in c.get('projects', []) if p['id'] != project_id]
-                save_data(data)
+                save_client(c)
                 
                 # בדיקה אם זה AJAX request
                 wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
@@ -2609,7 +2610,7 @@ def delete_task(client_id, project_id, task_id):
                 filtered_tasks = [t for t in tasks if t['id'] != task_id]
                 p['tasks'] = filtered_tasks
                 
-                save_data(data)
+                save_client(c)
                 print(f"Task '{task_title}' (ID: {task_id}) deleted successfully from project {project_id}")
                 return jsonify({'success': True, 'message': f'המשימה "{task_title}" נמחקה בהצלחה'})
         
@@ -2667,7 +2668,7 @@ def upload_document(client_id):
                     'upload_date': datetime.now().strftime("%d/%m/%y %H:%M")
                 }
                 c['documents'].append(new_doc)
-                save_data(data)
+                save_client(c)
                 print(f"Document saved: {filename} for client {client_id}")  # Debug
                 return jsonify({'success': True, 'document': new_doc}), 200
         
@@ -2752,7 +2753,7 @@ def add_contact(client_id):
                     'email': request.form.get('email', ''),
                     'created_date': datetime.now().strftime("%d/%m/%y %H:%M")
                 })
-                save_data(data)
+                save_client(c)
                 break
         return redirect(request.referrer or url_for('client_page', client_id=client_id))
     except Exception as e:
@@ -2768,7 +2769,7 @@ def delete_contact(client_id, contact_id):
             if c['id'] == client_id:
                 if 'contacts' in c:
                     c['contacts'] = [contact for contact in c['contacts'] if contact.get('id') != contact_id]
-                    save_data(data)
+                    save_client(c)
                 break
         return redirect(request.referrer or url_for('client_page', client_id=client_id))
     except Exception as e:
@@ -2813,7 +2814,7 @@ def add_client():
         }
         
         data.append(new_client)
-        save_data(data)
+        save_client(new_client)
         
         return jsonify({'success': True, 'client_id': new_client['id']})
     except Exception as e:
@@ -2866,7 +2867,7 @@ def delete_document(client_id, doc_id):
                     # מחיקת הרשומה מהנתונים
                     documents.remove(doc_to_remove)
                     c['documents'] = documents
-                    save_data(data)
+                    save_client(c)
                     print(f"DEBUG: Document removed from database, returning success")
                     return jsonify({'status': 'success', 'message': 'המסמך נמחק בהצלחה'})
                 else:
@@ -3081,8 +3082,10 @@ def update_finance(client_id):
     wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \
                 request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
+    matched_client = None
     for c in data:
         if c['id'] == client_id:
+            matched_client = c
             if action == 'retainer': c['retainer'] = int(request.form.get('amount', 0))
             elif action == 'extra':
                 charge_number = get_next_charge_number(c)
@@ -3110,7 +3113,8 @@ def update_finance(client_id):
                     send_charge_notification_email(c.get('name', ''), new_charge)
                 except Exception as e:
                     print(f"[WARNING] Failed to send charge notification email: {e}")
-    save_data(data)
+    if matched_client is not None:
+        save_client(matched_client)
     
     if wants_json:
         return jsonify({'success': True, 'message': 'עודכן בהצלחה'})
@@ -3272,7 +3276,7 @@ def toggle_charge_status(client_id, charge_id):
                         new_status = not current_status
                         charge['completed'] = new_status
                         charge['paid'] = new_status
-                        save_data(data)
+                        save_client(c)
                         return jsonify({'success': True, 'completed': new_status, 'paid': new_status})
         return jsonify({'success': False, 'error': 'חיוב לא נמצא'}), 404
     except Exception as e:
@@ -3312,7 +3316,7 @@ def toggle_retainer_status(client_id, month):
                     except Exception:
                         pass
 
-                save_data(data)
+                save_client(c)
                 return jsonify({'success': True, 'paid': new_status, 'month': normalized_month})
         return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
@@ -3334,7 +3338,7 @@ def update_charge_our_cost(client_id, charge_id):
                 for charge in c.get('extra_charges', []):
                     if charge.get('id') == charge_id:
                         charge['our_cost'] = our_cost
-                        save_data(data)
+                        save_client(c)
                         return jsonify({'success': True})
         
         return jsonify({'success': False, 'error': 'חיוב לא נמצא'}), 404
@@ -3356,7 +3360,7 @@ def delete_charge(client_id, charge_id):
             if c['id'] == client_id:
                 charges = c.get('extra_charges', [])
                 c['extra_charges'] = [ch for ch in charges if ch.get('id') != charge_id]
-                save_data(data)
+                save_client(c)
                 return jsonify({'success': True})
         return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
@@ -3376,7 +3380,7 @@ def archive_client(client_id):
             if c['id'] == client_id:
                 c['archived'] = True
                 c['archived_at'] = datetime.now().isoformat()
-                save_data(data)
+                save_client(c)
                 return jsonify({'success': True})
         return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
     except Exception as e:
@@ -3409,7 +3413,7 @@ def toggle_client_active(client_id):
                     c['archived'] = True
                     c['archived_at'] = datetime.now().isoformat()
                 
-                save_data(data_clients)
+                save_client(c)
                 return jsonify({'success': True})
         
         return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
@@ -5118,7 +5122,7 @@ def add_event_charge(event_id):
                         break
                 
                 save_events(events_list)
-                save_data(data)
+                save_client(client)
                 break
         tab = request.form.get('tab', 'charges')
         return redirect(url_for('event_page', event_id=event_id, tab=tab))
@@ -5164,7 +5168,7 @@ def edit_event_charge(event_id):
                                 break
                         
                         save_events(events_list)
-                        save_data(data)
+                        save_client(client)
                         break
                 break
         
@@ -5376,7 +5380,7 @@ def api_client_assignment_assign():
         if not client_found:
             return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
         
-        save_data(clients)
+        save_client(c)
         
         if user_ids:
             user_names = [users.get(uid, {}).get('name', uid) for uid in user_ids if uid in users]
@@ -5562,7 +5566,7 @@ def manage_users():
                     break
             
             if client_found:
-                save_data(clients)
+                save_client(c)
                 # בניית הודעת הצלחה
                 if user_ids:
                     user_names = [users.get(uid, {}).get('name', uid) for uid in user_ids if uid in users]
@@ -5828,7 +5832,7 @@ def submit_form(form_token):
                     'done': False
                 }
                 forms_project['tasks'].append(task)
-                save_data(data)
+                save_client(client)
                 
                 # שליחת מייל
                 email_result = send_form_email(
@@ -5849,14 +5853,14 @@ def submit_form(form_token):
                     email_confirmation += f"{'='*50}"
                     task_note += email_confirmation
                     task['note'] = task_note
-                    save_data(data)  # שמירה מחדש עם האישור
+                    save_client(client)  # שמירה מחדש עם האישור
                 elif not email_result:
                     email_warning = f"\n\n{'='*50}\n⚠️ אזהרה:\n"
                     email_warning += f"המשימה נוצרה אך המייל לא נשלח - בדוק הגדרות SMTP\n"
                     email_warning += f"{'='*50}"
                     task_note += email_warning
                     task['note'] = task_note
-                    save_data(data)
+                    save_client(client)
                 
                 return jsonify({
                     'status': 'success',
@@ -6173,7 +6177,7 @@ def add_manager_note(client_id, project_id, task_id):
         if not task_found:
             return jsonify({'success': False, 'error': 'משימה לא נמצאה'}), 404
         
-        save_data(data)
+        save_client(client_found)
         
         # שליחת התראה לכל המשתמשים שויכו ללקוח (אם לא זה admin)
         if assigned_users_list and manager_note and client_found:
