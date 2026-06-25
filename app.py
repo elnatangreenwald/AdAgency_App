@@ -40,7 +40,7 @@ USE_DATABASE = os.environ.get('USE_DATABASE', 'false').lower() == 'true'
 if USE_DATABASE:
     # Import database helpers to override JSON functions
     from database_helpers import (
-        load_users, save_users, load_data, save_data,
+        load_users, save_users, load_data, save_data, save_client,
         load_suppliers, save_suppliers, load_quotes, save_quotes,
         load_messages, save_messages, load_events, save_events,
         load_equipment_bank, save_equipment_bank,
@@ -320,6 +320,22 @@ def get_next_charge_number(client):
 if not USE_DATABASE:
     def save_data(data):
         with open(DATA_FILE, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, indent=4)
+
+    def save_client(client):
+        """JSON-mode single-client save: replace the one client and rewrite the
+        file (local file write is cheap). Keeps a unified interface with DB mode."""
+        if not client or not client.get('id'):
+            return
+        all_clients = load_data()
+        found = False
+        for i, c in enumerate(all_clients):
+            if c.get('id') == client.get('id'):
+                all_clients[i] = client
+                found = True
+                break
+        if not found:
+            all_clients.append(client)
+        save_data(all_clients)
 
     def load_suppliers():
         if not os.path.exists(SUPPLIERS_FILE) or os.stat(SUPPLIERS_FILE).st_size == 0: return []
@@ -1432,7 +1448,7 @@ def quick_add_task():
                         task_number = get_next_task_number(c, p)
                         task['task_number'] = task_number
                         p.setdefault('tasks', []).append(task)
-                        save_data(data)
+                        save_client(c)
                         
                         # NEW: Create notification if assigned to someone else
                         if assigned_to and assigned_to != created_by:
@@ -2219,7 +2235,7 @@ def add_task(client_id, project_id):
                             task['task_number'] = task_number
                         
                         p.setdefault('tasks', []).append(task)
-                        save_data(data)
+                        save_client(c)
                         return jsonify({
                             'status': 'success',
                             'message': 'המשימה נוספה בהצלחה',
@@ -2318,7 +2334,7 @@ def update_task_status(client_id, project_id, task_id):
                                         t['done'] = False
                                         del t['completed_at']  # הסר את תאריך ההשלמה
                                 
-                                save_data(data)
+                                save_client(c)
                                 return jsonify({
                                     'status': 'success',
                                     'message': 'סטטוס המשימה עודכן',
@@ -2379,7 +2395,7 @@ def update_task_dates(client_id, project_id, task_id):
                                 if deadline:
                                     t['deadline'] = deadline.split('T')[0] if 'T' in deadline else deadline
                                 
-                                save_data(data)
+                                save_client(c)
                                 return jsonify({'status': 'success', 'message': 'תאריכים עודכנו בהצלחה'})
         
         return jsonify({'status': 'error', 'error': 'משימה לא נמצאה'}), 404
@@ -2437,7 +2453,7 @@ def update_task(client_id, project_id, task_id):
                                 if notes is not None:
                                     t['note'] = notes
                                 
-                                save_data(data)
+                                save_client(c)
                                 
                                 # בדיקה אם זה AJAX request
                                 wants_json = request.headers.get('Accept', '').find('application/json') != -1 or \

@@ -209,65 +209,84 @@ def load_data():
     finally:
         db.close()
 
+def _upsert_client(db, client_data):
+    """Find-or-create a single client row and apply all fields. Shared by
+    save_data (bulk) and save_client (single, fast path)."""
+    client_id = client_data.get('id')
+    if not client_id:
+        return
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if client:
+        client.name = client_data.get('name', client.name)
+        client.client_number = client_data.get('client_number')
+        client.retainer = client_data.get('retainer', 0)
+        client.retainer_payments = client_data.get('retainer_payments', client.retainer_payments or {})
+        client.extra_charges = client_data.get('extra_charges', [])
+        client.projects = client_data.get('projects', [])
+        client.assigned_user = client_data.get('assigned_user')
+        client.files = client_data.get('files', [])
+        client.contacts = client_data.get('contacts', [])
+        client.logo_url = client_data.get('logo_url')
+        client.active = client_data.get('active', True)
+        client.archived = client_data.get('archived', False)
+        client.archived_at = client_data.get('archived_at')
+        client.calculated_extra = client_data.get('calculated_extra', 0)
+        client.calculated_retainer = client_data.get('calculated_retainer', 0)
+        client.calculated_total = client_data.get('calculated_total', 0)
+        client.calculated_open_charges = client_data.get('calculated_open_charges', 0)
+        client.calculated_monthly_revenue = client_data.get('calculated_monthly_revenue', 0)
+        # Flag JSONB fields so SQLAlchemy detects in-place changes (e.g. deletions)
+        flag_modified(client, 'retainer_payments')
+        flag_modified(client, 'extra_charges')
+        flag_modified(client, 'projects')
+        flag_modified(client, 'assigned_user')
+        flag_modified(client, 'files')
+        flag_modified(client, 'contacts')
+    else:
+        client = Client(
+            id=client_id,
+            name=client_data.get('name', ''),
+            client_number=client_data.get('client_number'),
+            retainer=client_data.get('retainer', 0),
+            retainer_payments=client_data.get('retainer_payments', {}),
+            extra_charges=client_data.get('extra_charges', []),
+            projects=client_data.get('projects', []),
+            assigned_user=client_data.get('assigned_user'),
+            files=client_data.get('files', []),
+            contacts=client_data.get('contacts', []),
+            logo_url=client_data.get('logo_url'),
+            active=client_data.get('active', True),
+            archived=client_data.get('archived', False),
+            archived_at=client_data.get('archived_at'),
+            calculated_extra=client_data.get('calculated_extra', 0),
+            calculated_retainer=client_data.get('calculated_retainer', 0),
+            calculated_total=client_data.get('calculated_total', 0),
+            calculated_open_charges=client_data.get('calculated_open_charges', 0),
+            calculated_monthly_revenue=client_data.get('calculated_monthly_revenue', 0)
+        )
+        db.add(client)
+
+
 def save_data(data):
-    """Save clients data to database"""
+    """Save ALL clients data to database (bulk). Prefer save_client() when only
+    one client changed - it is dramatically faster."""
     db = get_db()
     try:
         for client_data in data:
-            client_id = client_data.get('id')
-            if not client_id:
-                continue
-            
-            client = db.query(Client).filter(Client.id == client_id).first()
-            if client:
-                client.name = client_data.get('name', client.name)
-                client.client_number = client_data.get('client_number')
-                client.retainer = client_data.get('retainer', 0)
-                client.retainer_payments = client_data.get('retainer_payments', client.retainer_payments or {})
-                client.extra_charges = client_data.get('extra_charges', [])
-                client.projects = client_data.get('projects', [])
-                client.assigned_user = client_data.get('assigned_user')
-                client.files = client_data.get('files', [])
-                client.contacts = client_data.get('contacts', [])
-                client.logo_url = client_data.get('logo_url')
-                client.active = client_data.get('active', True)
-                client.archived = client_data.get('archived', False)
-                client.archived_at = client_data.get('archived_at')
-                client.calculated_extra = client_data.get('calculated_extra', 0)
-                client.calculated_retainer = client_data.get('calculated_retainer', 0)
-                client.calculated_total = client_data.get('calculated_total', 0)
-                client.calculated_open_charges = client_data.get('calculated_open_charges', 0)
-                client.calculated_monthly_revenue = client_data.get('calculated_monthly_revenue', 0)
-                # Flag JSONB fields so SQLAlchemy detects in-place changes (e.g. deletions)
-                flag_modified(client, 'retainer_payments')
-                flag_modified(client, 'extra_charges')
-                flag_modified(client, 'projects')
-                flag_modified(client, 'assigned_user')
-                flag_modified(client, 'files')
-                flag_modified(client, 'contacts')
-            else:
-                client = Client(
-                    id=client_id,
-                    name=client_data.get('name', ''),
-                    client_number=client_data.get('client_number'),
-                    retainer=client_data.get('retainer', 0),
-                    retainer_payments=client_data.get('retainer_payments', {}),
-                    extra_charges=client_data.get('extra_charges', []),
-                    projects=client_data.get('projects', []),
-                    assigned_user=client_data.get('assigned_user'),
-                    files=client_data.get('files', []),
-                    contacts=client_data.get('contacts', []),
-                    logo_url=client_data.get('logo_url'),
-                    active=client_data.get('active', True),
-                    archived=client_data.get('archived', False),
-                    archived_at=client_data.get('archived_at'),
-                    calculated_extra=client_data.get('calculated_extra', 0),
-                    calculated_retainer=client_data.get('calculated_retainer', 0),
-                    calculated_total=client_data.get('calculated_total', 0),
-                    calculated_open_charges=client_data.get('calculated_open_charges', 0),
-                    calculated_monthly_revenue=client_data.get('calculated_monthly_revenue', 0)
-                )
-                db.add(client)
+            _upsert_client(db, client_data)
+        db.commit()
+    finally:
+        db.close()
+
+
+def save_client(client_data):
+    """Fast path: persist a SINGLE client only. Avoids rewriting every client
+    row (and their large JSONB blobs) on each small change like adding a task."""
+    if not client_data or not client_data.get('id'):
+        return
+    db = get_db()
+    try:
+        _upsert_client(db, client_data)
         db.commit()
     finally:
         db.close()
