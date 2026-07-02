@@ -6577,13 +6577,48 @@ def _drop_stale_active_sessions(time_data):
         save_time_tracking(time_data)
 
 
-def _enrich_time_tracking_session(session):
-    """מוסיף ל-session שמות לקוח/פרויקט/משימה ו-elapsed_seconds (לפי start_time)."""
+def _enrich_time_tracking_session(session, clients_data=None):
+    """מוסיף ל-session שמות לקוח/פרויקט/משימה ו-elapsed_seconds (לפי start_time).
+    
+    Args:
+        session: dict של ה-session לעדכון
+        clients_data: אופציונלי - רשימת לקוחות קיימת (לחיסכון בטעינה חוזרת)
+    """
     if not session:
         return
-    clients = load_data()
-    clients_dict = {c['id']: c for c in clients}
-    client = clients_dict.get(session.get('client_id'), {})
+    
+    client_id = session.get('client_id')
+    client = None
+    
+    # ניסיון לטעון רק את הלקוח הספציפי אם אפשר (Database mode)
+    if USE_DATABASE and client_id:
+        try:
+            from database import get_db, Client as DbClient
+            db = get_db()
+            db_client = db.query(DbClient).filter(DbClient.id == client_id).first()
+            if db_client:
+                client = {
+                    'id': db_client.id,
+                    'name': db_client.name,
+                    'projects': db_client.projects or []
+                }
+            db.close()
+        except Exception as e:
+            # #region agent log
+            try:
+                with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
+                    _f.write(json.dumps({'sessionId':'b00014','location':'app.py:_enrich_time_tracking_session','message':'DB query failed, using fallback','data':{'error':str(e),'client_id':client_id},'timestamp':int(time.time()*1000),'hypothesisId':'D'})+'\n')
+            except: pass
+            # #endregion
+            pass
+    
+    # Fallback: אם לא הצלחנו או אם זה JSON mode
+    if client is None:
+        if clients_data is None:
+            clients_data = load_data()
+        clients_dict = {c['id']: c for c in clients_data}
+        client = clients_dict.get(client_id, {})
+    
     session['client_name'] = client.get('name', 'לא ידוע')
     project = None
     task = None
