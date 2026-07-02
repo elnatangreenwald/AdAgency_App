@@ -1220,34 +1220,15 @@ def api_mark_notifications_read():
 @login_required
 def api_clients():
     """API endpoint להחזרת לקוחות"""
-    # #region agent log
-    _debug_start = time.time()
-    # #endregion
     try:
         user_role = get_user_role(current_user.id)
-        # #region agent log
-        _t1 = time.time()
-        # #endregion
         all_c = load_data()
-        # #region agent log
-        _t2 = time.time()
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:api_clients','message':'api_clients load_data duration','data':{'loadDataMs':round((_t2-_t1)*1000),'clientsCount':len(all_c)},'timestamp':int(time.time()*1000),'hypothesisId':'A,D'})+'\n')
-        except: pass
-        # #endregion
         all_c = filter_active_clients(all_c)
         if is_manager_or_admin(current_user.id, user_role):
             display = all_c
         else:
             display = [c for c in all_c if can_user_access_client(current_user.id, user_role, c)]
         display = sorted(display, key=lambda x: x.get('name', '').lower())
-        # #region agent log
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:api_clients:end','message':'api_clients total duration','data':{'totalMs':round((time.time()-_debug_start)*1000),'clientsCount':len(display)},'timestamp':int(time.time()*1000),'hypothesisId':'A,D'})+'\n')
-        except: pass
-        # #endregion
         return jsonify({
             'success': True,
             'clients': [{'id': c['id'], 'name': c.get('name', '')} for c in display]
@@ -1671,25 +1652,12 @@ def webhook_create_charge():
 @login_required
 def api_all_clients():
     """API endpoint להחזרת לקוחות"""
-    # #region agent log
-    _debug_start = time.time()
-    # #endregion
     try:
         user_role = get_user_role(current_user.id)
         if not check_permission('/all_clients', user_role):
             return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
         
-        # #region agent log
-        _t1 = time.time()
-        # #endregion
         all_clients_data = load_data()
-        # #region agent log
-        _t2 = time.time()
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:api_all_clients','message':'load_data duration','data':{'durationMs':round((_t2-_t1)*1000),'clientsCount':len(all_clients_data)},'timestamp':int(time.time()*1000),'hypothesisId':'A,D'})+'\n')
-        except: pass
-        # #endregion
         all_clients_data = filter_active_clients(all_clients_data)
         users = load_users()
         filter_user = request.args.get('user')
@@ -1732,12 +1700,6 @@ def api_all_clients():
         }
         users_dict = {uid: {'name': info.get('name', '')} for uid, info in users.items()}
         
-        # #region agent log
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:api_all_clients:end','message':'total api_all_clients duration','data':{'totalDurationMs':round((time.time()-_debug_start)*1000),'clientsCount':len(clients_list)},'timestamp':int(time.time()*1000),'hypothesisId':'A,D'})+'\n')
-        except: pass
-        # #endregion
         return jsonify({
             'success': True,
             'clients': clients_list,
@@ -6603,13 +6565,7 @@ def _enrich_time_tracking_session(session, clients_data=None):
                     'projects': db_client.projects or []
                 }
             db.close()
-        except Exception as e:
-            # #region agent log
-            try:
-                with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                    _f.write(json.dumps({'sessionId':'b00014','location':'app.py:_enrich_time_tracking_session','message':'DB query failed, using fallback','data':{'error':str(e),'client_id':client_id},'timestamp':int(time.time()*1000),'hypothesisId':'D'})+'\n')
-            except: pass
-            # #endregion
+        except Exception:
             pass
     
     # Fallback: אם לא הצלחנו או אם זה JSON mode
@@ -6651,20 +6607,7 @@ def api_time_tracking_start():
         task_id = data.get('task_id')
         user_id = current_user.id
         
-        # #region agent log
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:time_tracking_start','message':'time_tracking_start called','data':{'client_id':client_id,'project_id':project_id,'task_id':task_id,'user_id':user_id,'clientIdType':str(type(client_id).__name__),'projectIdType':str(type(project_id).__name__),'taskIdType':str(type(task_id).__name__)},'timestamp':int(time.time()*1000),'hypothesisId':'A,B'})+'\n')
-        except: pass
-        # #endregion
-        
         if not all([client_id, project_id, task_id]):
-            # #region agent log
-            try:
-                with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                    _f.write(json.dumps({'sessionId':'b00014','location':'app.py:time_tracking_start','message':'missing params','data':{'client_id':client_id,'project_id':project_id,'task_id':task_id},'timestamp':int(time.time()*1000),'hypothesisId':'B'})+'\n')
-            except: pass
-            # #endregion
             return jsonify({'success': False, 'error': 'חסרים פרמטרים נדרשים'}), 400
         
         time_data = load_time_tracking()
@@ -6674,12 +6617,6 @@ def api_time_tracking_start():
         if user_id in time_data.get('active_sessions', {}):
             active_session = time_data['active_sessions'][user_id].copy()
             _enrich_time_tracking_session(active_session)
-            # #region agent log
-            try:
-                with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                    _f.write(json.dumps({'sessionId':'b00014','location':'app.py:time_tracking_start','message':'active session exists','data':{'user_id':user_id,'active_session_id':active_session.get('id'),'active_task_id':active_session.get('task_id')},'timestamp':int(time.time()*1000),'hypothesisId':'C'})+'\n')
-            except: pass
-            # #endregion
             return jsonify({
                 'success': False,
                 'error': 'יש מדידה פעילה אחרת',
@@ -6702,24 +6639,11 @@ def api_time_tracking_start():
         time_data.setdefault('active_sessions', {})[user_id] = session
         save_time_tracking(time_data)
         
-        # #region agent log
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:time_tracking_start','message':'session created successfully','data':{'session_id':session_id,'user_id':user_id},'timestamp':int(time.time()*1000),'hypothesisId':'A'})+'\n')
-        except: pass
-        # #endregion
-        
         return jsonify({
             'success': True,
             'session': session
         })
     except Exception as e:
-        # #region agent log
-        try:
-            with open('debug-b00014.log', 'a', encoding='utf-8') as _f:
-                _f.write(json.dumps({'sessionId':'b00014','location':'app.py:time_tracking_start','message':'EXCEPTION','data':{'error':str(e)},'timestamp':int(time.time()*1000),'hypothesisId':'A'})+'\n')
-        except: pass
-        # #endregion
         print(f"Error in api_time_tracking_start: {e}")
         import traceback
         traceback.print_exc()

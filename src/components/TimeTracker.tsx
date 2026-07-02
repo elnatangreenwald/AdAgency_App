@@ -177,10 +177,6 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
   };
 
   const handleStart = async () => {
-    // #region agent log
-    console.log('[DEBUG b00014] handleStart CALLED', {clientId,projectId,taskId,clientIdType:typeof clientId,projectIdType:typeof projectId,taskIdType:typeof taskId});
-    fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'TimeTracker.tsx:180',message:'handleStart CALLED',data:{clientId,projectId,taskId,clientIdType:typeof clientId,projectIdType:typeof projectId,taskIdType:typeof taskId},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     setLoading(true);
     try {
       const response = await apiClient.post('/api/time_tracking/start', {
@@ -188,11 +184,6 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
         project_id: projectId,
         task_id: taskId,
       });
-
-      // #region agent log
-      console.log('[DEBUG b00014] handleStart RESPONSE', {success:response.data.success,error:response.data.error,hasActiveSession:!!response.data.active_session,session:response.data.session});
-      fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'TimeTracker.tsx:192',message:'handleStart RESPONSE',data:{success:response.data.success,error:response.data.error,hasActiveSession:!!response.data.active_session,session:response.data.session},timestamp:Date.now(),hypothesisId:'A,C'})}).catch(()=>{});
-      // #endregion
 
       if (response.data.success) {
         setShowConflictModal(false);
@@ -208,10 +199,6 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
           variant: 'success',
         });
       } else {
-        // #region agent log
-        console.log('[DEBUG b00014] handleStart NOT SUCCESS', {error:response.data.error,activeSession:response.data.active_session});
-        fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'TimeTracker.tsx:210',message:'handleStart NOT SUCCESS',data:{error:response.data.error,activeSession:response.data.active_session},timestamp:Date.now(),hypothesisId:'A,C'})}).catch(()=>{});
-        // #endregion
         if (response.data.active_session) {
           const as = response.data.active_session;
           setConflictSession(as);
@@ -226,10 +213,6 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
         }
       }
     } catch (error: any) {
-      // #region agent log
-      console.log('[DEBUG b00014] handleStart CATCH ERROR', {errorMsg:String(error),status:error.response?.status,responseData:error.response?.data});
-      fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'TimeTracker.tsx:228',message:'handleStart CATCH ERROR',data:{errorMsg:String(error),status:error.response?.status,responseData:error.response?.data},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       console.error('Error starting time tracking:', error);
       const status = error.response?.status;
       const data = error.response?.data;

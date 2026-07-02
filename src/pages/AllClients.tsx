@@ -53,26 +53,16 @@ export function AllClients() {
   }, [filterUser]);
 
   const fetchClients = async () => {
-    // #region agent log
-    const startTime = Date.now();
-    fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'AllClients.tsx:56',message:'fetchClients START',data:{filterUser},timestamp:Date.now(),hypothesisId:'A,C'})}).catch(()=>{});
-    // #endregion
     try {
       setLoading(true);
       const url = filterUser ? `/api/all_clients?user=${filterUser}` : '/api/all_clients';
       const response = await apiClient.get(url);
-      // #region agent log
-      fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'AllClients.tsx:62',message:'fetchClients RESPONSE',data:{durationMs:Date.now()-startTime,clientsCount:response.data.clients?.length,success:response.data.success},timestamp:Date.now(),hypothesisId:'A,B'})}).catch(()=>{});
-      // #endregion
       if (response.data.success) {
         setClients(response.data.clients);
         setClientsByUser(response.data.clients_by_user || {});
         setUsers(response.data.users || {});
       }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'AllClients.tsx:70',message:'fetchClients ERROR',data:{durationMs:Date.now()-startTime,error:String(error)},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       console.error('Error fetching clients:', error);
       toast({
         title: 'שגיאה',
