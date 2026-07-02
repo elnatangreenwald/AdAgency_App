@@ -104,13 +104,25 @@ export function Dashboard() {
   }, []);
 
   const fetchClients = async () => {
+    // #region agent log
+    const startTime = Date.now();
+    console.log('[DEBUG b00014] Dashboard fetchClients START');
+    fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'Dashboard.tsx:107',message:'Dashboard fetchClients START',data:{},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     try {
       // This should be an API endpoint
       const response = await apiClient.get('/api/clients');
+      // #region agent log
+      console.log('[DEBUG b00014] Dashboard fetchClients DONE', {durationMs:Date.now()-startTime,clientsCount:response.data.clients?.length});
+      fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'Dashboard.tsx:113',message:'Dashboard fetchClients DONE',data:{durationMs:Date.now()-startTime,clientsCount:response.data.clients?.length},timestamp:Date.now(),hypothesisId:'A,C'})}).catch(()=>{});
+      // #endregion
       if (response.data.success) {
         setClients(response.data.clients);
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7556/ingest/0a58c98c-7b22-4733-bb38-e02600a13e45',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'b00014'},body:JSON.stringify({sessionId:'b00014',location:'Dashboard.tsx:120',message:'Dashboard fetchClients ERROR',data:{durationMs:Date.now()-startTime,error:String(error)},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       console.error('Error fetching clients:', error);
     }
   };
