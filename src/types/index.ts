@@ -135,7 +135,69 @@ export interface User {
   updated_at?: string;
 }
 
-export type UserRole = 'עובד' | 'מנהל' | 'אדמין';
+export type UserRole = 'עובד' | 'מנהל' | 'אדמין' | 'מנהלת סטודיו' | 'מעצבת';
+
+// ============ Studio Types ============
+export type StudioStatus =
+  | 'חדשה'
+  | 'הוקצתה'
+  | 'בעבודה'
+  | 'ממתינה לאישור'
+  | 'תיקונים'
+  | 'הושלמה';
+
+export interface StudioFile {
+  id: string;
+  object_key: string;
+  original_name: string;
+  size?: number;
+  content_type?: string;
+  kind: 'source' | 'deliverable';
+  uploaded_by?: string;
+  uploaded_by_name?: string;
+  uploaded_at?: string;
+}
+
+export interface StudioComment {
+  id: string;
+  text: string;
+  by?: string;
+  by_name?: string;
+  at?: string;
+}
+
+export interface StudioHistoryEntry {
+  action: string;
+  from?: string;
+  to?: string;
+  to_name?: string;
+  by?: string;
+  by_name?: string;
+  at?: string;
+}
+
+export interface StudioRequest {
+  id: string;
+  title: string;
+  brief?: string;
+  client_id?: string | null;
+  client_name?: string;
+  deadline?: string;
+  priority?: string;
+  work_type?: string;
+  format_required?: string;
+  status: StudioStatus;
+  created_by?: string;
+  created_by_name?: string;
+  assigned_designer?: string | null;
+  assigned_designer_name?: string;
+  source_files?: StudioFile[];
+  deliverables?: StudioFile[];
+  comments?: StudioComment[];
+  history?: StudioHistoryEntry[];
+  created_at?: string;
+  updated_at?: string;
+}
 
 // ============ Event Types ============
 export interface EventItem {
@@ -231,10 +293,20 @@ export type QuoteStatus = 'ממתין' | 'אושר' | 'נדחה' | 'פג תוק�
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'task_assigned' | 'task_updated' | 'task_completed' | 'general';
+  type:
+    | 'task_assigned'
+    | 'task_updated'
+    | 'task_completed'
+    | 'general'
+    | 'studio_new'
+    | 'studio_assigned'
+    | 'studio_ready'
+    | 'studio_revisions';
   task_id?: string;
   client_id?: string;
   project_id?: string;
+  studio_request_id?: string;
+  link?: string;
   from_user_id?: string;
   from_user_name?: string;
   task_title?: string;

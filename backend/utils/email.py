@@ -177,6 +177,94 @@ def send_charge_notification_email(client_name: str, charge_data: dict) -> bool:
         return False
 
 
+def send_studio_notification_email(recipient_email, subject, heading, message, details=None, link=None):
+    """
+    Generic studio notification email (parallel to in-app notifications during
+    the transition period from email-based workflow).
+
+    Args:
+        recipient_email: destination email
+        subject: email subject
+        heading: bold heading shown in the colored header
+        message: main sentence
+        details: optional dict of label -> value rows
+        link: optional URL to the request in the system
+
+    Returns True on success, False otherwise.
+    """
+    from datetime import datetime
+
+    if not recipient_email:
+        print("[STUDIO EMAIL] No recipient - skipping")
+        return False
+
+    try:
+        smtp = get_smtp_config()
+        if not smtp['username'] or not smtp['password']:
+            print("[WARNING] Email disabled - no SMTP configuration")
+            return False
+
+        current_time = datetime.now().strftime('%d/%m/%Y %H:%M')
+
+        rows_html = ''
+        for label, value in (details or {}).items():
+            if value in (None, ''):
+                continue
+            rows_html += f"""
+                    <div class='field' style='text-align: right; padding: 10px 0; border-bottom: 1px solid #e2e8f0;'>
+                        <div style='color: #64748b; font-size: 13px;'>{label}</div>
+                        <div style='color: #1e293b; font-size: 15px; font-weight: 500;'>{value}</div>
+                    </div>"""
+
+        link_html = ''
+        if link:
+            link_html = f"""
+                    <div style='margin-top: 20px; text-align: center;'>
+                        <a href='{link}' style='background: #043841; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block;'>פתיחת הבקשה במערכת</a>
+                    </div>"""
+
+        email_body = f"""
+        <html dir='rtl' lang='he'>
+        <head><meta charset='UTF-8'></head>
+        <body style='font-family: Heebo, Arial, sans-serif; direction: rtl; text-align: right; background: #f5f5f5; margin: 0; padding: 0;'>
+            <div style='max-width: 520px; margin: 0 auto; padding: 20px;'>
+                <div style='background: linear-gradient(135deg, #0d6e7d, #043841); color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;'>
+                    <h1 style='margin: 0; font-size: 20px;'>🎨 {heading}</h1>
+                </div>
+                <div style='background: white; padding: 24px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                    <p style='font-size: 16px; color: #1e293b;'>{message}</p>
+                    {rows_html}
+                    {link_html}
+                    <div style='margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px; text-align: center;'>
+                        נשלח אוטומטית ממערכת הסטודיו ב-{current_time}
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg = MIMEMultipart('alternative')
+        msg['From'] = smtp['username']
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(email_body, 'html', 'utf-8'))
+
+        server = smtplib.SMTP(smtp['server'], smtp['port'])
+        server.starttls()
+        server.login(smtp['username'], smtp['password'])
+        server.send_message(msg)
+        server.quit()
+
+        print(f"[SUCCESS] Studio notification email sent to {recipient_email}")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Error sending studio notification email: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def send_form_email(form_title, client_name, form_submission, uploaded_files, form_token, forms_list=None):
     """
     Send email with form details

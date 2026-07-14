@@ -74,17 +74,29 @@ def create_notification(user_id, notification_type, data):
     notifications_data = load_notifications()
     
     # Build the message based on type
+    from_name = data.get('from_user_name', 'משתמש')
+    task_title = data.get('task_title', '')
+    client_name = data.get('client_name', '')
+    client_suffix = f" ({client_name})" if client_name else ''
+
     if notification_type == 'task_assigned':
-        from_name = data.get('from_user_name', 'משתמש')
-        task_title = data.get('task_title', 'משימה')
-        client_name = data.get('client_name', '')
-        if client_name:
-            message = f"{from_name} הקצה לך משימה חדשה: {task_title} ({client_name})"
-        else:
-            message = f"{from_name} הקצה לך משימה חדשה: {task_title}"
+        title = task_title or 'משימה'
+        message = f"{from_name} הקצה לך משימה חדשה: {title}{client_suffix}"
+    elif notification_type == 'studio_new':
+        title = task_title or 'בקשת עיצוב'
+        message = f"בקשת עיצוב חדשה מ{from_name}: {title}{client_suffix}"
+    elif notification_type == 'studio_assigned':
+        title = task_title or 'בקשת עיצוב'
+        message = f"הוקצתה לך בקשת עיצוב: {title}{client_suffix}"
+    elif notification_type == 'studio_ready':
+        title = task_title or 'בקשת עיצוב'
+        message = f"העיצוב מוכן לאישור: {title}{client_suffix}"
+    elif notification_type == 'studio_revisions':
+        title = task_title or 'בקשת עיצוב'
+        message = f"התקבלו הערות/תיקונים על: {title}{client_suffix}"
     else:
         message = data.get('message', 'התראה חדשה')
-    
+
     notification = {
         'id': str(uuid.uuid4()),
         'user_id': user_id,
@@ -92,6 +104,8 @@ def create_notification(user_id, notification_type, data):
         'task_id': data.get('task_id'),
         'client_id': data.get('client_id'),
         'project_id': data.get('project_id'),
+        'studio_request_id': data.get('studio_request_id'),
+        'link': data.get('link'),
         'from_user_id': data.get('from_user_id'),
         'from_user_name': data.get('from_user_name'),
         'task_title': data.get('task_title'),

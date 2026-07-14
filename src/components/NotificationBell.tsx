@@ -131,8 +131,12 @@ export function NotificationBell({ className }: NotificationBellProps) {
       markAsRead([notification.id]);
     }
     
-    // Navigate to client page with the task
-    if (notification.client_id) {
+    // Navigate: prefer explicit link (e.g. studio requests), fallback to client page
+    if (notification.link) {
+      navigate(notification.link);
+    } else if (notification.studio_request_id) {
+      navigate(`/studio/${notification.studio_request_id}`);
+    } else if (notification.client_id) {
       navigate(`/client/${notification.client_id}`);
     }
     

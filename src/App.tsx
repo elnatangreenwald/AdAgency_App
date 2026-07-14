@@ -12,6 +12,8 @@ import { EventPage } from './pages/EventPage';
 import { Suppliers } from './pages/Suppliers';
 import { Quotes } from './pages/Quotes';
 import { Forms } from './pages/Forms';
+import { Studio } from './pages/Studio';
+import { StudioRequestPage } from './pages/StudioRequest';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { ManageUsers } from './pages/ManageUsers';
 import { ClientAssignmentPage } from './pages/ClientAssignmentPage';
@@ -36,6 +38,8 @@ function App() {
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="quotes" element={<Quotes />} />
             <Route path="forms" element={<Forms />} />
+            <Route path="studio" element={<Studio />} />
+            <Route path="studio/:requestId" element={<StudioRequestPage />} />
             <Route path="client_assignment" element={<ClientAssignmentPage />} />
             <Route path="admin/dashboard" element={<AdminDashboard />} />
             <Route path="admin/users" element={<ManageUsers />} />

@@ -191,3 +191,16 @@ class TimeTrackingActiveSession(Base):
     start_time = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class StudioRequest(Base):
+    """בקשת עיצוב לסטודיו. שומר את כל תוכן הבקשה ב-JSONB (בדומה ל-Event/Supplier)
+    כדי לאפשר גמישות בשדות, עם עמודות עזר לסינון מהיר לפי סטטוס/מבקש/מעצבת."""
+    __tablename__ = 'studio_requests'
+
+    id = Column(String, primary_key=True)
+    data = Column(JSONB)  # Full studio request payload (brief, files, history...)
+    status = Column(String, default='חדשה')
+    created_by = Column(String)          # requester user_id
+    assigned_designer = Column(String)   # designer user_id (nullable)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

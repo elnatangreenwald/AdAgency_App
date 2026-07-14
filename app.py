@@ -46,12 +46,14 @@ if USE_DATABASE:
         load_equipment_bank, save_equipment_bank,
         load_checklist_templates, save_checklist_templates,
         load_forms, save_forms, delete_user_record,
-        load_time_tracking, save_time_tracking
+        load_time_tracking, save_time_tracking,
+        load_studio_requests, save_studio_request, delete_studio_request
     )
 
 # Import notifications module
 from backend.utils.notifications import create_notification
-from backend.utils.email import send_charge_notification_email
+from backend.utils.email import send_charge_notification_email, send_studio_notification_email
+from backend.utils import storage as studio_storage
 
 app = Flask(__name__)
 # SECRET_KEY מ-environment variable (חובה בפרודקשן!)
@@ -88,6 +90,7 @@ PERMISSIONS_FILE = os.path.join(BASE_DIR, 'permissions_db.json')
 USER_ACTIVITY_FILE = os.path.join(BASE_DIR, 'user_activity.json')
 ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
 TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
+STUDIO_FILE = os.path.join(BASE_DIR, 'studio_db.json')
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -364,6 +367,42 @@ if not USE_DATABASE:
 
     def save_events(events):
         with open(EVENTS_FILE, 'w', encoding='utf-8') as f: json.dump(events, f, ensure_ascii=False, indent=4)
+
+    def load_studio_requests():
+        """טעינת בקשות סטודיו מקובץ JSON (מצב פיתוח/ללא DB)"""
+        if not os.path.exists(STUDIO_FILE) or os.stat(STUDIO_FILE).st_size == 0:
+            return []
+        with open(STUDIO_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        # מיון: חדש קודם
+        return sorted(data, key=lambda x: x.get('created_at', ''), reverse=True)
+
+    def _save_all_studio_requests(requests):
+        with open(STUDIO_FILE, 'w', encoding='utf-8') as f:
+            json.dump(requests, f, ensure_ascii=False, indent=4)
+
+    def save_studio_request(request_data):
+        """שמירת בקשת סטודיו בודדת (upsert) לקובץ JSON"""
+        if not request_data or not request_data.get('id'):
+            return
+        all_requests = load_studio_requests()
+        found = False
+        for i, r in enumerate(all_requests):
+            if r.get('id') == request_data.get('id'):
+                all_requests[i] = request_data
+                found = True
+                break
+        if not found:
+            all_requests.append(request_data)
+        _save_all_studio_requests(all_requests)
+
+    def delete_studio_request(request_id):
+        all_requests = load_studio_requests()
+        new_requests = [r for r in all_requests if r.get('id') != request_id]
+        if len(new_requests) == len(all_requests):
+            return False
+        _save_all_studio_requests(new_requests)
+        return True
 
 if not USE_DATABASE:
     def load_time_tracking():
@@ -1213,6 +1252,607 @@ def api_mark_notifications_read():
         })
     except Exception as e:
         print(f"Error in api_mark_notifications_read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== STUDIO API ====================
+
+STUDIO_STATUSES = ['חדשה', 'הוקצתה', 'בעבודה', 'ממתינה לאישור', 'תיקונים', 'הושלמה']
+
+
+def _user_name(users, uid):
+    if not uid:
+        return ''
+    return users.get(uid, {}).get('name', uid)
+
+
+def _user_email(users, uid):
+    if not uid:
+        return None
+    return users.get(uid, {}).get('email')
+
+
+def _studio_manager_ids(users):
+    """מזהי כל מנהלות הסטודיו. אם אין אף אחת - נופל חזרה ל-admin."""
+    ids = [uid for uid, info in users.items() if info.get('role') == 'מנהלת סטודיו']
+    if not ids and 'admin' in users:
+        ids = ['admin']
+    return ids
+
+
+def _studio_request_link(req_id):
+    try:
+        base = request.host_url.rstrip('/')
+    except Exception:
+        base = ''
+    return f"{base}/app/studio/{req_id}"
+
+
+def _can_access_studio_request(user_id, user_role, req):
+    if is_studio_manager(user_id, user_role):
+        return True
+    if req.get('created_by') == user_id:
+        return True
+    if req.get('assigned_designer') == user_id:
+        return True
+    return False
+
+
+def _studio_designer_name(users, req):
+    return _user_name(users, req.get('assigned_designer')) if req.get('assigned_designer') else ''
+
+
+def _enrich_studio_request(users, req):
+    """מוסיף שמות תצוגה לבקשה לפני החזרה ל-frontend."""
+    enriched = dict(req)
+    enriched['created_by_name'] = _user_name(users, req.get('created_by'))
+    enriched['assigned_designer_name'] = _studio_designer_name(users, req)
+    return enriched
+
+
+@app.route('/api/studio/requests')
+@login_required
+def api_studio_requests():
+    """רשימת בקשות הסטודיו, מסוננת לפי תפקיד (scoped)."""
+    try:
+        user_role = get_user_role(current_user.id)
+        users = load_users()
+        all_requests = load_studio_requests()
+
+        if is_studio_manager(current_user.id, user_role):
+            visible = all_requests
+        elif is_designer(user_role):
+            visible = [r for r in all_requests
+                       if r.get('assigned_designer') == current_user.id
+                       or r.get('created_by') == current_user.id]
+        else:
+            visible = [r for r in all_requests if r.get('created_by') == current_user.id]
+
+        return jsonify({
+            'success': True,
+            'requests': [_enrich_studio_request(users, r) for r in visible],
+            'statuses': STUDIO_STATUSES,
+            'can_manage': is_studio_manager(current_user.id, user_role),
+            'is_designer': is_designer(user_role),
+            'my_role': user_role,
+        })
+    except Exception as e:
+        print(f"Error in api_studio_requests: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/designers')
+@login_required
+def api_studio_designers():
+    """רשימת המעצבות (להקצאה ע\"י מנהלת הסטודיו)."""
+    try:
+        users = load_users()
+        designers = [
+            {'id': uid, 'name': info.get('name', uid)}
+            for uid, info in users.items()
+            if info.get('role') == 'מעצבת'
+        ]
+        return jsonify({'success': True, 'designers': sorted(designers, key=lambda x: x['name'])})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_studio_create_request():
+    """יצירת בקשת עיצוב חדשה."""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        title = (data.get('title') or '').strip()
+        if not title:
+            return jsonify({'success': False, 'error': 'יש להזין כותרת לבקשה'}), 400
+
+        users = load_users()
+        req_id = str(uuid.uuid4())
+        now = datetime.now().isoformat()
+        creator_name = _user_name(users, current_user.id)
+
+        new_request = {
+            'id': req_id,
+            'title': title,
+            'brief': (data.get('brief') or '').strip(),
+            'client_id': data.get('client_id') or None,
+            'client_name': data.get('client_name') or '',
+            'deadline': data.get('deadline') or '',
+            'priority': data.get('priority') or 'רגילה',
+            'work_type': data.get('work_type') or '',
+            'format_required': data.get('format_required') or '',
+            'status': 'חדשה',
+            'created_by': current_user.id,
+            'assigned_designer': None,
+            'source_files': [],
+            'deliverables': [],
+            'comments': [],
+            'history': [{
+                'action': 'created',
+                'by': current_user.id,
+                'by_name': creator_name,
+                'at': now,
+            }],
+            'created_at': now,
+            'updated_at': now,
+        }
+        save_studio_request(new_request)
+
+        # התראה + מייל למנהלות הסטודיו
+        link = _studio_request_link(req_id)
+        for mgr_id in _studio_manager_ids(users):
+            if mgr_id == current_user.id:
+                continue
+            try:
+                create_notification(
+                    user_id=mgr_id,
+                    notification_type='studio_new',
+                    data={
+                        'studio_request_id': req_id,
+                        'link': f"/studio/{req_id}",
+                        'from_user_id': current_user.id,
+                        'from_user_name': creator_name,
+                        'task_title': title,
+                        'client_name': new_request['client_name'],
+                    }
+                )
+            except Exception as ne:
+                print(f"[STUDIO] notify manager failed: {ne}")
+            try:
+                send_studio_notification_email(
+                    _user_email(users, mgr_id),
+                    subject=f"בקשת עיצוב חדשה: {title}",
+                    heading='בקשת עיצוב חדשה',
+                    message=f"{creator_name} פתח/ה בקשת עיצוב חדשה וממתינה להקצאה.",
+                    details={
+                        'כותרת': title,
+                        'לקוח': new_request['client_name'],
+                        'דחיפות': new_request['priority'],
+                        'דדליין': new_request['deadline'],
+                        'סוג עבודה': new_request['work_type'],
+                    },
+                    link=link,
+                )
+            except Exception as ee:
+                print(f"[STUDIO] email manager failed: {ee}")
+
+        return jsonify({'success': True, 'request': _enrich_studio_request(users, new_request)})
+    except Exception as e:
+        print(f"Error in api_studio_create_request: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _find_studio_request(req_id):
+    for r in load_studio_requests():
+        if r.get('id') == req_id:
+            return r
+    return None
+
+
+@app.route('/api/studio/requests/<req_id>')
+@login_required
+def api_studio_get_request(req_id):
+    """פרטי בקשה בודדת (עם בדיקת גישה)."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה לצפות בבקשה זו'}), 403
+        users = load_users()
+        return jsonify({
+            'success': True,
+            'request': _enrich_studio_request(users, req),
+            'statuses': STUDIO_STATUSES,
+            'can_manage': is_studio_manager(current_user.id, user_role),
+            'is_designer': is_designer(user_role),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>', methods=['PATCH', 'POST'])
+@login_required
+@csrf.exempt
+def api_studio_update_request(req_id):
+    """עדכון בקשה: סטטוס ושדות. שולח התראות בהתאם למעבר הסטטוס."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה לעדכן בקשה זו'}), 403
+
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        users = load_users()
+        actor_name = _user_name(users, current_user.id)
+        now = datetime.now().isoformat()
+        old_status = req.get('status')
+
+        # שדות שניתן לעדכן חופשית
+        for field in ['title', 'brief', 'client_id', 'client_name', 'deadline',
+                      'priority', 'work_type', 'format_required']:
+            if field in data:
+                req[field] = data[field]
+
+        new_status = data.get('status')
+        status_changed = bool(new_status and new_status in STUDIO_STATUSES and new_status != old_status)
+        if new_status and new_status not in STUDIO_STATUSES:
+            return jsonify({'success': False, 'error': 'סטטוס לא חוקי'}), 400
+        if status_changed:
+            req['status'] = new_status
+            req.setdefault('history', []).append({
+                'action': 'status_changed',
+                'from': old_status,
+                'to': new_status,
+                'by': current_user.id,
+                'by_name': actor_name,
+                'at': now,
+            })
+
+        req['updated_at'] = now
+        save_studio_request(req)
+
+        link = _studio_request_link(req_id)
+        title = req.get('title', 'בקשת עיצוב')
+
+        # התראות לפי מעבר סטטוס
+        if status_changed and new_status == 'ממתינה לאישור':
+            recipient = req.get('created_by')
+            if recipient and recipient != current_user.id:
+                try:
+                    create_notification(
+                        user_id=recipient,
+                        notification_type='studio_ready',
+                        data={'studio_request_id': req_id, 'link': f"/studio/{req_id}",
+                              'from_user_id': current_user.id, 'from_user_name': actor_name,
+                              'task_title': title, 'client_name': req.get('client_name', '')}
+                    )
+                except Exception as ne:
+                    print(f"[STUDIO] notify ready failed: {ne}")
+                try:
+                    send_studio_notification_email(
+                        _user_email(users, recipient),
+                        subject=f"העיצוב מוכן לאישור: {title}",
+                        heading='העיצוב מוכן לאישור',
+                        message=f"{actor_name} סימן/ה שהעיצוב מוכן וממתין לאישורך.",
+                        details={'כותרת': title, 'לקוח': req.get('client_name', '')},
+                        link=link,
+                    )
+                except Exception as ee:
+                    print(f"[STUDIO] email ready failed: {ee}")
+
+        elif status_changed and new_status == 'תיקונים':
+            recipient = req.get('assigned_designer')
+            if recipient and recipient != current_user.id:
+                try:
+                    create_notification(
+                        user_id=recipient,
+                        notification_type='studio_revisions',
+                        data={'studio_request_id': req_id, 'link': f"/studio/{req_id}",
+                              'from_user_id': current_user.id, 'from_user_name': actor_name,
+                              'task_title': title, 'client_name': req.get('client_name', '')}
+                    )
+                except Exception as ne:
+                    print(f"[STUDIO] notify revisions failed: {ne}")
+                try:
+                    send_studio_notification_email(
+                        _user_email(users, recipient),
+                        subject=f"התקבלו תיקונים: {title}",
+                        heading='התקבלו הערות לתיקון',
+                        message=f"{actor_name} ביקש/ה תיקונים בבקשת העיצוב.",
+                        details={'כותרת': title, 'לקוח': req.get('client_name', '')},
+                        link=link,
+                    )
+                except Exception as ee:
+                    print(f"[STUDIO] email revisions failed: {ee}")
+
+        return jsonify({'success': True, 'request': _enrich_studio_request(users, req)})
+    except Exception as e:
+        print(f"Error in api_studio_update_request: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>/assign', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_studio_assign_request(req_id):
+    """הקצאת מעצבת לבקשה - מנהלת סטודיו/אדמין בלבד."""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not is_studio_manager(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'רק מנהלת הסטודיו יכולה להקצות מעצבת'}), 403
+
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        designer_id = data.get('designer_id')
+        users = load_users()
+        if not designer_id or designer_id not in users:
+            return jsonify({'success': False, 'error': 'יש לבחור מעצבת חוקית'}), 400
+
+        now = datetime.now().isoformat()
+        actor_name = _user_name(users, current_user.id)
+        req['assigned_designer'] = designer_id
+        # הקצאה מעבירה אוטומטית לסטטוס "הוקצתה" אם הבקשה עדיין חדשה
+        if req.get('status') in (None, 'חדשה'):
+            req['status'] = 'הוקצתה'
+        req.setdefault('history', []).append({
+            'action': 'assigned',
+            'to': designer_id,
+            'to_name': _user_name(users, designer_id),
+            'by': current_user.id,
+            'by_name': actor_name,
+            'at': now,
+        })
+        req['updated_at'] = now
+        save_studio_request(req)
+
+        link = _studio_request_link(req_id)
+        title = req.get('title', 'בקשת עיצוב')
+        if designer_id != current_user.id:
+            try:
+                create_notification(
+                    user_id=designer_id,
+                    notification_type='studio_assigned',
+                    data={'studio_request_id': req_id, 'link': f"/studio/{req_id}",
+                          'from_user_id': current_user.id, 'from_user_name': actor_name,
+                          'task_title': title, 'client_name': req.get('client_name', '')}
+                )
+            except Exception as ne:
+                print(f"[STUDIO] notify assigned failed: {ne}")
+            try:
+                send_studio_notification_email(
+                    _user_email(users, designer_id),
+                    subject=f"הוקצתה לך בקשת עיצוב: {title}",
+                    heading='הוקצתה לך בקשת עיצוב',
+                    message=f"{actor_name} הקצה/תה לך בקשת עיצוב חדשה.",
+                    details={'כותרת': title, 'לקוח': req.get('client_name', ''),
+                             'דחיפות': req.get('priority', ''), 'דדליין': req.get('deadline', '')},
+                    link=link,
+                )
+            except Exception as ee:
+                print(f"[STUDIO] email assigned failed: {ee}")
+
+        return jsonify({'success': True, 'request': _enrich_studio_request(users, req)})
+    except Exception as e:
+        print(f"Error in api_studio_assign_request: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>', methods=['DELETE'])
+@login_required
+@csrf.exempt
+def api_studio_delete_request(req_id):
+    """מחיקת בקשה - היוצר או מנהלת סטודיו."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not (is_studio_manager(current_user.id, user_role) or req.get('created_by') == current_user.id):
+            return jsonify({'success': False, 'error': 'אין הרשאה למחוק בקשה זו'}), 403
+
+        # ניקוי קבצים מ-R2 (best effort)
+        for f in (req.get('source_files', []) + req.get('deliverables', [])):
+            if f.get('object_key'):
+                try:
+                    studio_storage.delete_object(f['object_key'])
+                except Exception:
+                    pass
+        delete_studio_request(req_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>/comments', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_studio_add_comment(req_id):
+    """הוספת הערה/תגובה לבקשה (למשל לסבב תיקונים)."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה'}), 403
+
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        text_val = (data.get('text') or '').strip()
+        if not text_val:
+            return jsonify({'success': False, 'error': 'הערה ריקה'}), 400
+
+        users = load_users()
+        comment = {
+            'id': str(uuid.uuid4()),
+            'text': text_val,
+            'by': current_user.id,
+            'by_name': _user_name(users, current_user.id),
+            'at': datetime.now().isoformat(),
+        }
+        req.setdefault('comments', []).append(comment)
+        req['updated_at'] = comment['at']
+        save_studio_request(req)
+        return jsonify({'success': True, 'comment': comment})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/uploads/presign', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_studio_presign_upload():
+    """מחזיר presigned PUT URL להעלאה ישירה ל-R2 מהדפדפן."""
+    try:
+        if not studio_storage.is_configured():
+            return jsonify({'success': False, 'error': 'אחסון הקבצים (R2) לא מוגדר. יש להגדיר את משתני הסביבה של R2.'}), 503
+
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        req_id = data.get('request_id')
+        filename = data.get('filename') or 'file'
+        content_type = data.get('content_type') or 'application/octet-stream'
+        kind = data.get('kind', 'deliverable')
+
+        req = _find_studio_request(req_id) if req_id else None
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה'}), 403
+
+        object_key = studio_storage.build_object_key(req_id, filename, kind=kind)
+        upload_url = studio_storage.generate_upload_url(object_key, content_type=content_type)
+        return jsonify({
+            'success': True,
+            'upload_url': upload_url,
+            'object_key': object_key,
+        })
+    except Exception as e:
+        print(f"Error in api_studio_presign_upload: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>/files', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_studio_register_file(req_id):
+    """רישום קובץ שכבר הועלה ל-R2 (מטא-דאטה) על הבקשה."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה'}), 403
+
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        object_key = data.get('object_key')
+        original_name = data.get('original_name') or 'file'
+        kind = data.get('kind', 'deliverable')
+        if not object_key:
+            return jsonify({'success': False, 'error': 'חסר מזהה קובץ'}), 400
+
+        users = load_users()
+        file_meta = {
+            'id': str(uuid.uuid4()),
+            'object_key': object_key,
+            'original_name': original_name,
+            'size': data.get('size'),
+            'content_type': data.get('content_type'),
+            'kind': kind,
+            'uploaded_by': current_user.id,
+            'uploaded_by_name': _user_name(users, current_user.id),
+            'uploaded_at': datetime.now().isoformat(),
+        }
+        bucket = 'source_files' if kind == 'source' else 'deliverables'
+        req.setdefault(bucket, []).append(file_meta)
+        req['updated_at'] = file_meta['uploaded_at']
+        save_studio_request(req)
+        return jsonify({'success': True, 'file': file_meta})
+    except Exception as e:
+        print(f"Error in api_studio_register_file: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>/files/<file_id>/download')
+@login_required
+def api_studio_download_file(req_id, file_id):
+    """מחזיר presigned GET URL ומפנה אליו להורדה ישירה מ-R2."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה'}), 403
+
+        target = None
+        for f in (req.get('source_files', []) + req.get('deliverables', [])):
+            if f.get('id') == file_id:
+                target = f
+                break
+        if not target:
+            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+
+        download_url = studio_storage.generate_download_url(
+            target['object_key'], download_name=target.get('original_name')
+        )
+        return redirect(download_url)
+    except Exception as e:
+        print(f"Error in api_studio_download_file: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/studio/requests/<req_id>/files/<file_id>', methods=['DELETE'])
+@login_required
+@csrf.exempt
+def api_studio_delete_file(req_id, file_id):
+    """מחיקת קובץ בודד מבקשה (מ-R2 ומהמטא-דאטה)."""
+    try:
+        req = _find_studio_request(req_id)
+        if not req:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not _can_access_studio_request(current_user.id, user_role, req):
+            return jsonify({'success': False, 'error': 'אין הרשאה'}), 403
+
+        removed = None
+        for bucket in ('source_files', 'deliverables'):
+            for f in req.get(bucket, []):
+                if f.get('id') == file_id:
+                    removed = f
+                    req[bucket] = [x for x in req[bucket] if x.get('id') != file_id]
+                    break
+            if removed:
+                break
+        if not removed:
+            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+
+        if removed.get('object_key'):
+            try:
+                studio_storage.delete_object(removed['object_key'])
+            except Exception:
+                pass
+        req['updated_at'] = datetime.now().isoformat()
+        save_studio_request(req)
+        return jsonify({'success': True})
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -5224,6 +5864,7 @@ def load_permissions():
             '/suppliers': 'עובד',
             '/quotes': 'עובד',
             '/forms': 'עובד',
+            '/studio': 'עובד',
             '/client_assignment': 'עובד',
             '/admin/dashboard': 'מנהל',
             '/admin/users': 'אדמין'
@@ -5247,6 +5888,14 @@ def get_user_role(user_id):
 def is_manager_or_admin(user_id, user_role):
     """בודק אם המשתמש הוא מנהל או אדמין"""
     return user_id == 'admin' or user_role in ['מנהל', 'אדמין']
+
+def is_studio_manager(user_id, user_role):
+    """מנהלת סטודיו רואה ומנהלת את כל בקשות הסטודיו. מנהל/אדמין מקבלים גישה מלאה גם כן."""
+    return user_id == 'admin' or user_role in ['מנהלת סטודיו', 'מנהל', 'אדמין']
+
+def is_designer(user_role):
+    """בודק אם המשתמש הוא מעצבת"""
+    return user_role == 'מעצבת'
 
 def normalize_assigned_user(assigned):
     """מנרמל את assigned_user לרשימה - תומך גם ב-string וגם ב-list"""
@@ -7175,7 +7824,7 @@ def serve_react_app_assets(filename):
 
 # React SPA catch-all routes - serve index.html for client-side routing
 REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers', 
-                '/quotes', '/forms', '/admin', '/archive', '/my_tasks', '/time_tracking',
+                '/quotes', '/forms', '/studio', '/admin', '/archive', '/my_tasks', '/time_tracking',
                 '/client_assignment']
 
 @app.route('/app')

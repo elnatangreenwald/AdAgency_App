@@ -9,9 +9,9 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy import text
 from sqlalchemy.orm.attributes import flag_modified
 from database import (
-    get_db, User, Client, Supplier, Quote, Message, Event,
+    get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity,
-    TimeTrackingEntry, TimeTrackingActiveSession
+    TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest
 )
 from datetime import datetime
 
@@ -520,6 +520,87 @@ def save_forms(forms):
         db.commit()
     finally:
         db.close()
+
+# ============ Studio Requests Functions ============
+
+_studio_schema_checked = False
+
+def _ensure_studio_schema():
+    """Lazily create the studio_requests table on first use. Mirrors the
+    _ensure_clients_schema pattern - never runs at import time to avoid blocking
+    gunicorn worker startup when the DB is slow/unreachable."""
+    global _studio_schema_checked
+    if _studio_schema_checked:
+        return
+    try:
+        StudioRequest.__table__.create(bind=engine, checkfirst=True)
+        _studio_schema_checked = True
+    except Exception as e:
+        print(f"[DB] _ensure_studio_schema failed: {e}")
+
+
+def load_studio_requests():
+    """Load all studio requests from database (newest first)."""
+    _ensure_studio_schema()
+    db = get_db()
+    try:
+        requests = []
+        rows = db.query(StudioRequest).order_by(StudioRequest.created_at.desc()).all()
+        for row in rows:
+            data = dict(row.data or {})
+            data['id'] = row.id
+            data['status'] = row.status or data.get('status', 'חדשה')
+            data['created_by'] = row.created_by or data.get('created_by')
+            data['assigned_designer'] = row.assigned_designer if row.assigned_designer is not None else data.get('assigned_designer')
+            requests.append(data)
+        return requests
+    finally:
+        db.close()
+
+
+def save_studio_request(request_data):
+    """Fast path: persist a SINGLE studio request (upsert)."""
+    _ensure_studio_schema()
+    if not request_data or not request_data.get('id'):
+        return
+    db = get_db()
+    try:
+        req_id = request_data.get('id')
+        row = db.query(StudioRequest).filter(StudioRequest.id == req_id).first()
+        if row:
+            row.data = request_data
+            row.status = request_data.get('status', row.status)
+            row.created_by = request_data.get('created_by', row.created_by)
+            row.assigned_designer = request_data.get('assigned_designer')
+            flag_modified(row, 'data')
+        else:
+            row = StudioRequest(
+                id=req_id,
+                data=request_data,
+                status=request_data.get('status', 'חדשה'),
+                created_by=request_data.get('created_by'),
+                assigned_designer=request_data.get('assigned_designer'),
+            )
+            db.add(row)
+        db.commit()
+    finally:
+        db.close()
+
+
+def delete_studio_request(request_id):
+    """Delete a studio request row. Returns True on success."""
+    _ensure_studio_schema()
+    db = get_db()
+    try:
+        row = db.query(StudioRequest).filter(StudioRequest.id == request_id).first()
+        if not row:
+            return False
+        db.delete(row)
+        db.commit()
+        return True
+    finally:
+        db.close()
+
 
 # ============ Time Tracking Functions ============
 

@@ -420,6 +420,8 @@ export function ManageUsers() {
                   <SelectContent>
                     <SelectItem value="עובד">עובד</SelectItem>
                     <SelectItem value="מנהל">מנהל</SelectItem>
+                    <SelectItem value="מנהלת סטודיו">מנהלת סטודיו</SelectItem>
+                    <SelectItem value="מעצבת">מעצבת</SelectItem>
                     <SelectItem value="אדמין">אדמין</SelectItem>
                   </SelectContent>
                 </Select>
@@ -532,6 +534,8 @@ export function ManageUsers() {
                           <SelectContent>
                             <SelectItem value="עובד">עובד</SelectItem>
                             <SelectItem value="מנהל">מנהל</SelectItem>
+                            <SelectItem value="מנהלת סטודיו">מנהלת סטודיו</SelectItem>
+                            <SelectItem value="מעצבת">מעצבת</SelectItem>
                             <SelectItem value="אדמין">אדמין</SelectItem>
                           </SelectContent>
                         </Select>

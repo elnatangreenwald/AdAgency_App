@@ -12,7 +12,8 @@ import {
   LogOut,
   Archive,
   Clock,
-  Link2
+  Link2,
+  Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,6 +68,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/suppliers', icon: MapPin, label: 'ספקים' },
     { path: '/quotes', icon: FileText, label: 'הצעות מחיר' },
     { path: '/forms', icon: ClipboardList, label: 'טפסים' },
+    { path: '/studio', icon: Palette, label: 'סטודיו' },
     { path: '/time_tracking', icon: Clock, label: 'דוחות שעות עבודה' },
     { path: '/client_assignment', icon: Link2, label: 'שיוך לקוחות' },
     { path: '/admin/dashboard', icon: BarChart3, label: 'דוח מנהלים' },
