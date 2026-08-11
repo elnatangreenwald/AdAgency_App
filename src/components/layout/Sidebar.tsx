@@ -13,7 +13,8 @@ import {
   Archive,
   Clock,
   Link2,
-  Palette
+  Palette,
+  CheckSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,6 +54,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
 
   const navItems = [
     { path: '/', icon: Home, label: 'דשבורד' },
+    { path: '/tasks', icon: CheckSquare, label: 'משימות' },
     { 
       path: '/all_clients', 
       icon: Users, 

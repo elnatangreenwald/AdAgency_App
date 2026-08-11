@@ -1964,6 +1964,94 @@ def get_tasks_for_calendar():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+def _resolve_task_assignee_id(task):
+    """מחזיר את מזהה האחראי של משימה מכל שדות השיוך האפשריים"""
+    assignee_id = task.get('assignee') or task.get('assigned_to') or ''
+    if not assignee_id:
+        assigned_user = task.get('assigned_user')
+        if isinstance(assigned_user, list) and assigned_user:
+            assignee_id = assigned_user[0]
+        elif isinstance(assigned_user, str):
+            assignee_id = assigned_user
+    return assignee_id or ''
+
+
+def _normalize_deadline_date(deadline):
+    """מחזיר תאריך YYYY-MM-DD או מחרוזת ריקה"""
+    if not deadline:
+        return ''
+    if isinstance(deadline, str) and 'T' in deadline:
+        return deadline.split('T')[0]
+    return str(deadline)
+
+
+@app.route('/api/tasks/board')
+@login_required
+def get_tasks_for_board():
+    """API לעמוד משימות — משימות פתוחות של המשתמש, או הכל במצב ניהול"""
+    try:
+        data = load_data()
+        users = load_users()
+        current_uid = current_user.id
+        user_role = get_user_role(current_uid)
+        scope = (request.args.get('scope') or 'mine').strip().lower()
+
+        if scope == 'all':
+            if not is_manager_or_admin(current_uid, user_role):
+                return jsonify({'success': False, 'error': 'אין הרשאה'}), 403
+        else:
+            scope = 'mine'
+
+        tasks = []
+        for client in data:
+            if client.get('archived'):
+                continue
+            client_name = client.get('name', '')
+            client_id = client.get('id', '')
+            for project in client.get('projects', []):
+                project_title = project.get('title', '')
+                project_id = project.get('id', '')
+                for task in project.get('tasks', []):
+                    task_status = task.get('status', 'לביצוע')
+                    if task_status == 'הושלם':
+                        continue
+
+                    assignee_id = _resolve_task_assignee_id(task)
+                    if scope == 'mine' and assignee_id != current_uid:
+                        continue
+
+                    deadline_date = _normalize_deadline_date(task.get('deadline', ''))
+                    note = task.get('note') or task.get('notes') or ''
+                    assignee_name = (
+                        users.get(assignee_id, {}).get('name', assignee_id)
+                        if assignee_id else 'ללא אחראי'
+                    )
+
+                    tasks.append({
+                        'task_id': task.get('id', ''),
+                        'title': task.get('title', 'ללא כותרת'),
+                        'status': task_status,
+                        'priority': task.get('priority', 'medium'),
+                        'deadline': deadline_date,
+                        'note': note,
+                        'client_id': client_id,
+                        'client_name': client_name,
+                        'project_id': project_id,
+                        'project_title': project_title,
+                        'assignee_id': assignee_id,
+                        'assignee_name': assignee_name,
+                        'is_daily_task': bool(task.get('is_daily_task', False)),
+                        'created_at': task.get('created_at') or task.get('created_date') or '',
+                    })
+
+        return jsonify({'success': True, 'scope': scope, 'tasks': tasks})
+    except Exception as e:
+        print(f"Error in get_tasks_for_board: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/quick_update_tasks')
 @login_required
 def api_quick_update_tasks():

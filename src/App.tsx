@@ -19,6 +19,7 @@ import { ManageUsers } from './pages/ManageUsers';
 import { ClientAssignmentPage } from './pages/ClientAssignmentPage';
 import { Archive } from './pages/Archive';
 import { TimeTrackingReports } from './pages/TimeTrackingReports';
+import { TasksPage } from './pages/TasksPage';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="tasks" element={<TasksPage />} />
             <Route path="quick_update" element={<QuickUpdate />} />
             <Route path="all_clients" element={<AllClients />} />
             <Route path="client/:clientId" element={<ClientPage />} />
