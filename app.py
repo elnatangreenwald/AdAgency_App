@@ -1896,19 +1896,14 @@ def get_client_projects(client_id):
 @app.route('/api/tasks/calendar')
 @login_required
 def get_tasks_for_calendar():
-    """API endpoint להחזרת משימות עם deadline ללוח שנה"""
+    """API endpoint להחזרת משימות עם deadline ללוח שנה — רק משימות של המשתמש המחובר"""
     try:
         data = load_data()
         users = load_users()
-        user_role = get_user_role(current_user.id)
+        current_uid = current_user.id
         
         tasks = []
         for client in data:
-            # בדיקת הרשאות
-            if not is_manager_or_admin(current_user.id, user_role):
-                if not can_user_access_client(current_user.id, user_role, client):
-                    continue
-            
             client_name = client.get('name', '')
             for project in client.get('projects', []):
                 project_title = project.get('title', '')
@@ -1922,6 +1917,17 @@ def get_tasks_for_calendar():
                     is_daily_task = task.get('is_daily_task', False)
                     if task_status == 'הושלם' and not is_daily_task:
                         continue
+
+                    # רק משימות שמשויכות למשתמש הנוכחי (כולל אדמין)
+                    assignee_id = task.get('assignee') or task.get('assigned_to') or ''
+                    if not assignee_id:
+                        assigned_user = task.get('assigned_user')
+                        if isinstance(assigned_user, list) and assigned_user:
+                            assignee_id = assigned_user[0]
+                        elif isinstance(assigned_user, str):
+                            assignee_id = assigned_user
+                    if assignee_id != current_uid:
+                        continue
                     
                     # המרת תאריך לפורמט ISO
                     try:
@@ -1930,8 +1936,6 @@ def get_tasks_for_calendar():
                         else:
                             deadline_date = deadline
                         
-                        # קבלת שם המשתמש האחראי
-                        assignee_id = task.get('assignee', '')
                         assignee_name = users.get(assignee_id, {}).get('name', assignee_id) if assignee_id else 'ללא אחראי'
                         
                         task_title = task.get('title', 'ללא כותרת')
