@@ -1,7 +1,8 @@
 # Utils package
 from .helpers import (
     load_data, save_data, load_users, save_users,
-    load_suppliers, save_suppliers, load_quotes, save_quotes,
+    load_suppliers, save_suppliers, load_network_passwords, save_network_passwords,
+    load_quotes, save_quotes,
     load_messages, save_messages, load_events, save_events,
     load_time_tracking, save_time_tracking,
     load_equipment_bank, save_equipment_bank,
@@ -15,7 +16,7 @@ from .helpers import (
 )
 
 from .permissions import (
-    check_permission, get_user_role, is_manager_or_admin,
+    check_permission, get_user_role, is_manager_or_admin, is_strict_admin,
     can_user_access_client, normalize_assigned_user,
     filter_active_clients, filter_archived_clients,
     get_accessible_clients
@@ -33,7 +34,8 @@ from .notifications import (
 __all__ = [
     # Data helpers
     'load_data', 'save_data', 'load_users', 'save_users',
-    'load_suppliers', 'save_suppliers', 'load_quotes', 'save_quotes',
+    'load_suppliers', 'save_suppliers', 'load_network_passwords', 'save_network_passwords',
+    'load_quotes', 'save_quotes',
     'load_messages', 'save_messages', 'load_events', 'save_events',
     'load_time_tracking', 'save_time_tracking',
     'load_equipment_bank', 'save_equipment_bank',
@@ -45,7 +47,7 @@ __all__ = [
     'get_next_task_number', 'get_next_charge_number',
     'get_next_workday', 'assign_client_numbers',
     # Permissions
-    'check_permission', 'get_user_role', 'is_manager_or_admin',
+    'check_permission', 'get_user_role', 'is_manager_or_admin', 'is_strict_admin',
     'can_user_access_client', 'normalize_assigned_user',
     'filter_active_clients', 'filter_archived_clients',
     'get_accessible_clients',

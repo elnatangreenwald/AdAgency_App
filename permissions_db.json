@@ -9,5 +9,6 @@
     "/forms": "עובד",
     "/studio": "עובד",
     "/admin/dashboard": "מנהל",
-    "/admin/users": "אדמין"
+    "/admin/users": "אדמין",
+    "/admin/passwords": "אדמין"
 }

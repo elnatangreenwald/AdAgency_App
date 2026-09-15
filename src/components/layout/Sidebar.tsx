@@ -14,7 +14,8 @@ import {
   Clock,
   Link2,
   Palette,
-  CheckSquare
+  CheckSquare,
+  KeyRound
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +24,7 @@ interface SidebarProps {
   currentUser?: {
     id: string;
     name: string;
+    role?: string;
   };
   sidebarUsers?: Record<string, { name: string }>;
   onNavClick?: () => void;
@@ -76,8 +78,12 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/admin/dashboard', icon: BarChart3, label: 'דוח מנהלים' },
   ];
 
-  const adminItems = currentUser?.id === 'admin' ? [
+  const isAdmin =
+    currentUser?.id === 'admin' || currentUser?.role === 'אדמין';
+
+  const adminItems = isAdmin ? [
     { path: '/admin/users', icon: Settings, label: 'ניהול צוות' },
+    { path: '/admin/passwords', icon: KeyRound, label: 'סיסמאות רשתות' },
     { path: '/archive', icon: Archive, label: 'ארכיון' },
   ] : [];
 

@@ -55,6 +55,7 @@ class Config:
     ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
     TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
     NOTIFICATIONS_FILE = os.path.join(BASE_DIR, 'notifications_db.json')
+    NETWORK_PASSWORDS_FILE = os.path.join(BASE_DIR, 'network_passwords.json')
     
     # Rate limiting
     RATELIMIT_DEFAULT = ["200 per day", "50 per hour"]

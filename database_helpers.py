@@ -11,7 +11,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from database import (
     get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity,
-    TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest
+    TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest, NetworkPassword
 )
 from datetime import datetime
 
@@ -729,6 +729,78 @@ def save_time_tracking(data):
             )
             db.add(session)
         
+        db.commit()
+    finally:
+        db.close()
+
+
+# ============ Network Passwords (admin vault) ============
+
+_network_passwords_schema_checked = False
+
+def _ensure_network_passwords_schema():
+    """Lazily create the network_passwords table on first use."""
+    global _network_passwords_schema_checked
+    if _network_passwords_schema_checked:
+        return
+    try:
+        NetworkPassword.__table__.create(bind=engine, checkfirst=True)
+        _network_passwords_schema_checked = True
+    except Exception as e:
+        print(f"[DB] _ensure_network_passwords_schema failed: {e}")
+
+
+def _network_passwords_seed_path():
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'network_passwords.json')
+
+
+def load_network_passwords():
+    """Load social-network password vault from database. Seeds from JSON if empty."""
+    _ensure_network_passwords_schema()
+    db = get_db()
+    try:
+        entries = []
+        for row in db.query(NetworkPassword).all():
+            data = dict(row.data or {})
+            data['id'] = row.id
+            entries.append(data)
+    finally:
+        db.close()
+
+    if entries:
+        return entries
+
+    seed_path = _network_passwords_seed_path()
+    if os.path.exists(seed_path) and os.stat(seed_path).st_size > 0:
+        with open(seed_path, 'r', encoding='utf-8') as f:
+            seeded = json.load(f)
+        if isinstance(seeded, list) and seeded:
+            save_network_passwords(seeded)
+            return seeded
+    return []
+
+
+def save_network_passwords(entries):
+    """Replace the full network-password vault in the database."""
+    _ensure_network_passwords_schema()
+    db = get_db()
+    try:
+        incoming_ids = set()
+        for entry in entries or []:
+            entry_id = entry.get('id')
+            if not entry_id:
+                continue
+            incoming_ids.add(entry_id)
+            row = db.query(NetworkPassword).filter(NetworkPassword.id == entry_id).first()
+            if row:
+                row.data = entry
+                flag_modified(row, 'data')
+            else:
+                db.add(NetworkPassword(id=entry_id, data=entry))
+
+        for row in db.query(NetworkPassword).all():
+            if row.id not in incoming_ids:
+                db.delete(row)
         db.commit()
     finally:
         db.close()

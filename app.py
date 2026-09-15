@@ -47,7 +47,8 @@ if USE_DATABASE:
         load_checklist_templates, save_checklist_templates,
         load_forms, save_forms, delete_user_record,
         load_time_tracking, save_time_tracking,
-        load_studio_requests, save_studio_request, delete_studio_request
+        load_studio_requests, save_studio_request, delete_studio_request,
+        load_network_passwords, save_network_passwords
     )
 
 # Import notifications module
@@ -91,6 +92,7 @@ USER_ACTIVITY_FILE = os.path.join(BASE_DIR, 'user_activity.json')
 ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
 TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
 STUDIO_FILE = os.path.join(BASE_DIR, 'studio_db.json')
+NETWORK_PASSWORDS_FILE = os.path.join(BASE_DIR, 'network_passwords.json')
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -403,6 +405,18 @@ if not USE_DATABASE:
             return False
         _save_all_studio_requests(new_requests)
         return True
+
+    def load_network_passwords():
+        """טעינת ריכוז סיסמאות רשתות מקובץ JSON"""
+        if not os.path.exists(NETWORK_PASSWORDS_FILE) or os.stat(NETWORK_PASSWORDS_FILE).st_size == 0:
+            return []
+        with open(NETWORK_PASSWORDS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+
+    def save_network_passwords(entries):
+        with open(NETWORK_PASSWORDS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(entries, f, ensure_ascii=False, indent=4)
 
 if not USE_DATABASE:
     def load_time_tracking():
@@ -1252,6 +1266,138 @@ def api_mark_notifications_read():
         })
     except Exception as e:
         print(f"Error in api_mark_notifications_read: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== NETWORK PASSWORDS API (admin only) ====================
+
+def _network_password_payload():
+    data = request.get_json(silent=True) if request.is_json else None
+    if isinstance(data, dict):
+        return data
+    return request.form.to_dict()
+
+
+def _sanitize_network_password_entry(payload, existing=None):
+    existing = existing or {}
+    client = (payload.get('client') or existing.get('client') or '').strip()
+    platform = (payload.get('platform') or existing.get('platform') or '').strip()
+    username = (payload.get('username') or '').strip() if 'username' in payload else existing.get('username', '')
+    password = payload.get('password') if 'password' in payload else existing.get('password', '')
+    url = (payload.get('url') or '').strip() if 'url' in payload else existing.get('url', '')
+    notes = (payload.get('notes') or '').strip() if 'notes' in payload else existing.get('notes', '')
+    if not client and not platform:
+        return None, 'יש להזין שם לקוח או רשת'
+    entry = {
+        'id': existing.get('id') or str(uuid.uuid4()),
+        'client': client,
+        'platform': platform,
+        'username': username or '',
+        'password': password or '',
+        'url': url or '',
+        'notes': notes or '',
+        'created_at': existing.get('created_at') or datetime.now().isoformat(),
+        'updated_at': datetime.now().isoformat(),
+        'updated_by': current_user.id,
+    }
+    return entry, None
+
+
+@app.route('/api/admin/network_passwords')
+@login_required
+def api_admin_network_passwords():
+    """רשימת סיסמאות רשתות — אדמין בלבד"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not is_strict_admin(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה — רק אדמין'}), 403
+
+        entries = load_network_passwords()
+        entries.sort(key=lambda x: (x.get('client', ''), x.get('platform', ''), x.get('username', '')))
+        clients = sorted({e.get('client', '') for e in entries if e.get('client')})
+        platforms = sorted({e.get('platform', '') for e in entries if e.get('platform')})
+        return jsonify({
+            'success': True,
+            'entries': entries,
+            'clients': clients,
+            'platforms': platforms,
+        })
+    except Exception as e:
+        print(f"Error in api_admin_network_passwords: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/network_passwords', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_admin_network_passwords_create():
+    """הוספת רשומת סיסמה — אדמין בלבד"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not is_strict_admin(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה — רק אדמין'}), 403
+
+        payload = _network_password_payload()
+        entry, error = _sanitize_network_password_entry(payload)
+        if error:
+            return jsonify({'success': False, 'error': error}), 400
+
+        entries = load_network_passwords()
+        entries.append(entry)
+        save_network_passwords(entries)
+        return jsonify({'success': True, 'entry': entry})
+    except Exception as e:
+        print(f"Error in api_admin_network_passwords_create: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/network_passwords/<entry_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_admin_network_passwords_update(entry_id):
+    """עדכון רשומת סיסמה — אדמין בלבד"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not is_strict_admin(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה — רק אדמין'}), 403
+
+        entries = load_network_passwords()
+        existing = next((e for e in entries if e.get('id') == entry_id), None)
+        if not existing:
+            return jsonify({'success': False, 'error': 'הרשומה לא נמצאה'}), 404
+
+        payload = _network_password_payload()
+        entry, error = _sanitize_network_password_entry(payload, existing)
+        if error:
+            return jsonify({'success': False, 'error': error}), 400
+        entry['id'] = entry_id
+
+        entries = [entry if e.get('id') == entry_id else e for e in entries]
+        save_network_passwords(entries)
+        return jsonify({'success': True, 'entry': entry})
+    except Exception as e:
+        print(f"Error in api_admin_network_passwords_update: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/admin/network_passwords/<entry_id>/delete', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_admin_network_passwords_delete(entry_id):
+    """מחיקת רשומת סיסמה — אדמין בלבד"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not is_strict_admin(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'גישה חסומה — רק אדמין'}), 403
+
+        entries = load_network_passwords()
+        new_entries = [e for e in entries if e.get('id') != entry_id]
+        if len(new_entries) == len(entries):
+            return jsonify({'success': False, 'error': 'הרשומה לא נמצאה'}), 404
+        save_network_passwords(new_entries)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error in api_admin_network_passwords_delete: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -5959,12 +6105,17 @@ def load_permissions():
             '/studio': 'עובד',
             '/client_assignment': 'עובד',
             '/admin/dashboard': 'מנהל',
-            '/admin/users': 'אדמין'
+            '/admin/users': 'אדמין',
+            '/admin/passwords': 'אדמין'
         }
         save_permissions(default_permissions)
         return default_permissions
     with open(PERMISSIONS_FILE, 'r', encoding='utf-8') as f: 
-        return json.load(f)
+        permissions = json.load(f)
+    if '/admin/passwords' not in permissions:
+        permissions['/admin/passwords'] = 'אדמין'
+        save_permissions(permissions)
+    return permissions
 
 def save_permissions(permissions):
     with open(PERMISSIONS_FILE, 'w', encoding='utf-8') as f: 
@@ -5980,6 +6131,14 @@ def get_user_role(user_id):
 def is_manager_or_admin(user_id, user_role):
     """בודק אם המשתמש הוא מנהל או אדמין"""
     return user_id == 'admin' or user_role in ['מנהל', 'אדמין']
+
+def is_strict_admin(user_id, user_role=None):
+    """בודק אם המשתמש הוא אדמין בלבד (לא מנהל)"""
+    if user_id == 'admin':
+        return True
+    if user_role is None:
+        user_role = get_user_role(user_id)
+    return user_role == 'אדמין'
 
 def is_studio_manager(user_id, user_role):
     """מנהלת סטודיו רואה ומנהלת את כל בקשות הסטודיו. מנהל/אדמין מקבלים גישה מלאה גם כן."""
@@ -6157,6 +6316,7 @@ def api_admin_users():
             {'route': '/client_assignment', 'name': 'שיוך לקוחות'},
             {'route': '/admin/dashboard', 'name': 'דוח מנהלים'},
             {'route': '/admin/users', 'name': 'ניהול צוות'},
+            {'route': '/admin/passwords', 'name': 'סיסמאות רשתות'},
         ]
         
         users_list = [
@@ -6329,7 +6489,8 @@ def manage_users():
         {'route': '/quotes', 'name': 'הצעות מחיר'},
         {'route': '/forms', 'name': 'טפסים'},
         {'route': '/admin/dashboard', 'name': 'דוח מנהלים'},
-        {'route': '/admin/users', 'name': 'ניהול צוות'}
+        {'route': '/admin/users', 'name': 'ניהול צוות'},
+        {'route': '/admin/passwords', 'name': 'סיסמאות רשתות'},
     ]
     
     # Redirect to React manage users page
@@ -7917,7 +8078,7 @@ def serve_react_app_assets(filename):
 # React SPA catch-all routes - serve index.html for client-side routing
 REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers', 
                 '/quotes', '/forms', '/studio', '/admin', '/archive', '/my_tasks', '/time_tracking',
-                '/client_assignment']
+                '/client_assignment', '/admin/passwords']
 
 @app.route('/app')
 @app.route('/app/')

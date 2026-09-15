@@ -204,3 +204,13 @@ class StudioRequest(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
+class NetworkPassword(Base):
+    """ריכוז סיסמאות רשתות — אדמין בלבד. כל רשומה ב-JSONB כמו Supplier."""
+    __tablename__ = 'network_passwords'
+
+    id = Column(String, primary_key=True)
+    data = Column(JSONB)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+

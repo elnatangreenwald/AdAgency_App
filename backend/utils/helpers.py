@@ -264,6 +264,33 @@ def save_suppliers(suppliers):
         json.dump(suppliers, f, ensure_ascii=False, indent=4)
 
 
+def load_network_passwords():
+    """Load network password vault from JSON file"""
+    config = get_config()
+    passwords_file = getattr(config, 'NETWORK_PASSWORDS_FILE', None)
+    if not passwords_file:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        passwords_file = os.path.join(base_dir, 'network_passwords.json')
+
+    if not os.path.exists(passwords_file) or os.stat(passwords_file).st_size == 0:
+        return []
+    with open(passwords_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data if isinstance(data, list) else []
+
+
+def save_network_passwords(entries):
+    """Save network password vault to JSON file"""
+    config = get_config()
+    passwords_file = getattr(config, 'NETWORK_PASSWORDS_FILE', None)
+    if not passwords_file:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        passwords_file = os.path.join(base_dir, 'network_passwords.json')
+
+    with open(passwords_file, 'w', encoding='utf-8') as f:
+        json.dump(entries, f, ensure_ascii=False, indent=4)
+
+
 def load_quotes():
     """Load quotes from JSON file"""
     config = get_config()
@@ -476,12 +503,17 @@ def load_permissions():
             '/quotes': 'עובד',
             '/forms': 'עובד',
             '/admin/dashboard': 'מנהל',
-            '/admin/users': 'אדמין'
+            '/admin/users': 'אדמין',
+            '/admin/passwords': 'אדמין'
         }
         save_permissions(default_permissions)
         return default_permissions
     with open(permissions_file, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        permissions = json.load(f)
+    if '/admin/passwords' not in permissions:
+        permissions['/admin/passwords'] = 'אדמין'
+        save_permissions(permissions)
+    return permissions
 
 
 def save_permissions(permissions):

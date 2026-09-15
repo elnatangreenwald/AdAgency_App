@@ -18,6 +18,15 @@ def is_manager_or_admin(user_id, user_role):
     return user_id == 'admin' or user_role in ['מנהל', 'אדמין']
 
 
+def is_strict_admin(user_id, user_role=None):
+    """Check if user is admin only (not manager)"""
+    if user_id == 'admin':
+        return True
+    if user_role is None:
+        user_role = get_user_role(user_id)
+    return user_role == 'אדמין'
+
+
 def normalize_assigned_user(assigned):
     """Normalize assigned_user to a list - supports both string and list"""
     if isinstance(assigned, str):

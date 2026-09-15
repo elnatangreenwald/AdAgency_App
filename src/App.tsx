@@ -20,6 +20,7 @@ import { ClientAssignmentPage } from './pages/ClientAssignmentPage';
 import { Archive } from './pages/Archive';
 import { TimeTrackingReports } from './pages/TimeTrackingReports';
 import { TasksPage } from './pages/TasksPage';
+import { NetworkPasswordsPage } from './pages/NetworkPasswordsPage';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
             <Route path="client_assignment" element={<ClientAssignmentPage />} />
             <Route path="admin/dashboard" element={<AdminDashboard />} />
             <Route path="admin/users" element={<ManageUsers />} />
+            <Route path="admin/passwords" element={<NetworkPasswordsPage />} />
             <Route path="archive" element={<Archive />} />
             <Route path="time_tracking" element={<TimeTrackingReports />} />
           </Route>
