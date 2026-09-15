@@ -504,14 +504,14 @@ def load_permissions():
             '/forms': 'עובד',
             '/admin/dashboard': 'מנהל',
             '/admin/users': 'אדמין',
-            '/admin/passwords': 'אדמין'
+            '/admin/passwords': 'עובד'
         }
         save_permissions(default_permissions)
         return default_permissions
     with open(permissions_file, 'r', encoding='utf-8') as f:
         permissions = json.load(f)
-    if '/admin/passwords' not in permissions:
-        permissions['/admin/passwords'] = 'אדמין'
+    if permissions.get('/admin/passwords') != 'עובד':
+        permissions['/admin/passwords'] = 'עובד'
         save_permissions(permissions)
     return permissions
 

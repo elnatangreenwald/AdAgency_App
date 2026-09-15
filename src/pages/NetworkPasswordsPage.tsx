@@ -92,9 +92,12 @@ function platformBadgeClass(platform: string) {
 export function NetworkPasswordsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const admin = isAdminUser(user);
+
   const [entries, setEntries] = useState<NetworkPasswordEntry[]>([]);
   const [clients, setClients] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
+  const [agencyClients, setAgencyClients] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [clientFilter, setClientFilter] = useState('all');
@@ -136,11 +139,30 @@ export function NetworkPasswordsPage() {
     }
   };
 
-  useEffect(() => {
-    if (isAdminUser(user)) {
-      fetchEntries();
+  const fetchAgencyClients = async () => {
+    try {
+      const response = await apiClient.get('/api/clients');
+      if (response.data.success) {
+        setAgencyClients(
+          (response.data.clients || [])
+            .map((c: { name?: string }) => c.name || '')
+            .filter(Boolean)
+        );
+      }
+    } catch {
+      // Optional helper list — the form still works as free text.
     }
-  }, [user]);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchAgencyClients();
+    if (admin) {
+      fetchEntries();
+    } else {
+      setLoading(false);
+    }
+  }, [user, admin]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -206,12 +228,33 @@ export function NetworkPasswordsPage() {
     setDialogOpen(true);
   };
 
+  const validateRequired = () => {
+    if (!form.client.trim()) {
+      toast({ title: 'שגיאה', description: 'יש להזין לקוח', variant: 'destructive' });
+      return false;
+    }
+    if (!form.platform.trim()) {
+      toast({ title: 'שגיאה', description: 'יש להזין פלטפורמה', variant: 'destructive' });
+      return false;
+    }
+    if (!form.username.trim()) {
+      toast({ title: 'שגיאה', description: 'יש להזין שם משתמש', variant: 'destructive' });
+      return false;
+    }
+    if (!form.password) {
+      toast({ title: 'שגיאה', description: 'יש להזין סיסמה', variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.client.trim() && !form.platform.trim()) {
+    if (!editing && !validateRequired()) return;
+    if (editing && (!form.client.trim() || !form.platform.trim())) {
       toast({
         title: 'שגיאה',
-        description: 'יש להזין שם לקוח או רשת',
+        description: 'יש להזין לקוח ופלטפורמה',
         variant: 'destructive',
       });
       return;
@@ -230,9 +273,15 @@ export function NetworkPasswordsPage() {
         ? await apiClient.post(`/api/admin/network_passwords/${editing.id}`, payload)
         : await apiClient.post('/api/admin/network_passwords', payload);
       if (response.data.success) {
-        toast({ title: editing ? 'הרשומה עודכנה' : 'הרשומה נוספה' });
+        toast({
+          title: editing ? 'הרשומה עודכנה' : 'הסיסמה נשלחה',
+          description: editing ? undefined : 'האדמין יוכל לראות אותה בריכוז הסיסמאות',
+        });
         setDialogOpen(false);
-        await fetchEntries();
+        setForm(EMPTY_FORM);
+        if (admin) {
+          await fetchEntries();
+        }
       } else {
         toast({
           title: 'שגיאה',
@@ -284,19 +333,17 @@ export function NetworkPasswordsPage() {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdminUser(user)) {
-    return <Navigate to="/" replace />;
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinner text="טוען סיסמאות..." />
+        <LoadingSpinner text={admin ? 'טוען סיסמאות...' : 'טוען...'} />
       </div>
     );
   }
 
-  const clientOptions = Array.from(new Set([...clients, ...entries.map((e) => e.client)].filter(Boolean)));
+  const clientOptions = Array.from(
+    new Set([...agencyClients, ...clients, ...entries.map((e) => e.client)].filter(Boolean))
+  );
   const platformOptions = Array.from(
     new Set([...SUGGESTED_PLATFORMS, ...platforms, ...entries.map((e) => e.platform)].filter(Boolean))
   );
@@ -312,243 +359,229 @@ export function NetworkPasswordsPage() {
                 <h1 className="text-2xl md:text-3xl font-bold">סיסמאות רשתות</h1>
               </div>
               <p className="text-white/80 text-sm">
-                ריכוז יוזרים וסיסמאות לרשתות חברתיות — גישה לאדמין בלבד
+                {admin
+                  ? 'ריכוז יוזרים וסיסמאות לרשתות חברתיות'
+                  : 'הוסיפו סיסמה חדשה — היא תגיע לריכוז של האדמין'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => setRevealAll((v) => !v)}
-                className="bg-white/15 text-white hover:bg-white/25 border-0"
-              >
-                {revealAll ? <EyeOff className="w-4 h-4 ml-2" /> : <Eye className="w-4 h-4 ml-2" />}
-                {revealAll ? 'הסתר הכל' : 'הצג הכל'}
-              </Button>
-              <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
-                <Plus className="w-4 h-4 ml-2" />
-                רשומה חדשה
-              </Button>
-            </div>
+            {admin && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setRevealAll((v) => !v)}
+                  className="bg-white/15 text-white hover:bg-white/25 border-0"
+                >
+                  {revealAll ? <EyeOff className="w-4 h-4 ml-2" /> : <Eye className="w-4 h-4 ml-2" />}
+                  {revealAll ? 'הסתר הכל' : 'הצג הכל'}
+                </Button>
+                <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
+                  <Plus className="w-4 h-4 ml-2" />
+                  רשומה חדשה
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="relative md:col-span-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="חיפוש לקוח, רשת, יוזר..."
-            className="pr-9"
-          />
-        </div>
-        <Select value={clientFilter} onValueChange={setClientFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="כל הלקוחות" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הלקוחות</SelectItem>
-            {clients.map((client) => (
-              <SelectItem key={client} value={client}>
-                {client}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={platformFilter} onValueChange={setPlatformFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="כל הרשתות" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הרשתות</SelectItem>
-            {platforms.map((platform) => (
-              <SelectItem key={platform} value={platform}>
-                {platform}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {grouped.length === 0 ? (
-        <Card>
-          <CardContent>
-            <EmptyState
-              icon={KeyRound}
-              title="אין רשומות להצגה"
-              description="נסו לשנות את החיפוש, או הוסיפו רשומה חדשה"
-              actionLabel="רשומה חדשה"
-              onAction={openCreate}
-            />
+      {!admin && (
+        <Card className="max-w-xl">
+          <CardContent className="p-4 md:p-6">
+            <h2 className="text-lg font-semibold text-[#043841] mb-4">הוספת סיסמה</h2>
+            <form onSubmit={handleSave} className="space-y-4">
+              <PasswordFields
+                form={form}
+                setForm={setForm}
+                clientOptions={clientOptions}
+                platformOptions={platformOptions}
+                compact
+              />
+              <Button type="submit" disabled={saving} className="bg-[#3d817a] hover:bg-[#2d6159]">
+                {saving ? 'שולח...' : 'שליחה'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
-      ) : (
-        grouped.map(([client, clientEntries]) => (
-          <section key={client} className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[#043841]">{client}</h2>
-              <span className="text-sm text-gray-500">{clientEntries.length} רשומות</span>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {clientEntries.map((entry) => {
-                const shown = revealAll || revealed[entry.id];
-                return (
-                  <Card key={entry.id} className="border-gray-200 shadow-sm">
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full border font-medium ${platformBadgeClass(
-                            entry.platform
-                          )}`}
-                        >
-                          {entry.platform || 'ללא רשת'}
-                        </span>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => setDeleteTarget(entry)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <SecretRow
-                        label="שם משתמש"
-                        value={entry.username}
-                        onCopy={() => copyText('שם משתמש', entry.username)}
-                      />
-                      <SecretRow
-                        label="סיסמה"
-                        value={entry.password}
-                        secret={!shown}
-                        onToggle={() =>
-                          setRevealed((prev) => ({ ...prev, [entry.id]: !prev[entry.id] }))
-                        }
-                        onCopy={() => copyText('סיסמה', entry.password)}
-                      />
-                      {entry.url && (
-                        <div className="flex items-center justify-between gap-2 text-sm">
-                          <span className="text-gray-500 shrink-0">קישור</span>
-                          <a
-                            href={entry.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[#3d817a] hover:underline truncate flex items-center gap-1"
-                          >
-                            {entry.url}
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      )}
-                      {entry.notes && (
-                        <p className="text-sm text-gray-600 bg-gray-50 rounded-md p-2 whitespace-pre-wrap">
-                          {entry.notes}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
-        ))
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>{editing ? 'עריכת רשומה' : 'רשומה חדשה'}</DialogTitle>
-            <DialogDescription>
-              שמרו יוזר וסיסמה לפי לקוח ורשת. השדות יוצגו רק לאדמין.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="np-client">לקוח / חשבון</Label>
-                <Input
-                  id="np-client"
-                  list="np-clients"
-                  value={form.client}
-                  onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
-                  placeholder="לדוגמה: דרך עמי"
+      {admin && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="relative md:col-span-1">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="חיפוש לקוח, רשת, יוזר..."
+                className="pr-9"
+              />
+            </div>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="כל הלקוחות" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הלקוחות</SelectItem>
+                {clients.map((client) => (
+                  <SelectItem key={client} value={client}>
+                    {client}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={platformFilter} onValueChange={setPlatformFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="כל הרשתות" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הרשתות</SelectItem>
+                {platforms.map((platform) => (
+                  <SelectItem key={platform} value={platform}>
+                    {platform}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {grouped.length === 0 ? (
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={KeyRound}
+                  title="אין רשומות להצגה"
+                  description="נסו לשנות את החיפוש, או הוסיפו רשומה חדשה"
+                  actionLabel="רשומה חדשה"
+                  onAction={openCreate}
                 />
-                <datalist id="np-clients">
-                  {clientOptions.map((client) => (
-                    <option key={client} value={client} />
-                  ))}
-                </datalist>
+              </CardContent>
+            </Card>
+          ) : (
+            grouped.map(([client, clientEntries]) => (
+              <section key={client} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-[#043841]">{client}</h2>
+                  <span className="text-sm text-gray-500">{clientEntries.length} רשומות</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {clientEntries.map((entry) => {
+                    const shown = revealAll || revealed[entry.id];
+                    return (
+                      <Card key={entry.id} className="border-gray-200 shadow-sm">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full border font-medium ${platformBadgeClass(
+                                entry.platform
+                              )}`}
+                            >
+                              {entry.platform || 'ללא רשת'}
+                            </span>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => setDeleteTarget(entry)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <SecretRow
+                            label="שם משתמש"
+                            value={entry.username}
+                            onCopy={() => copyText('שם משתמש', entry.username)}
+                          />
+                          <SecretRow
+                            label="סיסמה"
+                            value={entry.password}
+                            secret={!shown}
+                            onToggle={() =>
+                              setRevealed((prev) => ({ ...prev, [entry.id]: !prev[entry.id] }))
+                            }
+                            onCopy={() => copyText('סיסמה', entry.password)}
+                          />
+                          {entry.url && (
+                            <div className="flex items-center justify-between gap-2 text-sm">
+                              <span className="text-gray-500 shrink-0">קישור</span>
+                              <a
+                                href={entry.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#3d817a] hover:underline truncate flex items-center gap-1"
+                              >
+                                {entry.url}
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          )}
+                          {entry.notes && (
+                            <p className="text-sm text-gray-600 bg-gray-50 rounded-md p-2 whitespace-pre-wrap">
+                              {entry.notes}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </section>
+            ))
+          )}
+        </>
+      )}
+
+      {admin && (
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-lg" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>{editing ? 'עריכת רשומה' : 'רשומה חדשה'}</DialogTitle>
+              <DialogDescription>
+                שמרו יוזר וסיסמה לפי לקוח ופלטפורמה.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSave} className="space-y-4">
+              <PasswordFields
+                form={form}
+                setForm={setForm}
+                clientOptions={clientOptions}
+                platformOptions={platformOptions}
+              />
+              <div className="space-y-2">
+                <Label htmlFor="np-url">קישור</Label>
+                <Input
+                  id="np-url"
+                  value={form.url}
+                  onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
+                  placeholder="https://"
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="np-platform">רשת / שירות</Label>
-                <Input
-                  id="np-platform"
-                  list="np-platforms"
-                  value={form.platform}
-                  onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value }))}
-                  placeholder="לדוגמה: אינסטגרם"
+                <Label htmlFor="np-notes">הערות</Label>
+                <Textarea
+                  id="np-notes"
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  rows={3}
                 />
-                <datalist id="np-platforms">
-                  {platformOptions.map((platform) => (
-                    <option key={platform} value={platform} />
-                  ))}
-                </datalist>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-username">שם משתמש / מייל</Label>
-              <Input
-                id="np-username"
-                value={form.username}
-                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-password">סיסמה</Label>
-              <Input
-                id="np-password"
-                type="text"
-                autoComplete="off"
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-url">קישור</Label>
-              <Input
-                id="np-url"
-                value={form.url}
-                onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-                placeholder="https://"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="np-notes">הערות</Label>
-              <Textarea
-                id="np-notes"
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                rows={3}
-              />
-            </div>
-            <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                ביטול
-              </Button>
-              <Button type="submit" disabled={saving} className="bg-[#3d817a] hover:bg-[#2d6159]">
-                {saving ? 'שומר...' : 'שמירה'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  ביטול
+                </Button>
+                <Button type="submit" disabled={saving} className="bg-[#3d817a] hover:bg-[#2d6159]">
+                  {saving ? 'שומר...' : 'שמירה'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -563,6 +596,79 @@ export function NetworkPasswordsPage() {
         loading={deleting}
       />
     </div>
+  );
+}
+
+function PasswordFields({
+  form,
+  setForm,
+  clientOptions,
+  platformOptions,
+  compact = false,
+}: {
+  form: typeof EMPTY_FORM;
+  setForm: React.Dispatch<React.SetStateAction<typeof EMPTY_FORM>>;
+  clientOptions: string[];
+  platformOptions: string[];
+  compact?: boolean;
+}) {
+  return (
+    <>
+      <div className={`grid grid-cols-1 ${compact ? '' : 'sm:grid-cols-2'} gap-3`}>
+        <div className="space-y-2">
+          <Label htmlFor="np-client">לקוח</Label>
+          <Input
+            id="np-client"
+            list="np-clients"
+            value={form.client}
+            onChange={(e) => setForm((f) => ({ ...f, client: e.target.value }))}
+            placeholder="מי הלקוח"
+            required
+          />
+          <datalist id="np-clients">
+            {clientOptions.map((client) => (
+              <option key={client} value={client} />
+            ))}
+          </datalist>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="np-platform">פלטפורמה</Label>
+          <Input
+            id="np-platform"
+            list="np-platforms"
+            value={form.platform}
+            onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value }))}
+            placeholder="לאיזה פלטפורמה"
+            required
+          />
+          <datalist id="np-platforms">
+            {platformOptions.map((platform) => (
+              <option key={platform} value={platform} />
+            ))}
+          </datalist>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="np-username">שם משתמש</Label>
+        <Input
+          id="np-username"
+          value={form.username}
+          onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="np-password">סיסמה</Label>
+        <Input
+          id="np-password"
+          type="text"
+          autoComplete="off"
+          value={form.password}
+          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+          required
+        />
+      </div>
+    </>
   );
 }
 

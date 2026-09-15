@@ -1286,8 +1286,14 @@ def _sanitize_network_password_entry(payload, existing=None):
     password = payload.get('password') if 'password' in payload else existing.get('password', '')
     url = (payload.get('url') or '').strip() if 'url' in payload else existing.get('url', '')
     notes = (payload.get('notes') or '').strip() if 'notes' in payload else existing.get('notes', '')
-    if not client and not platform:
-        return None, 'יש להזין שם לקוח או רשת'
+    if not client:
+        return None, 'יש להזין לקוח'
+    if not platform:
+        return None, 'יש להזין פלטפורמה'
+    if not existing and not username:
+        return None, 'יש להזין שם משתמש'
+    if not existing and not password:
+        return None, 'יש להזין סיסמה'
     entry = {
         'id': existing.get('id') or str(uuid.uuid4()),
         'client': client,
@@ -1331,12 +1337,8 @@ def api_admin_network_passwords():
 @login_required
 @csrf.exempt
 def api_admin_network_passwords_create():
-    """הוספת רשומת סיסמה — אדמין בלבד"""
+    """הוספת רשומת סיסמה — כל משתמש מחובר. הצפייה נשארת לאדמין."""
     try:
-        user_role = get_user_role(current_user.id)
-        if not is_strict_admin(current_user.id, user_role):
-            return jsonify({'success': False, 'error': 'גישה חסומה — רק אדמין'}), 403
-
         payload = _network_password_payload()
         entry, error = _sanitize_network_password_entry(payload)
         if error:
@@ -1345,7 +1347,10 @@ def api_admin_network_passwords_create():
         entries = load_network_passwords()
         entries.append(entry)
         save_network_passwords(entries)
-        return jsonify({'success': True, 'entry': entry})
+        user_role = get_user_role(current_user.id)
+        if is_strict_admin(current_user.id, user_role):
+            return jsonify({'success': True, 'entry': entry})
+        return jsonify({'success': True})
     except Exception as e:
         print(f"Error in api_admin_network_passwords_create: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -6106,14 +6111,14 @@ def load_permissions():
             '/client_assignment': 'עובד',
             '/admin/dashboard': 'מנהל',
             '/admin/users': 'אדמין',
-            '/admin/passwords': 'אדמין'
+            '/admin/passwords': 'עובד'
         }
         save_permissions(default_permissions)
         return default_permissions
     with open(PERMISSIONS_FILE, 'r', encoding='utf-8') as f: 
         permissions = json.load(f)
-    if '/admin/passwords' not in permissions:
-        permissions['/admin/passwords'] = 'אדמין'
+    if permissions.get('/admin/passwords') != 'עובד':
+        permissions['/admin/passwords'] = 'עובד'
         save_permissions(permissions)
     return permissions
 

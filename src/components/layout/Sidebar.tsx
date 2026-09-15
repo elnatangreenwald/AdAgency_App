@@ -73,6 +73,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/quotes', icon: FileText, label: 'הצעות מחיר' },
     { path: '/forms', icon: ClipboardList, label: 'טפסים' },
     { path: '/studio', icon: Palette, label: 'סטודיו' },
+    { path: '/admin/passwords', icon: KeyRound, label: 'סיסמאות רשתות' },
     { path: '/time_tracking', icon: Clock, label: 'דוחות שעות עבודה' },
     { path: '/client_assignment', icon: Link2, label: 'שיוך לקוחות' },
     { path: '/admin/dashboard', icon: BarChart3, label: 'דוח מנהלים' },
@@ -83,7 +84,6 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
 
   const adminItems = isAdmin ? [
     { path: '/admin/users', icon: Settings, label: 'ניהול צוות' },
-    { path: '/admin/passwords', icon: KeyRound, label: 'סיסמאות רשתות' },
     { path: '/archive', icon: Archive, label: 'ארכיון' },
   ] : [];
 
