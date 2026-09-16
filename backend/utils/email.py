@@ -21,7 +21,7 @@ def get_smtp_config():
     }
 
 
-def send_password_reset_email(user_email, reset_token):
+def send_password_reset_email(user_email, reset_token, reset_url=None):
     """Send password reset email"""
     try:
         smtp = get_smtp_config()
@@ -30,7 +30,8 @@ def send_password_reset_email(user_email, reset_token):
             print("[WARNING] Email disabled - no SMTP configuration")
             return False
         
-        reset_url = f"http://127.0.0.1:5000/reset_password/{reset_token}"
+        if not reset_url:
+            reset_url = f"http://127.0.0.1:5000/app/reset-password/{reset_token}"
         
         email_body = f"""
         <html dir='rtl'>

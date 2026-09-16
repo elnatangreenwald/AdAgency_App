@@ -5,11 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/lib/api';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [mode, setMode] = useState<'login' | 'forgot'>('login');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -72,6 +75,7 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setInfo('');
     setLoading(true);
 
     try {
@@ -79,6 +83,38 @@ export function Login() {
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'שם משתמש או סיסמה שגויים');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+    if (!email.trim()) {
+      setError('נא להזין שם משתמש או אימייל');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await apiClient.post(
+        '/reset_password_request',
+        { username: email.trim() },
+        {
+          headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        }
+      );
+      if (response.data?.success) {
+        setInfo(response.data.message || 'אם המשתמש קיים ויש לו מייל רשום, נשלח קישור לאיפוס הסיסמה.');
+      } else {
+        setError(response.data?.error || 'שגיאה בשליחת הבקשה');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'שגיאה בשליחת הבקשה. פנו לאדמין אם הבעיה נמשכת.');
     } finally {
       setLoading(false);
     }
@@ -96,11 +132,12 @@ export function Login() {
             />
             <CardTitle className="text-xl sm:text-2xl text-center">מערכת ניהול</CardTitle>
             <CardDescription className="text-center text-sm sm:text-base">
-              התחבר לחשבון שלך
+              {mode === 'login' ? 'התחבר לחשבון שלך' : 'איפוס סיסמה'}
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
+          {mode === 'login' ? (
           <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -136,7 +173,62 @@ export function Login() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'מתחבר...' : 'התחבר'}
             </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('forgot');
+                setError('');
+                setInfo('');
+              }}
+              className="w-full text-sm text-[#0073ea] hover:underline"
+            >
+              שכחתי סיסמה
+            </button>
           </form>
+          ) : (
+          <form onSubmit={handleForgot} className="space-y-4" autoComplete="off">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+            {info && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
+                {info}
+              </div>
+            )}
+            <p className="text-sm text-gray-600">
+              הזינו שם משתמש או אימייל. אם יש מייל רשום במערכת, יישלח אליו קישור לאיפוס.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="forgot-username">שם משתמש או אימייל</Label>
+              <Input
+                id="forgot-username"
+                name="forgot-username"
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="הזן שם משתמש או אימייל"
+                autoComplete="off"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'שולח...' : 'שלחו קישור לאיפוס'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login');
+                setError('');
+                setInfo('');
+              }}
+              className="w-full text-sm text-[#0073ea] hover:underline"
+            >
+              חזרה להתחברות
+            </button>
+          </form>
+          )}
           <div className="mt-6 rounded-xl border-r-4 border-r-[#0073ea] bg-gradient-to-br from-[#f8f9fa] to-[#e9ecef] px-4 py-3 text-sm italic text-[#495057] relative">
             <span className="absolute right-3 top-1 text-3xl text-[#0073ea] opacity-30">
               "

@@ -60,6 +60,8 @@ class User(Base):
     google_id = Column(String)
     google_credentials = Column(Text)  # Base64 encoded
     email_password = Column(Text)
+    reset_token = Column(String)
+    reset_token_expires = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

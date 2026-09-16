@@ -942,12 +942,68 @@ def login():
     return redirect('/app/login')
 
 
-def send_password_reset_email(user_email, reset_token):
+def _wants_json():
+    accept = request.headers.get('Accept', '')
+    return (
+        request.is_json
+        or 'application/json' in accept
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    )
+
+
+def get_public_base_url():
+    """Public site origin for links in emails (production or current request)."""
+    explicit = (os.environ.get('PUBLIC_APP_URL') or os.environ.get('APP_BASE_URL') or '').strip()
+    if explicit:
+        return explicit.rstrip('/')
+    proto = request.headers.get('X-Forwarded-Proto', request.scheme or 'http')
+    host = request.headers.get('X-Forwarded-Host', request.host)
+    return f"{proto}://{host}".rstrip('/')
+
+
+def find_user_by_identifier(identifier):
+    """Find a user by username or email (case-insensitive)."""
+    ident = (identifier or '').strip()
+    if not ident:
+        return None, None
+    users = load_users()
+    if ident in users:
+        return ident, users[ident]
+    ident_l = ident.lower()
+    for uid, info in users.items():
+        if uid.lower() == ident_l:
+            return uid, info
+        email = (info.get('email') or '').strip().lower()
+        if email and email == ident_l:
+            return uid, info
+    return None, None
+
+
+def find_user_by_reset_token(token):
+    if not token:
+        return None, None
+    users = load_users()
+    for uid, info in users.items():
+        if info.get('reset_token') == token:
+            return uid, info
+    return None, None
+
+
+def is_reset_token_valid(user_info):
+    expires = user_info.get('reset_token_expires') if user_info else None
+    if not expires:
+        return False
+    try:
+        return datetime.fromisoformat(expires) > datetime.now()
+    except Exception:
+        return False
+
+
+def send_password_reset_email(user_email, reset_token, reset_url=None):
     """שליחת מייל לאיפוס סיסמה"""
     try:
         SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
         SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
-        # פרטי SMTP מ-environment variables בלבד (לא hardcoded)
         SMTP_USERNAME = os.environ.get('SMTP_USERNAME')
         SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD')
         
@@ -955,7 +1011,8 @@ def send_password_reset_email(user_email, reset_token):
             print("[WARNING] שליחת מייל מושבתת - אין הגדרות SMTP")
             return False
         
-        reset_url = f"http://127.0.0.1:5000/reset_password/{reset_token}"
+        if not reset_url:
+            reset_url = f"{get_public_base_url()}/app/reset-password/{reset_token}"
         
         email_body = f"""
         <html dir='rtl'>
@@ -993,130 +1050,110 @@ def send_password_reset_email(user_email, reset_token):
         print(f"[ERROR] שגיאה בשליחת מייל איפוס סיסמה: {e}")
         return False
 
+GENERIC_RESET_MSG = 'אם המשתמש קיים ויש לו מייל רשום, נשלח קישור לאיפוס הסיסמה.'
+
 @app.route('/reset_password_request', methods=['POST'])
-@csrf.exempt  # פטור מ-CSRF כי זה נקרא מ-modal ולא צריך token
+@limiter.limit("8 per minute")
+@csrf.exempt
 def reset_password_request():
     """בקשת איפוס סיסמה - שולח מייל"""
-    from flask import flash
-    username = request.form.get('username', '').strip()
-    
+    payload = request.get_json(silent=True) if request.is_json else None
+    username = ((payload or {}).get('username') or request.form.get('username') or '').strip()
+
+    def respond(success, message, status=200, error=None):
+        if _wants_json():
+            body = {'success': success, 'message': message}
+            if error:
+                body['error'] = error
+            return jsonify(body), status
+        flash(error or message, 'error' if not success else 'success')
+        return redirect('/app/login')
+
     if not username:
-        flash('נא להזין שם משתמש', 'error')
-        return redirect(url_for('login'))
-    
-    users = load_users()
-    
-    # חיפוש משתמש לפי שם משתמש
-    user = None
-    for uid, user_data in users.items():
-        if uid == username:
-            user = user_data
-            user_id = uid
-            break
-    
-    if not user:
-        # לא נגלה למשתמש שהמשתמש לא קיים (אבטחה)
-        flash('אם המשתמש קיים במערכת, קישור איפוס סיסמה נשלח למייל', 'success')
-        return redirect(url_for('login'))
-    
-    user_email = user.get('email', '')
-    if not user_email:
-        flash('למשתמש זה לא רשום מייל במערכת. אנא פנה למנהל המערכת.', 'error')
-        return redirect(url_for('login'))
-    
-    # יצירת טוקן איפוס סיסמה
-    reset_token = str(uuid.uuid4())
-    
-    # שמירת טוקן איפוס סיסמה (ניתן לשמור בקובץ נפרד או ב-JSON)
-    RESET_TOKENS_FILE = os.path.join(BASE_DIR, 'reset_tokens.json')
-    reset_tokens = {}
-    if os.path.exists(RESET_TOKENS_FILE):
-        with open(RESET_TOKENS_FILE, 'r', encoding='utf-8') as f:
-            reset_tokens = json.load(f)
-    
-    reset_tokens[reset_token] = {
-        'user_id': user_id,
-        'created': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'used': False
-    }
-    
-    with open(RESET_TOKENS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(reset_tokens, f, ensure_ascii=False, indent=4)
-    
-    # שליחת מייל
-    email_sent = send_password_reset_email(user_email, reset_token)
-    
-    if email_sent:
-        flash('קישור איפוס סיסמה נשלח למייל שלך', 'success')
-    else:
-        flash('שגיאה בשליחת המייל. אנא פנה למנהל המערכת.', 'error')
-    
-    return redirect(url_for('login'))
+        return respond(False, '', status=400, error='נא להזין שם משתמש או אימייל')
+
+    user_id, user = find_user_by_identifier(username)
+    user_email = (user.get('email') or '').strip() if user else ''
+
+    if user and user_email:
+        reset_token = str(uuid.uuid4())
+        users = load_users()
+        users[user_id]['reset_token'] = reset_token
+        users[user_id]['reset_token_expires'] = (datetime.now() + timedelta(hours=24)).isoformat()
+        save_users(users)
+        reset_url = f"{get_public_base_url()}/app/reset-password/{reset_token}"
+        email_sent = send_password_reset_email(user_email, reset_token, reset_url=reset_url)
+        if not email_sent:
+            return respond(False, '', status=503, error='שליחת המייל נכשלה. פנו לאדמין לאיפוס סיסמה.')
+
+    return respond(True, GENERIC_RESET_MSG)
+
+
+@app.route('/api/reset_password/<token>', methods=['GET'])
+@csrf.exempt
+def api_reset_password_validate(token):
+    """בדיקה אם קישור האיפוס תקף"""
+    user_id, user = find_user_by_reset_token(token)
+    if not user_id or not is_reset_token_valid(user):
+        return jsonify({'success': False, 'error': 'קישור לא תקין או שפג תוקפו'}), 400
+    return jsonify({'success': True})
+
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
-@csrf.exempt  # פטור מ-CSRF כי יש token מיוחד משלו
+@csrf.exempt
 def reset_password(token):
     """איפוס סיסמה עם טוקן"""
-    from flask import flash
-    
-    RESET_TOKENS_FILE = os.path.join(BASE_DIR, 'reset_tokens.json')
-    
-    # טעינת טוקנים
-    if not os.path.exists(RESET_TOKENS_FILE):
-        return "קישור לא תקין או פג תוקף", 400
-    
-    with open(RESET_TOKENS_FILE, 'r', encoding='utf-8') as f:
-        reset_tokens = json.load(f)
-    
-    if token not in reset_tokens:
-        return "קישור לא תקין או פג תוקף", 400
-    
-    token_data = reset_tokens[token]
-    
-    # בדיקת תוקף (24 שעות)
-    created_time = datetime.strptime(token_data['created'], '%Y-%m-%d %H:%M:%S')
-    if (datetime.now() - created_time).total_seconds() > 24 * 3600:
-        del reset_tokens[token]
-        with open(RESET_TOKENS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(reset_tokens, f, ensure_ascii=False, indent=4)
-        return "קישור פג תוקף. אנא בקש קישור חדש.", 400
-    
-    if token_data.get('used', False):
-        return "קישור זה כבר נעשה בו שימוש", 400
-    
-    if request.method == 'POST':
-        new_password = request.form.get('password', '').strip()
-        confirm_password = request.form.get('confirm_password', '').strip()
-        
-        if not new_password or len(new_password) < 4:
-            flash('סיסמה חייבת להכיל לפחות 4 תווים', 'error')
-            return render_template('reset_password.html', token=token)
-        
-        if new_password != confirm_password:
-            flash('הסיסמאות לא תואמות', 'error')
-            return render_template('reset_password.html', token=token)
-        
-        # עדכון סיסמה
-        users = load_users()
-        user_id = token_data['user_id']
-        
-        if user_id in users:
-            users[user_id]['password'] = generate_password_hash(new_password)
-            with open(USERS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(users, f, ensure_ascii=False, indent=4)
-            
-            # סימון טוקן כמשומש
-            reset_tokens[token]['used'] = True
-            with open(RESET_TOKENS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(reset_tokens, f, ensure_ascii=False, indent=4)
-            
-            flash('הסיסמה עודכנה בהצלחה! ניתן להתחבר עם הסיסמה החדשה.', 'success')
-            return redirect(url_for('login'))
-        else:
-            flash('שגיאה בעדכון הסיסמה', 'error')
-            return render_template('reset_password.html', token=token)
-    
-    return render_template('reset_password.html', token=token)
+    if request.method == 'GET' and not _wants_json():
+        return redirect(f'/app/reset-password/{token}')
+
+    user_id, user = find_user_by_reset_token(token)
+    if not user_id or not is_reset_token_valid(user):
+        msg = 'קישור לא תקין או שפג תוקפו'
+        if _wants_json():
+            return jsonify({'success': False, 'error': msg}), 400
+        flash(msg, 'error')
+        return redirect('/app/login')
+
+    if request.method == 'GET':
+        return jsonify({'success': True})
+
+    payload = request.get_json(silent=True) if request.is_json else None
+    new_password = ((payload or {}).get('password') or request.form.get('password') or '').strip()
+    confirm_password = ((payload or {}).get('confirm_password') or request.form.get('confirm_password') or '').strip()
+
+    if not new_password or len(new_password) < 4:
+        msg = 'סיסמה חייבת להכיל לפחות 4 תווים'
+        if _wants_json():
+            return jsonify({'success': False, 'error': msg}), 400
+        flash(msg, 'error')
+        return render_template('reset_password.html', token=token)
+
+    if new_password != confirm_password:
+        msg = 'הסיסמאות לא תואמות'
+        if _wants_json():
+            return jsonify({'success': False, 'error': msg}), 400
+        flash(msg, 'error')
+        return render_template('reset_password.html', token=token)
+
+    users = load_users()
+    if user_id not in users:
+        msg = 'שגיאה בעדכון הסיסמה'
+        if _wants_json():
+            return jsonify({'success': False, 'error': msg}), 400
+        flash(msg, 'error')
+        return redirect('/app/login')
+
+    users[user_id]['password'] = generate_password_hash(new_password)
+    users[user_id]['reset_token'] = None
+    users[user_id]['reset_token_expires'] = None
+    save_users(users)
+
+    msg = 'הסיסמה עודכנה בהצלחה. ניתן להתחבר עם הסיסמה החדשה.'
+    if _wants_json():
+        return jsonify({'success': True, 'message': msg})
+    flash(msg, 'success')
+    return redirect('/app/login')
+
 
 @app.route('/')
 @login_required

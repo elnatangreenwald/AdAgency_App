@@ -21,6 +21,7 @@ import { Archive } from './pages/Archive';
 import { TimeTrackingReports } from './pages/TimeTrackingReports';
 import { TasksPage } from './pages/TasksPage';
 import { NetworkPasswordsPage } from './pages/NetworkPasswordsPage';
+import { ResetPassword } from './pages/ResetPassword';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
       <BrowserRouter basename="/app">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="tasks" element={<TasksPage />} />

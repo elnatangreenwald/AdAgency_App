@@ -20,6 +20,26 @@ from datetime import datetime
 # ה-worker ב-gunicorn, ואם ה-DB איטי/לא נגיש זה גורם ל-WORKER TIMEOUT (502).
 # במקום זה הבדיקה רצה פעם אחת, בעצלתיים, בקריאה הראשונה ל-load_data.
 _schema_checked = False
+_users_reset_schema_checked = False
+
+def _ensure_users_reset_schema():
+    """Add password-reset columns without blocking worker startup."""
+    global _users_reset_schema_checked
+    if _users_reset_schema_checked:
+        return
+    db = get_db()
+    try:
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR;"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires VARCHAR;"))
+        db.commit()
+        _users_reset_schema_checked = True
+    except Exception:
+        try:
+            db.rollback()
+        except Exception:
+            pass
+    finally:
+        db.close()
 
 def _ensure_clients_schema():
     global _schema_checked
@@ -64,6 +84,7 @@ def _get_file_paths():
 
 def load_users():
     """Load users from database"""
+    _ensure_users_reset_schema()
     db = get_db()
     try:
         users = {}
@@ -76,7 +97,9 @@ def load_users():
                 'email': user.email,
                 'google_id': user.google_id,
                 'google_credentials': user.google_credentials,
-                'email_password': user.email_password
+                'email_password': user.email_password,
+                'reset_token': user.reset_token,
+                'reset_token_expires': user.reset_token_expires,
             }
         
         # Ensure admin user exists
@@ -101,6 +124,7 @@ def load_users():
 
 def save_users(users):
     """Save users to database"""
+    _ensure_users_reset_schema()
     db = get_db()
     try:
         for user_id, user_data in users.items():
@@ -113,6 +137,8 @@ def save_users(users):
                 user.google_id = user_data.get('google_id')
                 user.google_credentials = user_data.get('google_credentials')
                 user.email_password = user_data.get('email_password')
+                user.reset_token = user_data.get('reset_token')
+                user.reset_token_expires = user_data.get('reset_token_expires')
             else:
                 user = User(
                     user_id=user_id,
@@ -122,7 +148,9 @@ def save_users(users):
                     email=user_data.get('email'),
                     google_id=user_data.get('google_id'),
                     google_credentials=user_data.get('google_credentials'),
-                    email_password=user_data.get('email_password')
+                    email_password=user_data.get('email_password'),
+                    reset_token=user_data.get('reset_token'),
+                    reset_token_expires=user_data.get('reset_token_expires'),
                 )
                 db.add(user)
         db.commit()
