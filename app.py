@@ -2113,7 +2113,14 @@ def api_studio_delete_file(req_id, file_id):
 
 # ==================== MATERIAL APPROVALS API ====================
 
-APPROVAL_STATUSES = ['טיוטה', 'נשלח ללקוח', 'אושר', 'נדרשים תיקונים']
+ST_DRAFT = 'טיוטה'
+ST_WAITING = 'ממתין לאישור לקוח'
+ST_COMMENT = 'נשלחה הערת לקוח'
+ST_APPROVED = 'מאושר לקוח'
+ST_LIVE = 'עלה לאוויר'
+APPROVAL_STATUSES = [ST_DRAFT, ST_WAITING, ST_COMMENT, ST_APPROVED, ST_LIVE]
+# שמות סטטוסים מהגרסה הראשונה של המודול - ממופים בקריאה
+LEGACY_APPROVAL_STATUSES = {'נשלח ללקוח': ST_WAITING, 'נדרשים תיקונים': ST_COMMENT, 'אושר': ST_APPROVED}
 APPROVAL_PUBLIC_FIELDS_MAX = {'name': 100, 'comment': 3000}
 
 
@@ -2125,8 +2132,22 @@ def _approval_internal_url(approval_id):
     return f"{get_public_base_url()}/app/approvals/{approval_id}"
 
 
+def _normalize_approval(approval):
+    if approval and approval.get('status') in LEGACY_APPROVAL_STATUSES:
+        approval['status'] = LEGACY_APPROVAL_STATUSES[approval['status']]
+    return approval
+
+
+def _all_approvals():
+    return [_normalize_approval(a) for a in load_material_approvals()]
+
+
+def _approval_by_token(token):
+    return _normalize_approval(find_material_approval_by_token(token))
+
+
 def _find_material_approval(approval_id):
-    for a in load_material_approvals():
+    for a in _all_approvals():
         if a.get('id') == approval_id:
             return a
     return None
@@ -2273,7 +2294,7 @@ def api_approvals_list():
         status_filter = request.args.get('status')
 
         visible = []
-        for a in load_material_approvals():
+        for a in _all_approvals():
             if client_filter and a.get('client_id') != client_filter:
                 continue
             if status_filter and a.get('status') != status_filter:
@@ -2297,7 +2318,7 @@ def api_approvals_clients():
         user_role = get_user_role(current_user.id)
         clients_by_id = {c.get('id'): c for c in load_data()}
         summary = {}
-        for a in load_material_approvals():
+        for a in _all_approvals():
             cid = a.get('client_id')
             if not cid or not _can_access_approval(current_user.id, user_role, a, clients_by_id):
                 continue
@@ -2334,7 +2355,7 @@ def api_approvals_client_page(client_id):
         clients_by_id = {client_id: client}
         users = load_users()
         approvals = [
-            _enrich_approval(users, a) for a in load_material_approvals()
+            _enrich_approval(users, a) for a in _all_approvals()
             if a.get('client_id') == client_id
             and _can_access_approval(current_user.id, user_role, a, clients_by_id)
         ]
@@ -2421,7 +2442,7 @@ def api_approvals_create():
             'description': (data.get('description') or '').strip(),
             'client_id': client['id'],
             'client_name': client.get('name', ''),
-            'status': 'טיוטה',
+            'status': ST_DRAFT,
             'created_by': current_user.id,
             'versions': [{
                 'number': 1,
@@ -2489,19 +2510,42 @@ def api_approvals_update(approval_id):
                 return jsonify({'success': False, 'error': 'הפרויקט לא קיים ברשימה'}), 400
             approval['project_name'] = project_name
 
-        if data.get('action') == 'send':
+        new_status = ST_WAITING if data.get('action') == 'send' else data.get('status')
+        old_status = approval.get('status')
+        if new_status and new_status != old_status:
+            if new_status not in APPROVAL_STATUSES:
+                return jsonify({'success': False, 'error': 'סטטוס לא חוקי'}), 400
             current = _current_version(approval)
-            if not current or not current.get('files'):
-                return jsonify({'success': False, 'error': 'יש להעלות לפחות קובץ אחד לפני השליחה'}), 400
-            if current.get('response'):
-                return jsonify({'success': False, 'error': 'הלקוח כבר הגיב לגרסה זו. יש לפתוח גרסה חדשה.'}), 400
-            if approval.get('status') != 'נשלח ללקוח':
-                old_status = approval.get('status')
-                approval['status'] = 'נשלח ללקוח'
+            if not current:
+                return jsonify({'success': False, 'error': 'אין גרסה פעילה'}), 400
+
+            if new_status == ST_WAITING:
+                if not current.get('files'):
+                    return jsonify({'success': False, 'error': 'יש להעלות לפחות קובץ אחד לפני השליחה ללקוח'}), 400
+                if current.get('response'):
+                    return jsonify({'success': False, 'error': 'כבר התקבלה תגובה לגרסה זו. יש לפתוח גרסה חדשה.'}), 400
                 current['sent_at'] = current.get('sent_at') or now
-                approval.setdefault('history', []).append(_approval_history_entry(
-                    'sent', current_user.id, actor_name,
-                    version=current.get('number'), **{'from': old_status, 'to': 'נשלח ללקוח'}))
+
+            elif new_status in (ST_APPROVED, ST_COMMENT):
+                # עדכון ידני - למשל הלקוח אישר/העיר בטלפון או בוואטסאפ
+                comment = (data.get('comment') or '').strip()[:APPROVAL_PUBLIC_FIELDS_MAX['comment']]
+                if new_status == ST_COMMENT and not comment:
+                    return jsonify({'success': False, 'error': 'יש לרשום את הערת הלקוח'}), 400
+                response = {
+                    'decision': 'approve' if new_status == ST_APPROVED else 'changes',
+                    'name': f"{actor_name} (עדכון ידני)",
+                    'comment': comment,
+                    'at': now,
+                    'manual': True,
+                }
+                current['response'] = response
+                current['sent_at'] = current.get('sent_at') or now
+                approval.setdefault('client_responses', []).append({'version': current.get('number'), **response})
+
+            approval['status'] = new_status
+            approval.setdefault('history', []).append(_approval_history_entry(
+                'status_changed', current_user.id, actor_name,
+                version=current.get('number'), **{'from': old_status, 'to': new_status}))
 
         approval['updated_at'] = now
         save_material_approval(approval)
@@ -2562,10 +2606,10 @@ def api_approvals_new_version(approval_id):
             'response': None,
         })
         old_status = approval.get('status')
-        approval['status'] = 'טיוטה'
+        approval['status'] = ST_DRAFT
         approval.setdefault('history', []).append(_approval_history_entry(
             'new_version', current_user.id, actor_name,
-            version=number, **{'from': old_status, 'to': 'טיוטה'}))
+            version=number, **{'from': old_status, 'to': ST_DRAFT}))
         approval['updated_at'] = now
         save_material_approval(approval)
         return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
@@ -2586,7 +2630,7 @@ def api_approvals_presign_upload():
         if err:
             return err
         current = _current_version(approval)
-        if not current or current.get('response') or approval.get('status') == 'נשלח ללקוח':
+        if not current or current.get('response') or approval.get('status') == ST_WAITING:
             return jsonify({'success': False, 'error': 'לא ניתן להוסיף קבצים לגרסה שכבר נשלחה. יש לפתוח גרסה חדשה.'}), 400
         if not studio_storage.is_configured():
             return jsonify({'success': True, 'mode': 'local'})
@@ -2613,7 +2657,7 @@ def api_approvals_upload_local(approval_id):
         if err:
             return err
         current = _current_version(approval)
-        if not current or current.get('response') or approval.get('status') == 'נשלח ללקוח':
+        if not current or current.get('response') or approval.get('status') == ST_WAITING:
             return jsonify({'success': False, 'error': 'לא ניתן להוסיף קבצים לגרסה שכבר נשלחה'}), 400
         upload = request.files.get('file')
         if not upload or not upload.filename:
@@ -2661,7 +2705,7 @@ def api_approvals_register_file(approval_id):
         if not object_key or not object_key.startswith(f"approvals/{approval_id}/"):
             return jsonify({'success': False, 'error': 'מזהה קובץ לא תקין'}), 400
         current = _current_version(approval)
-        if not current or current.get('response') or approval.get('status') == 'נשלח ללקוח':
+        if not current or current.get('response') or approval.get('status') == ST_WAITING:
             return jsonify({'success': False, 'error': 'לא ניתן להוסיף קבצים לגרסה שכבר נשלחה'}), 400
 
         users = load_users()
@@ -2721,7 +2765,7 @@ def api_approvals_delete_file(approval_id, file_id):
         if not target:
             return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
         if version is not _current_version(approval) or version.get('response') \
-                or approval.get('status') == 'נשלח ללקוח':
+                or approval.get('status') == ST_WAITING:
             return jsonify({'success': False, 'error': 'לא ניתן למחוק קובץ מגרסה שנשלחה ללקוח'}), 400
 
         version['files'] = [f for f in version.get('files', []) if f.get('id') != file_id]
@@ -2764,7 +2808,7 @@ def _public_approval_payload(approval, file_url_base):
     sent_versions = [v for v in approval.get('versions', []) if v.get('sent_at')]
     current = sent_versions[-1] if sent_versions else None
     status = approval.get('status')
-    available = bool(current) and status != 'טיוטה'
+    available = bool(current) and status != ST_DRAFT
     return {
         'title': approval.get('title'),
         'project_name': approval.get('project_name', ''),
@@ -2772,7 +2816,7 @@ def _public_approval_payload(approval, file_url_base):
         'client_name': approval.get('client_name'),
         'status': status,
         'available': available,
-        'can_respond': available and status == 'נשלח ללקוח' and not current.get('response'),
+        'can_respond': available and status == ST_WAITING and not current.get('response'),
         'version': {
             'number': current.get('number'),
             'note': current.get('note', ''),
@@ -2792,7 +2836,7 @@ def _public_approval_payload(approval, file_url_base):
 @limiter.limit("120 per hour")
 def api_public_approval_get(token):
     try:
-        approval = find_material_approval_by_token(token)
+        approval = _approval_by_token(token)
         if not approval:
             return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
         return jsonify({'success': True, 'approval': _public_approval_payload(
@@ -2813,7 +2857,7 @@ def _serve_public_approval_file(approval, file_id):
 @app.route('/api/public/approvals/<token>/files/<file_id>')
 @limiter.limit("600 per hour")
 def api_public_approval_file(token, file_id):
-    approval = find_material_approval_by_token(token)
+    approval = _approval_by_token(token)
     if not approval:
         return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
     return _serve_public_approval_file(approval, file_id)
@@ -2823,7 +2867,7 @@ def api_public_approval_file(token, file_id):
 @csrf.exempt
 @limiter.limit("20 per hour")
 def api_public_approval_respond(token):
-    approval = find_material_approval_by_token(token)
+    approval = _approval_by_token(token)
     if not approval:
         return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
     return _handle_public_response(approval, f"/api/public/approvals/{token}/files")
@@ -2851,7 +2895,7 @@ def api_public_portal_get(portal_token):
             return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
         client = _find_client(portal['client_id']) or {}
         items = []
-        for a in load_material_approvals():
+        for a in _all_approvals():
             if a.get('client_id') != portal['client_id']:
                 continue
             if not any(v.get('sent_at') for v in a.get('versions', [])):
@@ -2905,11 +2949,11 @@ def _handle_public_response(approval, file_url_base):
             return jsonify({'success': False, 'error': 'יש לפרט אילו תיקונים נדרשים'}), 400
 
         current = _current_version(approval)
-        if approval.get('status') != 'נשלח ללקוח' or not current or current.get('response'):
+        if approval.get('status') != ST_WAITING or not current or current.get('response'):
             return jsonify({'success': False, 'error': 'לא ניתן להגיב על גרסה זו'}), 409
 
         now = datetime.now().isoformat()
-        new_status = 'אושר' if decision == 'approve' else 'נדרשים תיקונים'
+        new_status = ST_APPROVED if decision == 'approve' else ST_COMMENT
         response = {'decision': decision, 'name': name, 'comment': comment, 'at': now}
         current['response'] = response
         approval.setdefault('client_responses', []).append({'version': current.get('number'), **response})

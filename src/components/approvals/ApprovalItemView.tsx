@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { apiClient } from '@/lib/api';
 import { PublicApproval, PublicApprovalFile } from '@/types';
 import { AlertCircle, CheckCircle2, Download, FileText } from 'lucide-react';
+import { ST_LIVE } from './utils';
 
 const NAME_STORAGE_KEY = 'approval_responder_name';
 
@@ -113,6 +114,9 @@ export function ApprovalItemView({ item, respondUrl, onUpdated, showClientName =
             גרסה {version.number}
             {version.sent_at ? ` · ${new Date(version.sent_at).toLocaleDateString('he-IL')}` : ''}
           </div>
+        )}
+        {item.status === ST_LIVE && (
+          <div className="text-sm font-semibold bg-purple-50 text-purple-800 rounded-lg p-3">החומרים עלו לאוויר</div>
         )}
         {version?.note && (
           <div className="text-sm bg-amber-50 text-amber-900 rounded-lg p-3 whitespace-pre-wrap">

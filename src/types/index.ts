@@ -200,7 +200,12 @@ export interface StudioRequest {
 }
 
 // ============ Material Approval Types ============
-export type ApprovalStatus = 'טיוטה' | 'נשלח ללקוח' | 'אושר' | 'נדרשים תיקונים';
+export type ApprovalStatus =
+  | 'טיוטה'
+  | 'ממתין לאישור לקוח'
+  | 'נשלחה הערת לקוח'
+  | 'מאושר לקוח'
+  | 'עלה לאוויר';
 
 export interface ApprovalFile {
   id: string;
@@ -218,6 +223,7 @@ export interface ApprovalResponse {
   name: string;
   comment?: string;
   at: string;
+  manual?: boolean;
 }
 
 export interface ApprovalVersion {

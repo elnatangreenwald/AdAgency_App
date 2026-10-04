@@ -16,8 +16,25 @@ import {
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { apiClient, uploadApprovalFile } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { ApprovalFile, ApprovalVersion, MaterialApproval } from '@/types';
-import { approvalStatusColor, copyToClipboard, formatFileSize } from '@/components/approvals/utils';
+import { ApprovalFile, ApprovalStatus, ApprovalVersion, MaterialApproval } from '@/types';
+import {
+  APPROVAL_STATUSES,
+  APPROVAL_STATUS_DESCRIPTIONS,
+  ST_APPROVED,
+  ST_COMMENT,
+  ST_DRAFT,
+  ST_WAITING,
+  approvalStatusColor,
+  copyToClipboard,
+  formatFileSize,
+} from '@/components/approvals/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ProjectSelect } from '@/components/approvals/ProjectSelect';
 import {
   ArrowRight,
@@ -53,6 +70,8 @@ export function ApprovalDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ title: '', description: '', project_name: '' });
   const [projectOptions, setProjectOptions] = useState<string[]>([]);
+  const [manualStatus, setManualStatus] = useState<ApprovalStatus | null>(null);
+  const [manualComment, setManualComment] = useState('');
 
   const fetchApproval = useCallback(async () => {
     try {
@@ -98,25 +117,30 @@ export function ApprovalDetail() {
     }
   };
 
-  const sendToClient = async () => {
+  const changeStatus = async (status: ApprovalStatus, comment?: string) => {
     setBusy(true);
     try {
-      const res = await apiClient.patch(`/api/approvals/${approvalId}`, { action: 'send' });
+      const res = await apiClient.patch(`/api/approvals/${approvalId}`, { status, comment });
       if (res.data.success) {
         setApproval(res.data.approval);
-        const copied = res.data.approval.public_url
-          ? await copyToClipboard(res.data.approval.public_url)
-          : false;
-        toast({
-          title: 'נשלח ללקוח',
-          description: copied ? 'הקישור הועתק - העבירו אותו ללקוח' : 'העבירו ללקוח את הקישור',
-          variant: 'success',
-        });
+        setManualStatus(null);
+        setManualComment('');
+        toast({ title: 'הסטטוס עודכן', description: `${status}: ${APPROVAL_STATUS_DESCRIPTIONS[status]}`, variant: 'success' });
       }
     } catch (error: any) {
-      showError(error, 'שגיאה בשליחה ללקוח');
+      showError(error, 'שגיאה בעדכון הסטטוס');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleStatusSelect = (status: string) => {
+    const s = status as ApprovalStatus;
+    if (s === ST_APPROVED || s === ST_COMMENT) {
+      setManualComment('');
+      setManualStatus(s);
+    } else {
+      changeStatus(s);
     }
   };
 
@@ -208,8 +232,8 @@ export function ApprovalDetail() {
 
   const versions = approval.versions || [];
   const current = versions[versions.length - 1];
-  const isEditable = !!current && !current.response && approval.status !== 'נשלח ללקוח';
-  const canSend = isEditable && (current?.files?.length || 0) > 0;
+  const isEditable = !!current && !current.response && approval.status !== ST_WAITING;
+  const hasFiles = (current?.files?.length || 0) > 0;
   const canNewVersion = !!current && (!!current.response || !!current.sent_at);
 
   const renderFile = (f: ApprovalFile, editable: boolean) => {
@@ -276,7 +300,7 @@ export function ApprovalDetail() {
       <div className={`rounded-lg p-3 text-sm ${approved ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'}`}>
         <div className="flex items-center gap-2 font-semibold mb-1">
           {approved ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-          {approved ? 'אושר' : 'נדרשים תיקונים'} · {v.response.name}
+          {approved ? ST_APPROVED : ST_COMMENT} · {v.response.name}
           <span className="text-xs font-normal opacity-70">{new Date(v.response.at).toLocaleString('he-IL')}</span>
         </div>
         {v.response.comment && <div className="whitespace-pre-wrap">{v.response.comment}</div>}
@@ -351,10 +375,36 @@ export function ApprovalDetail() {
                 <Copy className="w-4 h-4 ml-1" /> העתקה
               </Button>
             </div>
-            {approval.status === 'טיוטה' && (
-              <p className="text-xs text-amber-700">הלקוח יראה את החומרים רק אחרי שתלחצו על "שליחה ללקוח".</p>
-            )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-5 space-y-3">
+          <h2 className="font-bold text-[#292f4c]">סטטוס</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Select value={approval.status} onValueChange={handleStatusSelect} disabled={busy}>
+              <SelectTrigger className="sm:w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {APPROVAL_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-gray-500">{APPROVAL_STATUS_DESCRIPTIONS[approval.status]}</span>
+          </div>
+          {approval.status === ST_DRAFT && !hasFiles && (
+            <p className="text-xs text-amber-700">
+              כדי להעביר ל"{ST_WAITING}" צריך קודם להעלות לפחות קובץ אחד לגרסה הנוכחית.
+            </p>
+          )}
+          {approval.status === ST_DRAFT && hasFiles && isEditable && (
+            <Button type="button" size="sm" onClick={() => changeStatus(ST_WAITING)} disabled={busy || uploading}>
+              <Send className="w-4 h-4 ml-1" /> שליחה ללקוח
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -375,11 +425,6 @@ export function ApprovalDetail() {
                       onChange={(e) => { handleUpload(e.target.files); e.target.value = ''; }}
                     />
                   </label>
-                )}
-                {isEditable && (
-                  <Button type="button" size="sm" onClick={sendToClient} disabled={!canSend || busy || uploading}>
-                    <Send className="w-4 h-4 ml-1" /> שליחה ללקוח
-                  </Button>
                 )}
                 {canNewVersion && (
                   <Button type="button" size="sm" variant="outline" onClick={() => setVersionOpen(true)}>
@@ -424,6 +469,31 @@ export function ApprovalDetail() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!manualStatus} onOpenChange={(o) => !o && setManualStatus(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>עדכון ידני: {manualStatus}</DialogTitle>
+            <DialogDescription>
+              לשימוש כשהלקוח {manualStatus === ST_APPROVED ? 'אישר' : 'העיר'} מחוץ למערכת (טלפון, וואטסאפ, מייל).
+              העדכון יירשם על גרסה {current?.number}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>{manualStatus === ST_COMMENT ? 'הערת הלקוח *' : 'הערה (אופציונלי)'}</Label>
+            <Textarea value={manualComment} onChange={(e) => setManualComment(e.target.value)} rows={4} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManualStatus(null)}>ביטול</Button>
+            <Button
+              onClick={() => manualStatus && changeStatus(manualStatus, manualComment)}
+              disabled={busy || (manualStatus === ST_COMMENT && !manualComment.trim())}
+            >
+              עדכון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={versionOpen} onOpenChange={setVersionOpen}>
         <DialogContent>

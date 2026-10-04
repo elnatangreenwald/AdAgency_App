@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { apiClient } from '@/lib/api';
 import { PublicApproval } from '@/types';
 import { ApprovalItemView, PublicShell } from '@/components/approvals/ApprovalItemView';
-import { approvalStatusColor, compareHebrew } from '@/components/approvals/utils';
+import { ST_DRAFT, approvalStatusColor, compareHebrew } from '@/components/approvals/utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 type Filter = 'pending' | 'all';
@@ -127,7 +127,7 @@ export function ClientApprovalPortal() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${approvalStatusColor(item.status)}`}>
-                        {item.can_respond ? 'ממתין לאישורכם' : item.status === 'טיוטה' ? 'בעדכון' : item.status}
+                        {item.can_respond ? 'ממתין לאישורכם' : item.status === ST_DRAFT ? 'בעדכון' : item.status}
                       </span>
                       {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                     </div>

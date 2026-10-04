@@ -1,17 +1,33 @@
 import { ApprovalStatus } from '@/types';
 
-export const APPROVAL_STATUSES: ApprovalStatus[] = ['טיוטה', 'נשלח ללקוח', 'נדרשים תיקונים', 'אושר'];
+export const ST_DRAFT: ApprovalStatus = 'טיוטה';
+export const ST_WAITING: ApprovalStatus = 'ממתין לאישור לקוח';
+export const ST_COMMENT: ApprovalStatus = 'נשלחה הערת לקוח';
+export const ST_APPROVED: ApprovalStatus = 'מאושר לקוח';
+export const ST_LIVE: ApprovalStatus = 'עלה לאוויר';
+
+export const APPROVAL_STATUSES: ApprovalStatus[] = [ST_DRAFT, ST_WAITING, ST_COMMENT, ST_APPROVED, ST_LIVE];
+
+export const APPROVAL_STATUS_DESCRIPTIONS: Record<ApprovalStatus, string> = {
+  [ST_DRAFT]: 'הלקוח לא רואה את הפריט',
+  [ST_WAITING]: 'הפריט מוצג ללקוח וממתין לאישור או להערה',
+  [ST_COMMENT]: 'הלקוח שלח הערות לתיקון',
+  [ST_APPROVED]: 'הלקוח אישר את החומרים',
+  [ST_LIVE]: 'החומרים פורסמו',
+};
 
 export function approvalStatusColor(status: string) {
   switch (status) {
-    case 'טיוטה':
+    case ST_DRAFT:
       return 'bg-gray-100 text-gray-700';
-    case 'נשלח ללקוח':
+    case ST_WAITING:
       return 'bg-cyan-100 text-cyan-800';
-    case 'נדרשים תיקונים':
+    case ST_COMMENT:
       return 'bg-red-100 text-red-800';
-    case 'אושר':
+    case ST_APPROVED:
       return 'bg-green-100 text-green-800';
+    case ST_LIVE:
+      return 'bg-purple-100 text-purple-800';
     default:
       return 'bg-gray-100 text-gray-700';
   }
