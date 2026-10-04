@@ -123,3 +123,61 @@ export async function uploadStudioFile(
   return register.data.file;
 }
 
+/**
+ * Material-approval upload into the approval's current version.
+ * Same 3-step direct-to-R2 flow as uploadStudioFile. When the server has no R2
+ * configured (local development) it answers mode='local' and the file is
+ * posted to the Flask server instead.
+ */
+export async function uploadApprovalFile(
+  approvalId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+) {
+  const contentType = file.type || 'application/octet-stream';
+  const presign = await apiClient.post('/api/approvals/uploads/presign', {
+    approval_id: approvalId,
+    filename: file.name,
+    content_type: contentType,
+  });
+  if (!presign.data?.success) {
+    throw new Error(presign.data?.error || 'שגיאה בקבלת קישור העלאה');
+  }
+
+  const reportProgress = (evt: { loaded: number; total?: number }) => {
+    if (onProgress && evt.total) {
+      onProgress(Math.round((evt.loaded / evt.total) * 100));
+    }
+  };
+
+  if (presign.data.mode === 'local') {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiFormClient.post(`/api/approvals/${approvalId}/files/upload_local`, formData, {
+      onUploadProgress: reportProgress,
+    });
+    if (!res.data?.success) {
+      throw new Error(res.data?.error || 'שגיאה בהעלאת הקובץ');
+    }
+    return res.data.file;
+  }
+
+  const { upload_url, object_key } = presign.data;
+
+  await axios.put(upload_url, file, {
+    headers: { 'Content-Type': contentType },
+    onUploadProgress: reportProgress,
+  });
+
+  const register = await apiClient.post(`/api/approvals/${approvalId}/files`, {
+    object_key,
+    original_name: file.name,
+    size: file.size,
+    content_type: contentType,
+  });
+  if (!register.data?.success) {
+    throw new Error(register.data?.error || 'שגיאה ברישום הקובץ');
+  }
+  return register.data.file;
+}
+

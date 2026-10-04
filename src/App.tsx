@@ -22,6 +22,11 @@ import { TimeTrackingReports } from './pages/TimeTrackingReports';
 import { TasksPage } from './pages/TasksPage';
 import { NetworkPasswordsPage } from './pages/NetworkPasswordsPage';
 import { ResetPassword } from './pages/ResetPassword';
+import { Approvals } from './pages/Approvals';
+import { ApprovalDetail } from './pages/ApprovalDetail';
+import { PublicApproval } from './pages/PublicApproval';
+import { ApprovalClient } from './pages/ApprovalClient';
+import { ClientApprovalPortal } from './pages/ClientApprovalPortal';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
@@ -31,6 +36,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/approve/:token" element={<PublicApproval />} />
+          <Route path="/client-approvals/:token" element={<ClientApprovalPortal />} />
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="tasks" element={<TasksPage />} />
@@ -45,6 +52,9 @@ function App() {
             <Route path="forms" element={<Forms />} />
             <Route path="studio" element={<Studio />} />
             <Route path="studio/:requestId" element={<StudioRequestPage />} />
+            <Route path="approvals" element={<Approvals />} />
+            <Route path="approvals/client/:clientId" element={<ApprovalClient />} />
+            <Route path="approvals/:approvalId" element={<ApprovalDetail />} />
             <Route path="client_assignment" element={<ClientAssignmentPage />} />
             <Route path="admin/dashboard" element={<AdminDashboard />} />
             <Route path="admin/users" element={<ManageUsers />} />

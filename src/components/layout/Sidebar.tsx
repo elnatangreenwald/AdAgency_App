@@ -15,7 +15,8 @@ import {
   Link2,
   Palette,
   CheckSquare,
-  KeyRound
+  KeyRound,
+  FileCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,6 +74,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/quotes', icon: FileText, label: 'הצעות מחיר' },
     { path: '/forms', icon: ClipboardList, label: 'טפסים' },
     { path: '/studio', icon: Palette, label: 'סטודיו' },
+    { path: '/approvals', icon: FileCheck, label: 'אישור חומרים' },
     { path: '/admin/passwords', icon: KeyRound, label: 'סיסמאות רשתות' },
     { path: '/time_tracking', icon: Clock, label: 'דוחות שעות עבודה' },
     { path: '/client_assignment', icon: Link2, label: 'שיוך לקוחות' },

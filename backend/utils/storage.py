@@ -89,6 +89,30 @@ def build_object_key(request_id, original_filename, kind='deliverable'):
     return f"studio/{request_id}/{safe_kind}/{uuid.uuid4().hex}{ext}"
 
 
+def build_approval_object_key(approval_id, version_number, original_filename):
+    """Object key for a material-approval file: approvals/<id>/v<n>/<uuid>.<ext>"""
+    ext = ''
+    if original_filename and '.' in original_filename:
+        ext = '.' + original_filename.rsplit('.', 1)[1].lower()
+    try:
+        version_number = int(version_number)
+    except (TypeError, ValueError):
+        version_number = 1
+    return f"approvals/{approval_id}/v{version_number}/{uuid.uuid4().hex}{ext}"
+
+
+def generate_view_url(object_key, content_type=None):
+    """Presigned GET url for inline viewing (image/video/pdf preview)."""
+    client = _get_client()
+    cfg = _get_config()
+    params = {'Bucket': cfg['bucket'], 'Key': object_key, 'ResponseContentDisposition': 'inline'}
+    if content_type:
+        params['ResponseContentType'] = content_type
+    return client.generate_presigned_url(
+        'get_object', Params=params, ExpiresIn=DOWNLOAD_URL_TTL
+    )
+
+
 def generate_upload_url(object_key, content_type=None):
     """Return a presigned PUT url the browser can upload the file to directly."""
     client = _get_client()

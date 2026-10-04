@@ -48,7 +48,10 @@ if USE_DATABASE:
         load_forms, save_forms, delete_user_record,
         load_time_tracking, save_time_tracking,
         load_studio_requests, save_studio_request, delete_studio_request,
-        load_network_passwords, save_network_passwords
+        load_network_passwords, save_network_passwords,
+        load_material_approvals, save_material_approval, delete_material_approval,
+        find_material_approval_by_token,
+        load_approval_portal, find_approval_portal_by_token, save_approval_portal
     )
 
 # Import notifications module
@@ -93,6 +96,10 @@ ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
 TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
 STUDIO_FILE = os.path.join(BASE_DIR, 'studio_db.json')
 NETWORK_PASSWORDS_FILE = os.path.join(BASE_DIR, 'network_passwords.json')
+APPROVALS_FILE = os.path.join(BASE_DIR, 'approvals_db.json')
+APPROVAL_PORTALS_FILE = os.path.join(BASE_DIR, 'approval_portals.json')
+# אחסון מקומי לקבצי אישור חומרים כש-R2 לא מוגדר (פיתוח מקומי). מחוץ ל-static כדי שלא יהיה נגיש ישירות.
+APPROVAL_LOCAL_FILES_FOLDER = os.path.join(BASE_DIR, 'uploads', 'approvals')
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -405,6 +412,66 @@ if not USE_DATABASE:
             return False
         _save_all_studio_requests(new_requests)
         return True
+
+    def load_material_approvals():
+        """טעינת בקשות אישור חומרים מקובץ JSON (מצב פיתוח/ללא DB)"""
+        if not os.path.exists(APPROVALS_FILE) or os.stat(APPROVALS_FILE).st_size == 0:
+            return []
+        with open(APPROVALS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return sorted(data, key=lambda x: x.get('created_at', ''), reverse=True)
+
+    def _save_all_material_approvals(approvals):
+        with open(APPROVALS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(approvals, f, ensure_ascii=False, indent=4)
+
+    def find_material_approval_by_token(token):
+        if not token:
+            return None
+        return next((a for a in load_material_approvals() if a.get('token') == token), None)
+
+    def save_material_approval(approval):
+        if not approval or not approval.get('id'):
+            return
+        all_approvals = load_material_approvals()
+        for i, a in enumerate(all_approvals):
+            if a.get('id') == approval.get('id'):
+                all_approvals[i] = approval
+                break
+        else:
+            all_approvals.append(approval)
+        _save_all_material_approvals(all_approvals)
+
+    def delete_material_approval(approval_id):
+        all_approvals = load_material_approvals()
+        remaining = [a for a in all_approvals if a.get('id') != approval_id]
+        if len(remaining) == len(all_approvals):
+            return False
+        _save_all_material_approvals(remaining)
+        return True
+
+    def _load_all_approval_portals():
+        if not os.path.exists(APPROVAL_PORTALS_FILE) or os.stat(APPROVAL_PORTALS_FILE).st_size == 0:
+            return {}
+        with open(APPROVAL_PORTALS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+
+    def load_approval_portal(client_id):
+        return _load_all_approval_portals().get(client_id)
+
+    def find_approval_portal_by_token(token):
+        if not token:
+            return None
+        return next((p for p in _load_all_approval_portals().values() if p.get('token') == token), None)
+
+    def save_approval_portal(portal):
+        if not portal or not portal.get('client_id'):
+            return
+        all_portals = _load_all_approval_portals()
+        all_portals[portal['client_id']] = portal
+        with open(APPROVAL_PORTALS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(all_portals, f, ensure_ascii=False, indent=4)
 
     def load_network_passwords():
         """טעינת ריכוז סיסמאות רשתות מקובץ JSON"""
@@ -2042,6 +2109,861 @@ def api_studio_delete_file(req_id, file_id):
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== MATERIAL APPROVALS API ====================
+
+APPROVAL_STATUSES = ['טיוטה', 'נשלח ללקוח', 'אושר', 'נדרשים תיקונים']
+APPROVAL_PUBLIC_FIELDS_MAX = {'name': 100, 'comment': 3000}
+
+
+def _approval_public_url(token):
+    return f"{get_public_base_url()}/app/approve/{token}"
+
+
+def _approval_internal_url(approval_id):
+    return f"{get_public_base_url()}/app/approvals/{approval_id}"
+
+
+def _find_material_approval(approval_id):
+    for a in load_material_approvals():
+        if a.get('id') == approval_id:
+            return a
+    return None
+
+
+def _current_version(approval):
+    versions = approval.get('versions') or []
+    return versions[-1] if versions else None
+
+
+def _can_access_approval(user_id, user_role, approval, clients_by_id=None):
+    """מנהל/אדמין, יוצר הבקשה, או עובד המשויך ללקוח של הבקשה."""
+    if is_manager_or_admin(user_id, user_role):
+        return True
+    if approval.get('created_by') == user_id:
+        return True
+    client_id = approval.get('client_id')
+    if not client_id:
+        return False
+    if clients_by_id is None:
+        clients_by_id = {c.get('id'): c for c in load_data()}
+    client = clients_by_id.get(client_id)
+    return bool(client and can_user_access_client(user_id, user_role, client))
+
+
+def _enrich_approval(users, approval):
+    enriched = dict(approval)
+    enriched['created_by_name'] = _user_name(users, approval.get('created_by'))
+    enriched['public_url'] = _approval_public_url(approval.get('token'))
+    current = _current_version(approval)
+    enriched['current_version'] = current.get('number') if current else None
+    enriched['files_count'] = len(current.get('files', [])) if current else 0
+    return enriched
+
+
+def _approval_history_entry(action, by, by_name, **extra):
+    entry = {'action': action, 'by': by, 'by_name': by_name, 'at': datetime.now().isoformat()}
+    entry.update(extra)
+    return entry
+
+
+LOCAL_KEY_PREFIX = 'local:'
+
+
+def _is_local_file(f):
+    return (f.get('object_key') or '').startswith(LOCAL_KEY_PREFIX)
+
+
+def _local_file_path(object_key):
+    """נתיב מוחלט לקובץ מקומי. מחזיר None אם המפתח מנסה לצאת מתיקיית האחסון."""
+    rel = object_key[len(LOCAL_KEY_PREFIX):]
+    root = os.path.realpath(APPROVAL_LOCAL_FILES_FOLDER)
+    path = os.path.realpath(os.path.join(root, rel))
+    if not path.startswith(root + os.sep):
+        return None
+    return path
+
+
+def _delete_approval_file(f):
+    key = f.get('object_key')
+    if not key:
+        return
+    try:
+        if _is_local_file(f):
+            path = _local_file_path(key)
+            if path and os.path.exists(path):
+                os.remove(path)
+        else:
+            studio_storage.delete_object(key)
+    except Exception as e:
+        print(f"[APPROVALS] delete file failed: {e}")
+
+
+def _serve_approval_file(f, inline):
+    """הגשת קובץ: מקומי דרך send_file, R2 דרך redirect ל-presigned URL."""
+    if _is_local_file(f):
+        path = _local_file_path(f['object_key'])
+        if not path or not os.path.exists(path):
+            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+        return send_file(path, mimetype=f.get('content_type') or None,
+                         as_attachment=not inline, download_name=f.get('original_name') or 'file')
+    if inline:
+        return redirect(studio_storage.generate_view_url(f['object_key'], f.get('content_type')))
+    return redirect(studio_storage.generate_download_url(f['object_key'], download_name=f.get('original_name')))
+
+
+def _get_or_create_portal(client_id):
+    portal = load_approval_portal(client_id)
+    if not portal:
+        portal = {
+            'client_id': client_id,
+            'token': secrets.token_urlsafe(32),
+            'project_names': [],
+            'created_at': datetime.now().isoformat(),
+        }
+        save_approval_portal(portal)
+    return portal
+
+
+def _portal_public_url(token):
+    return f"{get_public_base_url()}/app/client-approvals/{token}"
+
+
+def _hebrew_sort_key(s):
+    return (s or '').strip().casefold()
+
+
+def _client_project_options(client, portal):
+    """רשימה סגורה של שמות פרויקטים: פרויקטי הלקוח במערכת + שמות שנוספו ידנית."""
+    names = []
+    for p in (client or {}).get('projects', []) or []:
+        title = (p.get('title') or '').strip()
+        if title:
+            names.append(title)
+    names.extend(n for n in (portal or {}).get('project_names', []) if n)
+    unique = list(dict.fromkeys(n.strip() for n in names if n.strip()))
+    return sorted(unique, key=_hebrew_sort_key)
+
+
+def _find_client(client_id):
+    return next((c for c in load_data() if c.get('id') == client_id), None)
+
+
+def _load_approval_for_user(approval_id):
+    """מחזיר (approval, error_response). error_response הוא None אם הכל תקין."""
+    approval = _find_material_approval(approval_id)
+    if not approval:
+        return None, (jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404)
+    user_role = get_user_role(current_user.id)
+    if not _can_access_approval(current_user.id, user_role, approval):
+        return None, (jsonify({'success': False, 'error': 'אין הרשאה לבקשה זו'}), 403)
+    return approval, None
+
+
+@app.route('/api/approvals')
+@login_required
+def api_approvals_list():
+    """רשימת בקשות אישור חומרים, מסוננת לפי הרשאה ואופציונלית לפי לקוח/סטטוס."""
+    try:
+        user_role = get_user_role(current_user.id)
+        users = load_users()
+        clients_by_id = {c.get('id'): c for c in load_data()}
+        client_filter = request.args.get('client_id')
+        status_filter = request.args.get('status')
+
+        visible = []
+        for a in load_material_approvals():
+            if client_filter and a.get('client_id') != client_filter:
+                continue
+            if status_filter and a.get('status') != status_filter:
+                continue
+            if _can_access_approval(current_user.id, user_role, a, clients_by_id):
+                visible.append(_enrich_approval(users, a))
+
+        return jsonify({'success': True, 'approvals': visible, 'statuses': APPROVAL_STATUSES})
+    except Exception as e:
+        print(f"Error in api_approvals_list: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/clients')
+@login_required
+def api_approvals_clients():
+    """לקוחות שיש להם לפחות בקשת אישור אחת (בכל סטטוס), ממוינים לפי א-ב."""
+    try:
+        user_role = get_user_role(current_user.id)
+        clients_by_id = {c.get('id'): c for c in load_data()}
+        summary = {}
+        for a in load_material_approvals():
+            cid = a.get('client_id')
+            if not cid or not _can_access_approval(current_user.id, user_role, a, clients_by_id):
+                continue
+            client = clients_by_id.get(cid) or {}
+            entry = summary.setdefault(cid, {
+                'client_id': cid,
+                'client_name': client.get('name') or a.get('client_name') or '',
+                'logo_url': client.get('logo_url'),
+                'total': 0,
+                'counts': {s: 0 for s in APPROVAL_STATUSES},
+                'last_updated': '',
+            })
+            entry['total'] += 1
+            status = a.get('status')
+            if status in entry['counts']:
+                entry['counts'][status] += 1
+            entry['last_updated'] = max(entry['last_updated'], a.get('updated_at') or '')
+        result = sorted(summary.values(), key=lambda x: _hebrew_sort_key(x['client_name']))
+        return jsonify({'success': True, 'clients': result, 'statuses': APPROVAL_STATUSES})
+    except Exception as e:
+        print(f"Error in api_approvals_clients: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/clients/<client_id>')
+@login_required
+def api_approvals_client_page(client_id):
+    """עמוד אישורים של לקוח: פרטי לקוח, קישור משותף, רשימת פרויקטים ובקשות."""
+    try:
+        user_role = get_user_role(current_user.id)
+        client = _find_client(client_id)
+        if not client:
+            return jsonify({'success': False, 'error': 'הלקוח לא נמצא'}), 404
+        clients_by_id = {client_id: client}
+        users = load_users()
+        approvals = [
+            _enrich_approval(users, a) for a in load_material_approvals()
+            if a.get('client_id') == client_id
+            and _can_access_approval(current_user.id, user_role, a, clients_by_id)
+        ]
+        if not approvals and not can_user_access_client(current_user.id, user_role, client):
+            return jsonify({'success': False, 'error': 'אין הרשאה ללקוח זה'}), 403
+        portal = _get_or_create_portal(client_id)
+        return jsonify({
+            'success': True,
+            'client': {'id': client_id, 'name': client.get('name', ''), 'logo_url': client.get('logo_url')},
+            'portal_url': _portal_public_url(portal['token']),
+            'project_options': _client_project_options(client, portal),
+            'approvals': approvals,
+            'statuses': APPROVAL_STATUSES,
+        })
+    except Exception as e:
+        print(f"Error in api_approvals_client_page: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/clients/<client_id>/projects')
+@login_required
+def api_approvals_client_projects(client_id):
+    client = _find_client(client_id)
+    if not client:
+        return jsonify({'success': False, 'error': 'הלקוח לא נמצא'}), 404
+    portal = load_approval_portal(client_id)
+    return jsonify({'success': True, 'project_options': _client_project_options(client, portal)})
+
+
+@app.route('/api/approvals/clients/<client_id>/projects', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_approvals_add_project(client_id):
+    """הוספת שם פרויקט לרשימה הסגורה של הלקוח."""
+    try:
+        client = _find_client(client_id)
+        if not client:
+            return jsonify({'success': False, 'error': 'הלקוח לא נמצא'}), 404
+        data = request.get_json(silent=True) or {}
+        name = (data.get('name') or '').strip()[:120]
+        if not name:
+            return jsonify({'success': False, 'error': 'יש להזין שם פרויקט'}), 400
+        portal = _get_or_create_portal(client_id)
+        if name not in _client_project_options(client, portal):
+            portal.setdefault('project_names', []).append(name)
+            portal['updated_at'] = datetime.now().isoformat()
+            save_approval_portal(portal)
+        return jsonify({'success': True, 'name': name,
+                        'project_options': _client_project_options(client, portal)})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_approvals_create():
+    """יצירת בקשת אישור חדשה (בסטטוס טיוטה, עם גרסה 1 ריקה)."""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        title = (data.get('title') or '').strip()
+        if not title:
+            return jsonify({'success': False, 'error': 'יש להזין כותרת'}), 400
+        client = _find_client(data.get('client_id')) if data.get('client_id') else None
+        if not client:
+            return jsonify({'success': False, 'error': 'יש לבחור לקוח'}), 400
+        project_name = (data.get('project_name') or '').strip()
+        if not project_name:
+            return jsonify({'success': False, 'error': 'יש לבחור פרויקט'}), 400
+        portal = _get_or_create_portal(client['id'])
+        if project_name not in _client_project_options(client, portal):
+            return jsonify({'success': False, 'error': 'הפרויקט לא קיים ברשימה. יש להוסיף אותו קודם.'}), 400
+
+        users = load_users()
+        creator_name = _user_name(users, current_user.id)
+        now = datetime.now().isoformat()
+        approval = {
+            'id': str(uuid.uuid4()),
+            'token': secrets.token_urlsafe(32),
+            'title': title,
+            'project_name': project_name,
+            'description': (data.get('description') or '').strip(),
+            'client_id': client['id'],
+            'client_name': client.get('name', ''),
+            'status': 'טיוטה',
+            'created_by': current_user.id,
+            'versions': [{
+                'number': 1,
+                'files': [],
+                'note': '',
+                'created_at': now,
+                'created_by': current_user.id,
+                'created_by_name': creator_name,
+                'sent_at': None,
+                'response': None,
+            }],
+            'client_responses': [],
+            'history': [_approval_history_entry('created', current_user.id, creator_name)],
+            'created_at': now,
+            'updated_at': now,
+        }
+        save_material_approval(approval)
+        return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
+    except Exception as e:
+        print(f"Error in api_approvals_create: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>')
+@login_required
+def api_approvals_get(approval_id):
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        users = load_users()
+        return jsonify({'success': True, 'approval': _enrich_approval(users, approval),
+                        'statuses': APPROVAL_STATUSES})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>', methods=['PATCH'])
+@login_required
+@csrf.exempt
+def api_approvals_update(approval_id):
+    """עדכון שדות, או action='send' לשליחת הגרסה הנוכחית ללקוח."""
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        users = load_users()
+        actor_name = _user_name(users, current_user.id)
+        now = datetime.now().isoformat()
+
+        for field in ['title', 'description']:
+            if field in data:
+                value = data[field]
+                approval[field] = value.strip() if isinstance(value, str) else value
+        if not (approval.get('title') or '').strip():
+            return jsonify({'success': False, 'error': 'יש להזין כותרת'}), 400
+        if 'project_name' in data:
+            project_name = (data.get('project_name') or '').strip()
+            client = _find_client(approval.get('client_id'))
+            portal = load_approval_portal(approval.get('client_id'))
+            if project_name not in _client_project_options(client, portal):
+                return jsonify({'success': False, 'error': 'הפרויקט לא קיים ברשימה'}), 400
+            approval['project_name'] = project_name
+
+        if data.get('action') == 'send':
+            current = _current_version(approval)
+            if not current or not current.get('files'):
+                return jsonify({'success': False, 'error': 'יש להעלות לפחות קובץ אחד לפני השליחה'}), 400
+            if current.get('response'):
+                return jsonify({'success': False, 'error': 'הלקוח כבר הגיב לגרסה זו. יש לפתוח גרסה חדשה.'}), 400
+            if approval.get('status') != 'נשלח ללקוח':
+                old_status = approval.get('status')
+                approval['status'] = 'נשלח ללקוח'
+                current['sent_at'] = current.get('sent_at') or now
+                approval.setdefault('history', []).append(_approval_history_entry(
+                    'sent', current_user.id, actor_name,
+                    version=current.get('number'), **{'from': old_status, 'to': 'נשלח ללקוח'}))
+
+        approval['updated_at'] = now
+        save_material_approval(approval)
+        return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
+    except Exception as e:
+        print(f"Error in api_approvals_update: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>', methods=['DELETE'])
+@login_required
+@csrf.exempt
+def api_approvals_delete(approval_id):
+    """מחיקת בקשה - היוצר או מנהל/אדמין. מנקה גם את הקבצים מ-R2."""
+    try:
+        approval = _find_material_approval(approval_id)
+        if not approval:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
+        user_role = get_user_role(current_user.id)
+        if not (is_manager_or_admin(current_user.id, user_role) or approval.get('created_by') == current_user.id):
+            return jsonify({'success': False, 'error': 'אין הרשאה למחוק בקשה זו'}), 403
+
+        for version in approval.get('versions', []):
+            for f in version.get('files', []):
+                _delete_approval_file(f)
+        delete_material_approval(approval_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>/versions', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_approvals_new_version(approval_id):
+    """פתיחת גרסה חדשה (סבב תיקונים). הסטטוס חוזר לטיוטה עד העלאת הקבצים והשליחה."""
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        current = _current_version(approval)
+        if current and not current.get('response') and not current.get('sent_at'):
+            return jsonify({'success': False, 'error': 'הגרסה הנוכחית עדיין לא נשלחה ללקוח'}), 400
+
+        data = request.get_json(silent=True) or {}
+        users = load_users()
+        actor_name = _user_name(users, current_user.id)
+        now = datetime.now().isoformat()
+        number = (current.get('number', 0) if current else 0) + 1
+        approval.setdefault('versions', []).append({
+            'number': number,
+            'files': [],
+            'note': (data.get('note') or '').strip(),
+            'created_at': now,
+            'created_by': current_user.id,
+            'created_by_name': actor_name,
+            'sent_at': None,
+            'response': None,
+        })
+        old_status = approval.get('status')
+        approval['status'] = 'טיוטה'
+        approval.setdefault('history', []).append(_approval_history_entry(
+            'new_version', current_user.id, actor_name,
+            version=number, **{'from': old_status, 'to': 'טיוטה'}))
+        approval['updated_at'] = now
+        save_material_approval(approval)
+        return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
+    except Exception as e:
+        print(f"Error in api_approvals_new_version: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/uploads/presign', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_approvals_presign_upload():
+    """presigned PUT URL להעלאה ישירה ל-R2, לגרסה הנוכחית של הבקשה.
+    אם R2 לא מוגדר מחזיר mode='local' והדפדפן מעלה לשרת (upload_local)."""
+    try:
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        approval, err = _load_approval_for_user(data.get('approval_id'))
+        if err:
+            return err
+        current = _current_version(approval)
+        if not current or current.get('response') or approval.get('status') == 'נשלח ללקוח':
+            return jsonify({'success': False, 'error': 'לא ניתן להוסיף קבצים לגרסה שכבר נשלחה. יש לפתוח גרסה חדשה.'}), 400
+        if not studio_storage.is_configured():
+            return jsonify({'success': True, 'mode': 'local'})
+
+        filename = data.get('filename') or 'file'
+        content_type = data.get('content_type') or 'application/octet-stream'
+        object_key = studio_storage.build_approval_object_key(approval['id'], current.get('number'), filename)
+        upload_url = studio_storage.generate_upload_url(object_key, content_type=content_type)
+        return jsonify({'success': True, 'mode': 'r2', 'upload_url': upload_url, 'object_key': object_key})
+    except Exception as e:
+        print(f"Error in api_approvals_presign_upload: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>/files/upload_local', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_approvals_upload_local(approval_id):
+    """העלאה לדיסק המקומי של השרת - רק כש-R2 לא מוגדר (פיתוח מקומי)."""
+    try:
+        if studio_storage.is_configured():
+            return jsonify({'success': False, 'error': 'יש להשתמש בהעלאה ל-R2'}), 400
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        current = _current_version(approval)
+        if not current or current.get('response') or approval.get('status') == 'נשלח ללקוח':
+            return jsonify({'success': False, 'error': 'לא ניתן להוסיף קבצים לגרסה שכבר נשלחה'}), 400
+        upload = request.files.get('file')
+        if not upload or not upload.filename:
+            return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
+
+        rel_key = studio_storage.build_approval_object_key(approval_id, current.get('number'), upload.filename)
+        object_key = LOCAL_KEY_PREFIX + rel_key
+        path = _local_file_path(object_key)
+        if not path:
+            return jsonify({'success': False, 'error': 'שם קובץ לא תקין'}), 400
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        upload.save(path)
+
+        users = load_users()
+        file_meta = {
+            'id': str(uuid.uuid4()),
+            'object_key': object_key,
+            'original_name': upload.filename,
+            'size': os.path.getsize(path),
+            'content_type': upload.mimetype or 'application/octet-stream',
+            'uploaded_by': current_user.id,
+            'uploaded_by_name': _user_name(users, current_user.id),
+            'uploaded_at': datetime.now().isoformat(),
+        }
+        current.setdefault('files', []).append(file_meta)
+        approval['updated_at'] = file_meta['uploaded_at']
+        save_material_approval(approval)
+        return jsonify({'success': True, 'file': file_meta})
+    except Exception as e:
+        print(f"Error in api_approvals_upload_local: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>/files', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_approvals_register_file(approval_id):
+    """רישום קובץ שהועלה ל-R2 על הגרסה הנוכחית."""
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        object_key = data.get('object_key')
+        if not object_key or not object_key.startswith(f"approvals/{approval_id}/"):
+            return jsonify({'success': False, 'error': 'מזהה קובץ לא תקין'}), 400
+        current = _current_version(approval)
+        if not current or current.get('response') or approval.get('status') == 'נשלח ללקוח':
+            return jsonify({'success': False, 'error': 'לא ניתן להוסיף קבצים לגרסה שכבר נשלחה'}), 400
+
+        users = load_users()
+        file_meta = {
+            'id': str(uuid.uuid4()),
+            'object_key': object_key,
+            'original_name': data.get('original_name') or 'file',
+            'size': data.get('size'),
+            'content_type': data.get('content_type'),
+            'uploaded_by': current_user.id,
+            'uploaded_by_name': _user_name(users, current_user.id),
+            'uploaded_at': datetime.now().isoformat(),
+        }
+        current.setdefault('files', []).append(file_meta)
+        approval['updated_at'] = file_meta['uploaded_at']
+        save_material_approval(approval)
+        return jsonify({'success': True, 'file': file_meta})
+    except Exception as e:
+        print(f"Error in api_approvals_register_file: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _find_approval_file(approval, file_id):
+    for version in approval.get('versions', []):
+        for f in version.get('files', []):
+            if f.get('id') == file_id:
+                return version, f
+    return None, None
+
+
+@app.route('/api/approvals/<approval_id>/files/<file_id>/download')
+@login_required
+def api_approvals_download_file(approval_id, file_id):
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        _, target = _find_approval_file(approval, file_id)
+        if not target:
+            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+        return _serve_approval_file(target, inline=request.args.get('inline') == '1')
+    except Exception as e:
+        print(f"Error in api_approvals_download_file: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/approvals/<approval_id>/files/<file_id>', methods=['DELETE'])
+@login_required
+@csrf.exempt
+def api_approvals_delete_file(approval_id, file_id):
+    """מחיקת קובץ - רק מגרסה שעדיין לא נשלחה ללקוח."""
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        version, target = _find_approval_file(approval, file_id)
+        if not target:
+            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+        if version is not _current_version(approval) or version.get('response') \
+                or approval.get('status') == 'נשלח ללקוח':
+            return jsonify({'success': False, 'error': 'לא ניתן למחוק קובץ מגרסה שנשלחה ללקוח'}), 400
+
+        version['files'] = [f for f in version.get('files', []) if f.get('id') != file_id]
+        _delete_approval_file(target)
+        approval['updated_at'] = datetime.now().isoformat()
+        save_material_approval(approval)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ---------- Public (client-facing, no login) ----------
+
+def _public_file_payload(f, local_url):
+    """local_url: כתובת בסיס ציבורית להגשת קובץ מקומי (כשאין R2)."""
+    payload = {
+        'id': f.get('id'),
+        'name': f.get('original_name'),
+        'size': f.get('size'),
+        'content_type': f.get('content_type'),
+        'view_url': None,
+        'download_url': None,
+    }
+    if _is_local_file(f):
+        payload['view_url'] = local_url
+        payload['download_url'] = f"{local_url}?download=1"
+    elif f.get('object_key') and studio_storage.is_configured():
+        try:
+            payload['view_url'] = studio_storage.generate_view_url(f['object_key'], f.get('content_type'))
+            payload['download_url'] = studio_storage.generate_download_url(
+                f['object_key'], download_name=f.get('original_name'))
+        except Exception as e:
+            print(f"[APPROVALS] presign view failed: {e}")
+    return payload
+
+
+def _public_approval_payload(approval, file_url_base):
+    """רק השדות שבטוח לחשוף ללקוח - ללא מזהי משתמשים, token או מפתחות R2.
+    file_url_base: קידומת לכתובות קבצים מקומיים, אליה מצורף /<file_id>."""
+    sent_versions = [v for v in approval.get('versions', []) if v.get('sent_at')]
+    current = sent_versions[-1] if sent_versions else None
+    status = approval.get('status')
+    available = bool(current) and status != 'טיוטה'
+    return {
+        'title': approval.get('title'),
+        'project_name': approval.get('project_name', ''),
+        'description': approval.get('description'),
+        'client_name': approval.get('client_name'),
+        'status': status,
+        'available': available,
+        'can_respond': available and status == 'נשלח ללקוח' and not current.get('response'),
+        'version': {
+            'number': current.get('number'),
+            'note': current.get('note', ''),
+            'sent_at': current.get('sent_at'),
+            'files': [_public_file_payload(f, f"{file_url_base}/{f.get('id')}")
+                      for f in current.get('files', [])],
+            'response': current.get('response'),
+        } if available else None,
+        'previous_responses': [
+            {'version': v.get('number'), **v['response']}
+            for v in sent_versions[:-1] if v.get('response')
+        ] if available else [],
+    }
+
+
+@app.route('/api/public/approvals/<token>')
+@limiter.limit("120 per hour")
+def api_public_approval_get(token):
+    try:
+        approval = find_material_approval_by_token(token)
+        if not approval:
+            return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
+        return jsonify({'success': True, 'approval': _public_approval_payload(
+            approval, f"/api/public/approvals/{token}/files")})
+    except Exception as e:
+        print(f"Error in api_public_approval_get: {e}")
+        return jsonify({'success': False, 'error': 'שגיאה בטעינת החומרים'}), 500
+
+
+def _serve_public_approval_file(approval, file_id):
+    """הגשת קובץ ללקוח - רק מגרסה שנשלחה אליו."""
+    version, target = _find_approval_file(approval, file_id)
+    if not target or not version.get('sent_at'):
+        return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+    return _serve_approval_file(target, inline=request.args.get('download') != '1')
+
+
+@app.route('/api/public/approvals/<token>/files/<file_id>')
+@limiter.limit("600 per hour")
+def api_public_approval_file(token, file_id):
+    approval = find_material_approval_by_token(token)
+    if not approval:
+        return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
+    return _serve_public_approval_file(approval, file_id)
+
+
+@app.route('/api/public/approvals/<token>/respond', methods=['POST'])
+@csrf.exempt
+@limiter.limit("20 per hour")
+def api_public_approval_respond(token):
+    approval = find_material_approval_by_token(token)
+    if not approval:
+        return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
+    return _handle_public_response(approval, f"/api/public/approvals/{token}/files")
+
+
+# ---------- Client portal (one shared link per client) ----------
+
+def _portal_approval_or_404(portal_token, approval_id):
+    portal = find_approval_portal_by_token(portal_token)
+    if not portal:
+        return None, None, (jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404)
+    approval = _find_material_approval(approval_id)
+    if not approval or approval.get('client_id') != portal.get('client_id'):
+        return portal, None, (jsonify({'success': False, 'error': 'הפריט לא נמצא'}), 404)
+    return portal, approval, None
+
+
+@app.route('/api/public/approval-portal/<portal_token>')
+@limiter.limit("120 per hour")
+def api_public_portal_get(portal_token):
+    """עמוד הלקוח: כל הפריטים שנשלחו אליו, לפי פרויקט."""
+    try:
+        portal = find_approval_portal_by_token(portal_token)
+        if not portal:
+            return jsonify({'success': False, 'error': 'הקישור אינו תקף'}), 404
+        client = _find_client(portal['client_id']) or {}
+        items = []
+        for a in load_material_approvals():
+            if a.get('client_id') != portal['client_id']:
+                continue
+            if not any(v.get('sent_at') for v in a.get('versions', [])):
+                continue
+            payload = _public_approval_payload(
+                a, f"/api/public/approval-portal/{portal_token}/items/{a['id']}/files")
+            payload['id'] = a['id']
+            payload['updated_at'] = a.get('updated_at')
+            items.append(payload)
+        items.sort(key=lambda x: x.get('updated_at') or '', reverse=True)
+        return jsonify({'success': True, 'client': {'name': client.get('name', ''),
+                                                    'logo_url': client.get('logo_url')},
+                        'items': items})
+    except Exception as e:
+        print(f"Error in api_public_portal_get: {e}")
+        return jsonify({'success': False, 'error': 'שגיאה בטעינת החומרים'}), 500
+
+
+@app.route('/api/public/approval-portal/<portal_token>/items/<approval_id>/files/<file_id>')
+@limiter.limit("600 per hour")
+def api_public_portal_file(portal_token, approval_id, file_id):
+    _, approval, err = _portal_approval_or_404(portal_token, approval_id)
+    if err:
+        return err
+    return _serve_public_approval_file(approval, file_id)
+
+
+@app.route('/api/public/approval-portal/<portal_token>/items/<approval_id>/respond', methods=['POST'])
+@csrf.exempt
+@limiter.limit("30 per hour")
+def api_public_portal_respond(portal_token, approval_id):
+    _, approval, err = _portal_approval_or_404(portal_token, approval_id)
+    if err:
+        return err
+    return _handle_public_response(
+        approval, f"/api/public/approval-portal/{portal_token}/items/{approval_id}/files")
+
+
+def _handle_public_response(approval, file_url_base):
+    """תגובת הלקוח: אישור או בקשת תיקונים (עם הערה חובה)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        decision = data.get('decision')
+        name = (data.get('name') or '').strip()[:APPROVAL_PUBLIC_FIELDS_MAX['name']]
+        comment = (data.get('comment') or '').strip()[:APPROVAL_PUBLIC_FIELDS_MAX['comment']]
+        if decision not in ('approve', 'changes'):
+            return jsonify({'success': False, 'error': 'החלטה לא חוקית'}), 400
+        if not name:
+            return jsonify({'success': False, 'error': 'יש להזין שם'}), 400
+        if decision == 'changes' and not comment:
+            return jsonify({'success': False, 'error': 'יש לפרט אילו תיקונים נדרשים'}), 400
+
+        current = _current_version(approval)
+        if approval.get('status') != 'נשלח ללקוח' or not current or current.get('response'):
+            return jsonify({'success': False, 'error': 'לא ניתן להגיב על גרסה זו'}), 409
+
+        now = datetime.now().isoformat()
+        new_status = 'אושר' if decision == 'approve' else 'נדרשים תיקונים'
+        response = {'decision': decision, 'name': name, 'comment': comment, 'at': now}
+        current['response'] = response
+        approval.setdefault('client_responses', []).append({'version': current.get('number'), **response})
+        approval.setdefault('history', []).append({
+            'action': 'client_response', 'by': None, 'by_name': name, 'at': now,
+            'version': current.get('number'), 'from': approval.get('status'), 'to': new_status,
+        })
+        approval['status'] = new_status
+        approval['updated_at'] = now
+        save_material_approval(approval)
+
+        # התראה + מייל ליוצר הבקשה
+        recipient = approval.get('created_by')
+        title = approval.get('title', 'אישור חומרים')
+        notif_type = 'approval_approved' if decision == 'approve' else 'approval_changes'
+        if recipient:
+            try:
+                create_notification(
+                    user_id=recipient,
+                    notification_type=notif_type,
+                    data={'approval_id': approval['id'], 'link': f"/approvals/{approval['id']}",
+                          'from_user_name': name, 'task_title': title,
+                          'client_id': approval.get('client_id'),
+                          'client_name': approval.get('client_name', '')}
+                )
+            except Exception as ne:
+                print(f"[APPROVALS] notify failed: {ne}")
+            try:
+                users = load_users()
+                heading = 'הלקוח אישר את החומרים' if decision == 'approve' else 'הלקוח ביקש תיקונים'
+                details = {'כותרת': title, 'לקוח': approval.get('client_name', ''),
+                           'פרויקט': approval.get('project_name', ''),
+                           'גרסה': str(current.get('number')), 'שם המגיב': name}
+                if comment:
+                    details['הערות'] = comment
+                send_studio_notification_email(
+                    _user_email(users, recipient),
+                    subject=f"{heading}: {title}",
+                    heading=heading,
+                    message=f"{name} הגיב/ה על החומרים שנשלחו לאישור.",
+                    details=details,
+                    link=_approval_internal_url(approval['id']),
+                )
+            except Exception as ee:
+                print(f"[APPROVALS] email failed: {ee}")
+
+        payload = _public_approval_payload(approval, file_url_base)
+        payload['id'] = approval['id']
+        return jsonify({'success': True, 'approval': payload})
+    except Exception as e:
+        print(f"Error in _handle_public_response: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': 'שגיאה בשמירת התגובה'}), 500
 
 
 @app.route('/api/clients')

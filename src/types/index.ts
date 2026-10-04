@@ -199,6 +199,107 @@ export interface StudioRequest {
   updated_at?: string;
 }
 
+// ============ Material Approval Types ============
+export type ApprovalStatus = 'טיוטה' | 'נשלח ללקוח' | 'אושר' | 'נדרשים תיקונים';
+
+export interface ApprovalFile {
+  id: string;
+  object_key: string;
+  original_name: string;
+  size?: number;
+  content_type?: string;
+  uploaded_by?: string;
+  uploaded_by_name?: string;
+  uploaded_at?: string;
+}
+
+export interface ApprovalResponse {
+  decision: 'approve' | 'changes';
+  name: string;
+  comment?: string;
+  at: string;
+}
+
+export interface ApprovalVersion {
+  number: number;
+  files: ApprovalFile[];
+  note?: string;
+  created_at?: string;
+  created_by?: string;
+  created_by_name?: string;
+  sent_at?: string | null;
+  response?: ApprovalResponse | null;
+}
+
+export interface ApprovalHistoryEntry {
+  action: string;
+  from?: string;
+  to?: string;
+  version?: number;
+  by?: string | null;
+  by_name?: string;
+  at?: string;
+}
+
+export interface MaterialApproval {
+  id: string;
+  token: string;
+  title: string;
+  project_name?: string;
+  description?: string;
+  client_id?: string | null;
+  client_name?: string;
+  status: ApprovalStatus;
+  created_by?: string;
+  created_by_name?: string;
+  versions: ApprovalVersion[];
+  client_responses?: (ApprovalResponse & { version: number })[];
+  history?: ApprovalHistoryEntry[];
+  public_url?: string;
+  current_version?: number | null;
+  files_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PublicApprovalFile {
+  id: string;
+  name: string;
+  size?: number;
+  content_type?: string;
+  view_url: string | null;
+  download_url: string | null;
+}
+
+export interface ApprovalClientSummary {
+  client_id: string;
+  client_name: string;
+  logo_url?: string | null;
+  total: number;
+  counts: Record<ApprovalStatus, number>;
+  last_updated?: string;
+}
+
+export interface PublicApproval {
+  id?: string;
+  title: string;
+  project_name?: string;
+  updated_at?: string;
+  description?: string;
+  client_name?: string;
+  status: ApprovalStatus;
+  available: boolean;
+  can_respond: boolean;
+  version: {
+    number: number;
+    note?: string;
+    sent_at?: string;
+    files: PublicApprovalFile[];
+    response?: ApprovalResponse | null;
+  } | null;
+  previous_responses: (ApprovalResponse & { version: number })[];
+}
+
 // ============ Event Types ============
 export interface EventItem {
   id: string;
@@ -301,11 +402,14 @@ export interface Notification {
     | 'studio_new'
     | 'studio_assigned'
     | 'studio_ready'
-    | 'studio_revisions';
+    | 'studio_revisions'
+    | 'approval_approved'
+    | 'approval_changes';
   task_id?: string;
   client_id?: string;
   project_id?: string;
   studio_request_id?: string;
+  approval_id?: string;
   link?: string;
   from_user_id?: string;
   from_user_name?: string;

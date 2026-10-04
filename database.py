@@ -207,6 +207,33 @@ class StudioRequest(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class MaterialApproval(Base):
+    """בקשת אישור חומרים מלקוח. הלקוח ניגש דרך לינק ציבורי עם token ייחודי.
+    כל התוכן (גרסאות, קבצים, תגובות) ב-JSONB, עם עמודות עזר לחיפוש/סינון."""
+    __tablename__ = 'material_approvals'
+
+    id = Column(String, primary_key=True)
+    token = Column(String, unique=True, index=True)
+    data = Column(JSONB)
+    status = Column(String, default='טיוטה')
+    client_id = Column(String)
+    created_by = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ApprovalPortal(Base):
+    """עמוד אישור חומרים של לקוח (משותף ללקוח דרך token). id = client_id.
+    data מחזיק את רשימת שמות הפרויקטים שנוספו ידנית לאישורים."""
+    __tablename__ = 'approval_portals'
+
+    id = Column(String, primary_key=True)
+    token = Column(String, unique=True, index=True)
+    data = Column(JSONB)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class NetworkPassword(Base):
     """ריכוז סיסמאות רשתות — אדמין בלבד. כל רשומה ב-JSONB כמו Supplier."""
     __tablename__ = 'network_passwords'

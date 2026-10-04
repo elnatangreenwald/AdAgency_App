@@ -136,6 +136,8 @@ export function NotificationBell({ className }: NotificationBellProps) {
       navigate(notification.link);
     } else if (notification.studio_request_id) {
       navigate(`/studio/${notification.studio_request_id}`);
+    } else if (notification.approval_id) {
+      navigate(`/approvals/${notification.approval_id}`);
     } else if (notification.client_id) {
       navigate(`/client/${notification.client_id}`);
     }

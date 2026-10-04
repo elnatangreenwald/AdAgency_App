@@ -64,6 +64,8 @@ time_tracking.json
 user_activity.json
 checklist_templates.json
 equipment_bank.json
+approvals_db.json
+approval_portals.json
 *.backup
 
 # Uploaded files (may contain private client data)

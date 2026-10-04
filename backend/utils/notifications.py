@@ -94,6 +94,12 @@ def create_notification(user_id, notification_type, data):
     elif notification_type == 'studio_revisions':
         title = task_title or 'בקשת עיצוב'
         message = f"התקבלו הערות/תיקונים על: {title}{client_suffix}"
+    elif notification_type == 'approval_approved':
+        title = task_title or 'חומרים'
+        message = f"{from_name} אישר/ה את החומרים: {title}{client_suffix}"
+    elif notification_type == 'approval_changes':
+        title = task_title or 'חומרים'
+        message = f"{from_name} ביקש/ה תיקונים בחומרים: {title}{client_suffix}"
     else:
         message = data.get('message', 'התראה חדשה')
 
@@ -105,6 +111,7 @@ def create_notification(user_id, notification_type, data):
         'client_id': data.get('client_id'),
         'project_id': data.get('project_id'),
         'studio_request_id': data.get('studio_request_id'),
+        'approval_id': data.get('approval_id'),
         'link': data.get('link'),
         'from_user_id': data.get('from_user_id'),
         'from_user_name': data.get('from_user_name'),

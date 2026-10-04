@@ -11,7 +11,8 @@ from sqlalchemy.orm.attributes import flag_modified
 from database import (
     get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity,
-    TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest, NetworkPassword
+    TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest, NetworkPassword,
+    MaterialApproval, ApprovalPortal
 )
 from datetime import datetime
 
@@ -626,6 +627,152 @@ def delete_studio_request(request_id):
         db.delete(row)
         db.commit()
         return True
+    finally:
+        db.close()
+
+
+# ============ Material Approvals Functions ============
+
+_approvals_schema_checked = False
+
+def _ensure_approvals_schema():
+    """Lazily create the material_approvals table on first use (same pattern as
+    _ensure_studio_schema - never at import time)."""
+    global _approvals_schema_checked
+    if _approvals_schema_checked:
+        return
+    try:
+        MaterialApproval.__table__.create(bind=engine, checkfirst=True)
+        ApprovalPortal.__table__.create(bind=engine, checkfirst=True)
+        _approvals_schema_checked = True
+    except Exception as e:
+        print(f"[DB] _ensure_approvals_schema failed: {e}")
+
+
+def _approval_row_to_dict(row):
+    data = dict(row.data or {})
+    data['id'] = row.id
+    data['token'] = row.token or data.get('token')
+    data['status'] = row.status or data.get('status', 'טיוטה')
+    data['client_id'] = row.client_id if row.client_id is not None else data.get('client_id')
+    data['created_by'] = row.created_by or data.get('created_by')
+    return data
+
+
+def load_material_approvals():
+    """Load all material approvals (newest first)."""
+    _ensure_approvals_schema()
+    db = get_db()
+    try:
+        rows = db.query(MaterialApproval).order_by(MaterialApproval.created_at.desc()).all()
+        return [_approval_row_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def find_material_approval_by_token(token):
+    """Indexed lookup by public token. Returns dict or None."""
+    _ensure_approvals_schema()
+    if not token:
+        return None
+    db = get_db()
+    try:
+        row = db.query(MaterialApproval).filter(MaterialApproval.token == token).first()
+        return _approval_row_to_dict(row) if row else None
+    finally:
+        db.close()
+
+
+def save_material_approval(approval):
+    """Upsert a SINGLE material approval."""
+    _ensure_approvals_schema()
+    if not approval or not approval.get('id'):
+        return
+    db = get_db()
+    try:
+        row = db.query(MaterialApproval).filter(MaterialApproval.id == approval['id']).first()
+        if row:
+            row.data = approval
+            row.token = approval.get('token', row.token)
+            row.status = approval.get('status', row.status)
+            row.client_id = approval.get('client_id')
+            row.created_by = approval.get('created_by', row.created_by)
+            flag_modified(row, 'data')
+        else:
+            row = MaterialApproval(
+                id=approval['id'],
+                token=approval.get('token'),
+                data=approval,
+                status=approval.get('status', 'טיוטה'),
+                client_id=approval.get('client_id'),
+                created_by=approval.get('created_by'),
+            )
+            db.add(row)
+        db.commit()
+    finally:
+        db.close()
+
+
+def delete_material_approval(approval_id):
+    """Delete a material approval row. Returns True on success."""
+    _ensure_approvals_schema()
+    db = get_db()
+    try:
+        row = db.query(MaterialApproval).filter(MaterialApproval.id == approval_id).first()
+        if not row:
+            return False
+        db.delete(row)
+        db.commit()
+        return True
+    finally:
+        db.close()
+
+
+def _portal_row_to_dict(row):
+    data = dict(row.data or {})
+    data['client_id'] = row.id
+    data['token'] = row.token
+    return data
+
+
+def load_approval_portal(client_id):
+    """Client approval portal by client_id, or None."""
+    _ensure_approvals_schema()
+    db = get_db()
+    try:
+        row = db.query(ApprovalPortal).filter(ApprovalPortal.id == client_id).first()
+        return _portal_row_to_dict(row) if row else None
+    finally:
+        db.close()
+
+
+def find_approval_portal_by_token(token):
+    _ensure_approvals_schema()
+    if not token:
+        return None
+    db = get_db()
+    try:
+        row = db.query(ApprovalPortal).filter(ApprovalPortal.token == token).first()
+        return _portal_row_to_dict(row) if row else None
+    finally:
+        db.close()
+
+
+def save_approval_portal(portal):
+    """Upsert a client approval portal (keyed by client_id)."""
+    _ensure_approvals_schema()
+    if not portal or not portal.get('client_id'):
+        return
+    db = get_db()
+    try:
+        row = db.query(ApprovalPortal).filter(ApprovalPortal.id == portal['client_id']).first()
+        if row:
+            row.data = portal
+            row.token = portal.get('token', row.token)
+            flag_modified(row, 'data')
+        else:
+            db.add(ApprovalPortal(id=portal['client_id'], token=portal.get('token'), data=portal))
+        db.commit()
     finally:
         db.close()
 
