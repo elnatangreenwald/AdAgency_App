@@ -264,8 +264,16 @@ export interface MaterialApproval {
   public_url?: string;
   current_version?: number | null;
   files_count?: number;
+  preview_files?: ApprovalPreviewFile[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ApprovalPreviewFile {
+  id: string;
+  name: string;
+  content_type?: string;
+  url: string;
 }
 
 export interface PublicApprovalFile {

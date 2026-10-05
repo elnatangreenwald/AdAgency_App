@@ -5,38 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { apiClient } from '@/lib/api';
 import { PublicApproval, PublicApprovalFile } from '@/types';
-import { AlertCircle, CheckCircle2, Download, FileText } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import { ST_LIVE } from './utils';
+import { FileViewer } from './FilePreview';
 
 const NAME_STORAGE_KEY = 'approval_responder_name';
 
 function FilePreview({ file }: { file: PublicApprovalFile }) {
-  const type = file.content_type || '';
-  const url = file.view_url;
-
-  let preview: React.ReactNode;
-  if (url && type.startsWith('image/')) {
-    preview = (
-      <a href={url} target="_blank" rel="noreferrer" className="block bg-gray-100">
-        <img src={url} alt={file.name} className="w-full max-h-[70vh] object-contain mx-auto" loading="lazy" />
-      </a>
-    );
-  } else if (url && type.startsWith('video/')) {
-    preview = <video src={url} controls className="w-full max-h-[70vh] bg-black" />;
-  } else if (url && type === 'application/pdf') {
-    preview = <iframe src={url} title={file.name} className="w-full h-[70vh] bg-gray-100" />;
-  } else {
-    preview = (
-      <div className="flex flex-col items-center justify-center gap-2 py-10 bg-gray-50 text-gray-500">
-        <FileText className="w-10 h-10" />
-        <span className="text-sm">אין תצוגה מקדימה לקובץ זה</span>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      {preview}
+      <FileViewer url={file.view_url} contentType={file.content_type} name={file.name} large={false} />
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-gray-100">
         <span className="text-sm font-medium text-[#292f4c] truncate">{file.name}</span>
         {file.download_url && (

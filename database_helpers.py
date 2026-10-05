@@ -12,7 +12,7 @@ from database import (
     get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity,
     TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest, NetworkPassword,
-    MaterialApproval, ApprovalPortal
+    MaterialApproval, ApprovalPortal, ApprovalFileBlob
 )
 from datetime import datetime
 
@@ -644,6 +644,7 @@ def _ensure_approvals_schema():
     try:
         MaterialApproval.__table__.create(bind=engine, checkfirst=True)
         ApprovalPortal.__table__.create(bind=engine, checkfirst=True)
+        ApprovalFileBlob.__table__.create(bind=engine, checkfirst=True)
         _approvals_schema_checked = True
     except Exception as e:
         print(f"[DB] _ensure_approvals_schema failed: {e}")
@@ -724,6 +725,37 @@ def delete_material_approval(approval_id):
         db.delete(row)
         db.commit()
         return True
+    finally:
+        db.close()
+
+
+def save_approval_blob(blob_id, data, content_type=None):
+    _ensure_approvals_schema()
+    db = get_db()
+    try:
+        db.add(ApprovalFileBlob(id=blob_id, data=data, content_type=content_type, size=len(data)))
+        db.commit()
+    finally:
+        db.close()
+
+
+def load_approval_blob(blob_id):
+    """Returns (bytes, content_type) or None."""
+    _ensure_approvals_schema()
+    db = get_db()
+    try:
+        row = db.query(ApprovalFileBlob).filter(ApprovalFileBlob.id == blob_id).first()
+        return (row.data, row.content_type) if row else None
+    finally:
+        db.close()
+
+
+def delete_approval_blob(blob_id):
+    _ensure_approvals_schema()
+    db = get_db()
+    try:
+        db.query(ApprovalFileBlob).filter(ApprovalFileBlob.id == blob_id).delete()
+        db.commit()
     finally:
         db.close()
 

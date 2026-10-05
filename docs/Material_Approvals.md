@@ -133,8 +133,8 @@
 }
 ```
 
-`ApprovalFile`: `id`, `object_key` (`approvals/<id>/v<n>/<uuid>.<ext>`, ובאחסון מקומי עם קידומת
-`local:`), `original_name`, `size`, `content_type`, `uploaded_by`, `uploaded_by_name`, `uploaded_at`.
+`ApprovalFile`: `id`, `object_key` (`approvals/<id>/v<n>/<uuid>.<ext>` ב-R2, עם קידומת `local:`
+באחסון מקומי, או `db:<blob_id>` באחסון ב-DB), `original_name`, `size`, `content_type`, `uploaded_by`, `uploaded_by_name`, `uploaded_at`.
 
 טבלה נוספת `approval_portals` (עמוד הלקוח המשותף), נוצרת יחד עם `material_approvals`.
 במצב ללא DB: `approval_portals.json`.
@@ -165,11 +165,11 @@
 | POST | `/api/approvals/<id>/versions` | פתיחת גרסה חדשה (`note` אופציונלי) |
 | POST | `/api/approvals/uploads/presign` | presigned PUT URL (`approval_id`, `filename`, `content_type`). מחזיר `mode: "r2"` או `mode: "local"` |
 | POST | `/api/approvals/<id>/files` | רישום קובץ שהועלה ל-R2 לגרסה הנוכחית |
-| POST | `/api/approvals/<id>/files/upload_local` | העלאת קובץ (multipart, שדה `file`) לדיסק המקומי, רק כש-R2 לא מוגדר |
+| POST | `/api/approvals/<id>/files/upload_local` | העלאת קובץ (multipart, שדה `file`) דרך השרת, ל-DB או לדיסק. רק כש-R2 לא מוגדר |
 | GET | `/api/approvals/<id>/files/<file_id>/download` | הורדה. עם `?inline=1` לצפייה בדפדפן |
 | DELETE | `/api/approvals/<id>/files/<file_id>` | מחיקת קובץ (רק מגרסה שלא נשלחה) |
 
-כל השדות הפנימיים מוחזרים בתוספת `public_url`, `current_version`, `files_count`, `created_by_name`.
+כל השדות הפנימיים מוחזרים בתוספת `public_url`, `current_version`, `files_count`, `preview_files`, `created_by_name`.
 
 ### ציבורי (ללא התחברות)
 
@@ -207,11 +207,34 @@
 ## אחסון קבצים
 
 - **R2 מוגדר** (פרודקשן): העלאה ישירה מהדפדפן ל-R2 עם presigned URL, והגשה דרך presigned GET.
-- **R2 לא מוגדר** (פיתוח מקומי): ה-presign מחזיר `mode: "local"`, והדפדפן מעלה את הקובץ לשרת.
-  הקבצים נשמרים ב-`uploads/approvals/<id>/v<n>/` (מחוץ ל-`static`, ולא בגיט) ומוגשים דרך
-  ראוטים שבודקים הרשאה או token. השרת חוסם נתיב שמנסה לצאת מתיקיית האחסון.
+- **R2 לא מוגדר**: ה-presign מחזיר `mode: "local"`, והדפדפן מעלה את הקובץ לשרת
+  (`upload_local`). השרת שומר אותו לפי מצב האחסון:
+  - **עם DB** (`USE_DATABASE=true`, פרודקשן ב-Railway): תוכן הקובץ נשמר בטבלה `approval_file_blobs`
+    (`id`, `data` bytea, `content_type`, `size`), ו-`object_key` הוא `db:<blob_id>`. כך הקבצים
+    שורדים דיפלוי, כי הדיסק של Railway נמחק בכל דיפלוי. מגבלה: 50MB לקובץ (`APPROVAL_DB_FILE_MAX_BYTES`).
+  - **בלי DB** (פיתוח מקומי): הקבצים נשמרים ב-`uploads/approvals/<id>/v<n>/` (מחוץ ל-`static`,
+    ולא בגיט), ו-`object_key` מתחיל ב-`local:`. השרת חוסם נתיב שמנסה לצאת מתיקיית האחסון.
 
-שימו לב: ב-Railway הדיסק המקומי נמחק בכל דיפלוי, ולכן בפרודקשן חייבים להגדיר R2.
+  בשני המקרים הקבצים מוגשים דרך ראוטים שבודקים הרשאה או token.
+
+קבצים שהועלו לדיסק של Railway לפני המעבר לאחסון ב-DB אבדו בדיפלוי, וצריך להעלות אותם מחדש.
+לקבצי וידאו גדולים עדיף להגדיר R2.
+
+### תצוגה וקבצים חסרים
+
+- `FilePreview.tsx` כולל שלושה רכיבים:
+  - `FileThumb`: תמונה ממוזערת (תמונה, פריים ראשון של וידאו, או אייקון).
+  - `FileViewer`: תצוגה מלאה של תמונה, וידאו או PDF.
+  - `FileViewerDialog`: חלון צפייה בתוך האפליקציה. כפתור הצפייה בדף הבקשה פותח אותו במקום טאב חדש.
+- כשהקובץ חסר, השרת לא מחזיר JSON גולמי:
+  - בצפייה (`inline`) הוא מחזיר תמונת SVG עם הכיתוב "הקובץ לא זמין".
+  - בהורדה הוא מחזיר דף HTML קצר עם הסבר.
+  - בפרונט, `onError` של התמונה או הווידאו מציג הודעה "הקובץ לא זמין, יש להעלות אותו מחדש".
+- תמונות ממוזערות מוצגות במקומות האלה:
+  - כרטיסי הפריטים בעמוד הלקוח הפנימי: עד 3 קבצים מהגרסה הנוכחית, ו-"+N" אם יש יותר.
+  - רשימת הפריטים בעמוד הלקוח המשותף: הקובץ הראשון.
+  - רשימת הקבצים בדף הבקשה.
+- לצורך זה כל פריט פנימי מוחזר עם `preview_files`: `[{id, name, content_type, url}]`.
 
 ## התראות ומיילים
 
@@ -238,8 +261,8 @@
 
 | קובץ | תפקיד |
 |------|-------|
-| [database.py](../database.py) | מודלים `MaterialApproval`, `ApprovalPortal` |
-| [database_helpers.py](../database_helpers.py) | `load/save/delete_material_approval`, `find_material_approval_by_token`, `load/save_approval_portal`, `find_approval_portal_by_token` |
+| [database.py](../database.py) | מודלים `MaterialApproval`, `ApprovalPortal`, `ApprovalFileBlob` |
+| [database_helpers.py](../database_helpers.py) | `load/save/delete_material_approval`, `find_material_approval_by_token`, `load/save_approval_portal`, `find_approval_portal_by_token`, `save/load/delete_approval_blob` |
 | [app.py](../app.py) | אזור `MATERIAL APPROVALS API` + fallback ל-JSON |
 | [backend/utils/storage.py](../backend/utils/storage.py) | `build_approval_object_key`, `generate_view_url` |
 | [backend/utils/notifications.py](../backend/utils/notifications.py) | סוגי ההתראות החדשים |
@@ -248,5 +271,5 @@
 | [src/pages/ApprovalDetail.tsx](../src/pages/ApprovalDetail.tsx) | פרטי בקשה, גרסאות, העלאה ושליחה |
 | [src/pages/ClientApprovalPortal.tsx](../src/pages/ClientApprovalPortal.tsx) | עמוד הלקוח המשותף (ציבורי) |
 | [src/pages/PublicApproval.tsx](../src/pages/PublicApproval.tsx) | פריט בודד (ציבורי) |
-| [src/components/approvals/](../src/components/approvals/) | `NewApprovalDialog`, `ProjectSelect`, `ApprovalItemView`, `utils` |
+| [src/components/approvals/](../src/components/approvals/) | `NewApprovalDialog`, `ProjectSelect`, `ApprovalItemView`, `FilePreview`, `utils` |
 | [src/lib/api.ts](../src/lib/api.ts) | `uploadApprovalFile` (R2 או מקומי) |

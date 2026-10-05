@@ -5,7 +5,7 @@ Uses SQLAlchemy ORM with JSONB for complex nested data structures
 import os
 import json
 from datetime import datetime
-from sqlalchemy import create_engine, Column, String, Integer, Text, DateTime, JSON, Boolean
+from sqlalchemy import create_engine, Column, String, Integer, Text, DateTime, JSON, Boolean, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.dialects.postgresql import JSONB
@@ -232,6 +232,18 @@ class ApprovalPortal(Base):
     data = Column(JSONB)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ApprovalFileBlob(Base):
+    """תוכן קבצי אישור חומרים כש-R2 לא מוגדר. נשמר ב-DB כדי לשרוד דיפלוי
+    (הדיסק של Railway נמחק בכל דיפלוי)."""
+    __tablename__ = 'approval_file_blobs'
+
+    id = Column(String, primary_key=True)
+    data = Column(LargeBinary, nullable=False)
+    content_type = Column(String)
+    size = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class NetworkPassword(Base):

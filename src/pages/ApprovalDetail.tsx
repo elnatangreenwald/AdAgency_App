@@ -36,14 +36,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ProjectSelect } from '@/components/approvals/ProjectSelect';
+import { FileThumb, FileViewerDialog } from '@/components/approvals/FilePreview';
 import {
   ArrowRight,
   CheckCircle2,
   Copy,
   Download,
   Eye,
-  FileText,
-  Image as ImageIcon,
   AlertCircle,
   Pencil,
   Plus,
@@ -72,6 +71,7 @@ export function ApprovalDetail() {
   const [projectOptions, setProjectOptions] = useState<string[]>([]);
   const [manualStatus, setManualStatus] = useState<ApprovalStatus | null>(null);
   const [manualComment, setManualComment] = useState('');
+  const [viewerFile, setViewerFile] = useState<React.ComponentProps<typeof FileViewerDialog>['file']>(null);
 
   const fetchApproval = useCallback(async () => {
     try {
@@ -237,15 +237,20 @@ export function ApprovalDetail() {
   const canNewVersion = !!current && (!!current.response || !!current.sent_at);
 
   const renderFile = (f: ApprovalFile, editable: boolean) => {
-    const isImage = f.content_type?.startsWith('image/');
+    const viewUrl = `/api/approvals/${approval.id}/files/${f.id}/download?inline=1`;
+    const openViewer = () =>
+      setViewerFile({
+        url: viewUrl,
+        downloadUrl: `/api/approvals/${approval.id}/files/${f.id}/download`,
+        contentType: f.content_type,
+        name: f.original_name,
+      });
     return (
       <div key={f.id} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-2 min-w-0">
-          {isImage ? (
-            <ImageIcon className="w-4 h-4 text-[#043841] flex-shrink-0" />
-          ) : (
-            <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          )}
+        <div className="flex items-center gap-3 min-w-0">
+          <button type="button" onClick={openViewer} title="צפייה">
+            <FileThumb url={viewUrl} contentType={f.content_type} name={f.original_name} className="w-14 h-14" />
+          </button>
           <div className="min-w-0">
             <div className="text-sm font-medium truncate">{f.original_name}</div>
             <div className="text-xs text-gray-400">
@@ -254,15 +259,9 @@ export function ApprovalDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <a
-            href={`/api/approvals/${approval.id}/files/${f.id}/download?inline=1`}
-            target="_blank"
-            rel="noreferrer"
-            className="p-2 text-gray-500 hover:text-[#043841]"
-            title="צפייה"
-          >
+          <button type="button" onClick={openViewer} className="p-2 text-gray-500 hover:text-[#043841]" title="צפייה">
             <Eye className="w-4 h-4" />
-          </a>
+          </button>
           <a
             href={`/api/approvals/${approval.id}/files/${f.id}/download`}
             target="_blank"
@@ -469,6 +468,8 @@ export function ApprovalDetail() {
           </CardContent>
         </Card>
       )}
+
+      <FileViewerDialog file={viewerFile} onClose={() => setViewerFile(null)} />
 
       <Dialog open={!!manualStatus} onOpenChange={(o) => !o && setManualStatus(null)}>
         <DialogContent>

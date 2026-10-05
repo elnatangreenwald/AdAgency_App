@@ -4,6 +4,7 @@ import { apiClient } from '@/lib/api';
 import { PublicApproval } from '@/types';
 import { ApprovalItemView, PublicShell } from '@/components/approvals/ApprovalItemView';
 import { ST_DRAFT, approvalStatusColor, compareHebrew } from '@/components/approvals/utils';
+import { FileThumb } from '@/components/approvals/FilePreview';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 type Filter = 'pending' | 'all';
@@ -117,13 +118,23 @@ export function ClientApprovalPortal() {
                     onClick={() => setOpenId(isOpen ? null : item.id || null)}
                     className="w-full flex items-center justify-between gap-3 p-4 text-right hover:bg-gray-50"
                   >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-[#292f4c] truncate">{item.title}</div>
-                      {item.version && (
-                        <div className="text-xs text-gray-400">
-                          גרסה {item.version.number} · {item.version.files.length} קבצים
-                        </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {item.version?.files[0] && (
+                        <FileThumb
+                          url={item.version.files[0].view_url}
+                          contentType={item.version.files[0].content_type}
+                          name={item.version.files[0].name}
+                          className="w-12 h-12"
+                        />
                       )}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[#292f4c] truncate">{item.title}</div>
+                        {item.version && (
+                          <div className="text-xs text-gray-400">
+                            גרסה {item.version.number} · {item.version.files.length} קבצים
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${approvalStatusColor(item.status)}`}>

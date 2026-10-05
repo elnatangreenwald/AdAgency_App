@@ -1,4 +1,5 @@
 import os
+import io
 import sys
 import json
 import uuid
@@ -51,7 +52,8 @@ if USE_DATABASE:
         load_network_passwords, save_network_passwords,
         load_material_approvals, save_material_approval, delete_material_approval,
         find_material_approval_by_token,
-        load_approval_portal, find_approval_portal_by_token, save_approval_portal
+        load_approval_portal, find_approval_portal_by_token, save_approval_portal,
+        save_approval_blob, load_approval_blob, delete_approval_blob
     )
 
 # Import notifications module
@@ -100,6 +102,7 @@ APPROVALS_FILE = os.path.join(BASE_DIR, 'approvals_db.json')
 APPROVAL_PORTALS_FILE = os.path.join(BASE_DIR, 'approval_portals.json')
 # אחסון מקומי לקבצי אישור חומרים כש-R2 לא מוגדר (פיתוח מקומי). מחוץ ל-static כדי שלא יהיה נגיש ישירות.
 APPROVAL_LOCAL_FILES_FOLDER = os.path.join(BASE_DIR, 'uploads', 'approvals')
+APPROVAL_DB_FILE_MAX_BYTES = 50 * 1024 * 1024
 # הגדרת תיקיית העלאות
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -2180,6 +2183,15 @@ def _enrich_approval(users, approval):
     current = _current_version(approval)
     enriched['current_version'] = current.get('number') if current else None
     enriched['files_count'] = len(current.get('files', [])) if current else 0
+    enriched['preview_files'] = [
+        {
+            'id': f.get('id'),
+            'name': f.get('original_name'),
+            'content_type': f.get('content_type'),
+            'url': f"/api/approvals/{approval.get('id')}/files/{f.get('id')}/download?inline=1",
+        }
+        for f in (current.get('files', []) if current else [])[:3]
+    ]
     return enriched
 
 
@@ -2192,8 +2204,40 @@ def _approval_history_entry(action, by, by_name, **extra):
 LOCAL_KEY_PREFIX = 'local:'
 
 
+DB_KEY_PREFIX = 'db:'
+
+
 def _is_local_file(f):
     return (f.get('object_key') or '').startswith(LOCAL_KEY_PREFIX)
+
+
+def _is_db_file(f):
+    return (f.get('object_key') or '').startswith(DB_KEY_PREFIX)
+
+
+def _is_server_file(f):
+    """קובץ שמוגש דרך השרת (דיסק מקומי או DB), לא דרך R2."""
+    return _is_local_file(f) or _is_db_file(f)
+
+
+MISSING_FILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" viewBox="0 0 480 300">'
+    '<rect width="480" height="300" fill="#f3f4f6"/>'
+    '<text x="240" y="140" font-family="Arial" font-size="22" fill="#6b7280" text-anchor="middle" direction="rtl">'
+    'הקובץ לא זמין</text>'
+    '<text x="240" y="175" font-family="Arial" font-size="15" fill="#9ca3af" text-anchor="middle" direction="rtl">'
+    'יש להעלות אותו מחדש</text></svg>'
+)
+
+
+def _missing_file_response(inline):
+    """תשובה קריאה לקובץ חסר: תמונת placeholder בתצוגה, ודף הודעה בהורדה."""
+    if inline:
+        return app.response_class(MISSING_FILE_SVG, status=404, mimetype='image/svg+xml')
+    html = ('<!doctype html><html dir="rtl" lang="he"><meta charset="utf-8">'
+            '<body style="font-family:Arial;text-align:center;padding:60px;color:#374151">'
+            '<h2>הקובץ לא זמין</h2><p>ייתכן שהקובץ נמחק מהשרת. יש להעלות אותו מחדש.</p></body></html>')
+    return app.response_class(html, status=404, mimetype='text/html')
 
 
 def _local_file_path(object_key):
@@ -2211,7 +2255,9 @@ def _delete_approval_file(f):
     if not key:
         return
     try:
-        if _is_local_file(f):
+        if _is_db_file(f):
+            delete_approval_blob(key[len(DB_KEY_PREFIX):])
+        elif _is_local_file(f):
             path = _local_file_path(key)
             if path and os.path.exists(path):
                 os.remove(path)
@@ -2222,16 +2268,27 @@ def _delete_approval_file(f):
 
 
 def _serve_approval_file(f, inline):
-    """הגשת קובץ: מקומי דרך send_file, R2 דרך redirect ל-presigned URL."""
+    """הגשת קובץ: DB/מקומי דרך send_file, R2 דרך redirect ל-presigned URL."""
+    download_name = f.get('original_name') or 'file'
+    if _is_db_file(f):
+        blob = load_approval_blob(f['object_key'][len(DB_KEY_PREFIX):])
+        if not blob:
+            return _missing_file_response(inline)
+        response = send_file(io.BytesIO(blob[0]), mimetype=f.get('content_type') or blob[1] or None,
+                             as_attachment=not inline, download_name=download_name)
+        response.headers['Cache-Control'] = 'private, max-age=86400'
+        return response
     if _is_local_file(f):
         path = _local_file_path(f['object_key'])
         if not path or not os.path.exists(path):
-            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
+            return _missing_file_response(inline)
         return send_file(path, mimetype=f.get('content_type') or None,
-                         as_attachment=not inline, download_name=f.get('original_name') or 'file')
+                         as_attachment=not inline, download_name=download_name)
+    if not studio_storage.is_configured():
+        return _missing_file_response(inline)
     if inline:
         return redirect(studio_storage.generate_view_url(f['object_key'], f.get('content_type')))
-    return redirect(studio_storage.generate_download_url(f['object_key'], download_name=f.get('original_name')))
+    return redirect(studio_storage.generate_download_url(f['object_key'], download_name=download_name))
 
 
 def _get_or_create_portal(client_id):
@@ -2649,7 +2706,7 @@ def api_approvals_presign_upload():
 @login_required
 @csrf.exempt
 def api_approvals_upload_local(approval_id):
-    """העלאה לדיסק המקומי של השרת - רק כש-R2 לא מוגדר (פיתוח מקומי)."""
+    """העלאה דרך השרת כש-R2 לא מוגדר: ל-DB במצב USE_DATABASE, אחרת לדיסק המקומי."""
     try:
         if studio_storage.is_configured():
             return jsonify({'success': False, 'error': 'יש להשתמש בהעלאה ל-R2'}), 400
@@ -2663,21 +2720,33 @@ def api_approvals_upload_local(approval_id):
         if not upload or not upload.filename:
             return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
 
-        rel_key = studio_storage.build_approval_object_key(approval_id, current.get('number'), upload.filename)
-        object_key = LOCAL_KEY_PREFIX + rel_key
-        path = _local_file_path(object_key)
-        if not path:
-            return jsonify({'success': False, 'error': 'שם קובץ לא תקין'}), 400
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        upload.save(path)
+        content_type = upload.mimetype or 'application/octet-stream'
+        if USE_DATABASE:
+            # בפרודקשן הדיסק נמחק בכל דיפלוי - שומרים את התוכן ב-DB
+            data = upload.read()
+            if len(data) > APPROVAL_DB_FILE_MAX_BYTES:
+                return jsonify({'success': False, 'error': f'הקובץ גדול מדי (מקסימום {APPROVAL_DB_FILE_MAX_BYTES // (1024 * 1024)}MB)'}), 400
+            blob_id = str(uuid.uuid4())
+            save_approval_blob(blob_id, data, content_type)
+            object_key = DB_KEY_PREFIX + blob_id
+            size = len(data)
+        else:
+            rel_key = studio_storage.build_approval_object_key(approval_id, current.get('number'), upload.filename)
+            object_key = LOCAL_KEY_PREFIX + rel_key
+            path = _local_file_path(object_key)
+            if not path:
+                return jsonify({'success': False, 'error': 'שם קובץ לא תקין'}), 400
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            upload.save(path)
+            size = os.path.getsize(path)
 
         users = load_users()
         file_meta = {
             'id': str(uuid.uuid4()),
             'object_key': object_key,
             'original_name': upload.filename,
-            'size': os.path.getsize(path),
-            'content_type': upload.mimetype or 'application/octet-stream',
+            'size': size,
+            'content_type': content_type,
             'uploaded_by': current_user.id,
             'uploaded_by_name': _user_name(users, current_user.id),
             'uploaded_at': datetime.now().isoformat(),
@@ -2743,10 +2812,11 @@ def api_approvals_download_file(approval_id, file_id):
         approval, err = _load_approval_for_user(approval_id)
         if err:
             return err
+        inline = request.args.get('inline') == '1'
         _, target = _find_approval_file(approval, file_id)
         if not target:
-            return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
-        return _serve_approval_file(target, inline=request.args.get('inline') == '1')
+            return _missing_file_response(inline)
+        return _serve_approval_file(target, inline=inline)
     except Exception as e:
         print(f"Error in api_approvals_download_file: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -2789,10 +2859,10 @@ def _public_file_payload(f, local_url):
         'view_url': None,
         'download_url': None,
     }
-    if _is_local_file(f):
+    if _is_server_file(f) or not studio_storage.is_configured():
         payload['view_url'] = local_url
         payload['download_url'] = f"{local_url}?download=1"
-    elif f.get('object_key') and studio_storage.is_configured():
+    elif f.get('object_key'):
         try:
             payload['view_url'] = studio_storage.generate_view_url(f['object_key'], f.get('content_type'))
             payload['download_url'] = studio_storage.generate_download_url(
@@ -2848,10 +2918,11 @@ def api_public_approval_get(token):
 
 def _serve_public_approval_file(approval, file_id):
     """הגשת קובץ ללקוח - רק מגרסה שנשלחה אליו."""
+    inline = request.args.get('download') != '1'
     version, target = _find_approval_file(approval, file_id)
     if not target or not version.get('sent_at'):
-        return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
-    return _serve_approval_file(target, inline=request.args.get('download') != '1')
+        return _missing_file_response(inline)
+    return _serve_approval_file(target, inline=inline)
 
 
 @app.route('/api/public/approvals/<token>/files/<file_id>')

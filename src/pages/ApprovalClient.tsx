@@ -15,6 +15,7 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { MaterialApproval } from '@/types';
 import { NewApprovalDialog } from '@/components/approvals/NewApprovalDialog';
+import { FileThumb } from '@/components/approvals/FilePreview';
 import {
   APPROVAL_STATUSES,
   approvalStatusColor,
@@ -194,6 +195,16 @@ export function ApprovalClient() {
                     {a.status}
                   </span>
                 </div>
+                {a.preview_files && a.preview_files.length > 0 && (
+                  <div className="flex items-center gap-2 mt-3">
+                    {a.preview_files.map((f) => (
+                      <FileThumb key={f.id} url={f.url} contentType={f.content_type} name={f.name} />
+                    ))}
+                    {(a.files_count || 0) > a.preview_files.length && (
+                      <span className="text-xs font-semibold text-gray-500">+{(a.files_count || 0) - a.preview_files.length}</span>
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-3">
                   {a.current_version && <span>גרסה {a.current_version}</span>}
                   <span className="flex items-center gap-1">
