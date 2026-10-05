@@ -64,6 +64,7 @@ export function ApprovalDetail() {
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<string | null>(null);
+  const [versionToDelete, setVersionToDelete] = useState<number | null>(null);
   const [versionOpen, setVersionOpen] = useState(false);
   const [versionNote, setVersionNote] = useState('');
   const [editOpen, setEditOpen] = useState(false);
@@ -186,6 +187,18 @@ export function ApprovalDetail() {
       showError(error, 'שגיאה במחיקת הקובץ');
     } finally {
       setFileToDelete(null);
+    }
+  };
+
+  const deleteVersion = async () => {
+    if (versionToDelete === null) return;
+    try {
+      const res = await apiClient.delete(`/api/approvals/${approvalId}/versions/${versionToDelete}`);
+      if (res.data.success) setApproval(res.data.approval);
+    } catch (error: any) {
+      showError(error, 'שגיאה במחיקת הגרסה');
+    } finally {
+      setVersionToDelete(null);
     }
   };
 
@@ -456,9 +469,19 @@ export function ApprovalDetail() {
               <div key={v.number} className="border border-gray-100 rounded-lg p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">גרסה {v.number}</span>
-                  {v.created_at && (
-                    <span className="text-xs text-gray-400">{new Date(v.created_at).toLocaleDateString('he-IL')}</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {v.created_at && (
+                      <span className="text-xs text-gray-400">{new Date(v.created_at).toLocaleDateString('he-IL')}</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setVersionToDelete(v.number)}
+                      className="p-1.5 text-gray-400 hover:text-red-600"
+                      title="מחיקת גרסה"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 {v.note && <div className="text-xs text-gray-600">{v.note}</div>}
                 <div className="space-y-2">{v.files.map((f) => renderFile(f, false))}</div>
@@ -567,6 +590,14 @@ export function ApprovalDetail() {
         onConfirm={deleteFile}
         title="מחיקת קובץ"
         description="למחוק את הקובץ מהגרסה?"
+        confirmText="מחיקה"
+      />
+      <ConfirmDialog
+        open={versionToDelete !== null}
+        onOpenChange={(o) => !o && setVersionToDelete(null)}
+        onConfirm={deleteVersion}
+        title={`מחיקת גרסה ${versionToDelete ?? ''}`}
+        description="הגרסה, הקבצים שלה והתגובה של הלקוח עליה יימחקו. פעולה זו אינה הפיכה."
         confirmText="מחיקה"
       />
     </div>

@@ -127,7 +127,7 @@
     }
   ],
   "client_responses": [ { "version": 1, "decision": "...", "name": "...", "comment": "...", "at": "iso" } ],
-  "history": [ { "action": "created | sent | new_version | client_response", "from": "...", "to": "...", "version": 1, "by": "user_id | null", "by_name": "...", "at": "iso" } ],
+  "history": [ { "action": "created | sent | new_version | version_deleted | status_changed | client_response", "from": "...", "to": "...", "version": 1, "by": "user_id | null", "by_name": "...", "at": "iso" } ],
   "created_at": "iso",
   "updated_at": "iso"
 }
@@ -163,6 +163,7 @@
 | PATCH | `/api/approvals/<id>` | עדכון `title` / `description` / `project_name`, ושינוי `status` (עם `comment` בעדכון ידני). `action: "send"` שקול ל-`status: "ממתין לאישור לקוח"` |
 | DELETE | `/api/approvals/<id>` | מחיקה (כולל ניקוי קבצים מ-R2) |
 | POST | `/api/approvals/<id>/versions` | פתיחת גרסה חדשה (`note` אופציונלי) |
+| DELETE | `/api/approvals/<id>/versions/<number>` | מחיקת גרסה קודמת, כולל הקבצים והתגובה שלה. הגרסה הנוכחית לא נמחקת (400). נרשם בהיסטוריה כ-`version_deleted` |
 | POST | `/api/approvals/uploads/presign` | presigned PUT URL (`approval_id`, `filename`, `content_type`). מחזיר `mode: "r2"` או `mode: "local"` |
 | POST | `/api/approvals/<id>/files` | רישום קובץ שהועלה ל-R2 לגרסה הנוכחית |
 | POST | `/api/approvals/<id>/files/upload_local` | העלאת קובץ (multipart, שדה `file`) דרך השרת, ל-DB או לדיסק. רק כש-R2 לא מוגדר |

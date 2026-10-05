@@ -2675,6 +2675,38 @@ def api_approvals_new_version(approval_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/approvals/<approval_id>/versions/<int:number>', methods=['DELETE'])
+@login_required
+@csrf.exempt
+def api_approvals_delete_version(approval_id, number):
+    """מחיקת גרסה קודמת וקבציה. הגרסה הנוכחית (האחרונה) לא נמחקת."""
+    try:
+        approval, err = _load_approval_for_user(approval_id)
+        if err:
+            return err
+        versions = approval.get('versions', [])
+        current = _current_version(approval)
+        target = next((v for v in versions if v.get('number') == number), None)
+        if not target:
+            return jsonify({'success': False, 'error': 'הגרסה לא נמצאה'}), 404
+        if target is current:
+            return jsonify({'success': False, 'error': 'לא ניתן למחוק את הגרסה הנוכחית'}), 400
+
+        for f in target.get('files', []):
+            _delete_approval_file(f)
+        approval['versions'] = [v for v in versions if v is not target]
+        users = load_users()
+        actor_name = _user_name(users, current_user.id)
+        approval.setdefault('history', []).append(_approval_history_entry(
+            'version_deleted', current_user.id, actor_name, version=number))
+        approval['updated_at'] = datetime.now().isoformat()
+        save_material_approval(approval)
+        return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
+    except Exception as e:
+        print(f"Error in api_approvals_delete_version: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/approvals/uploads/presign', methods=['POST'])
 @login_required
 @csrf.exempt
