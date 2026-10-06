@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { FileText, Paperclip, Pencil, Plus, Receipt, Search, Trash2 } from 'lucide-react';
+import {
+  Download,
+  FileText,
+  Loader2,
+  Paperclip,
+  Pencil,
+  Plus,
+  Receipt,
+  Search,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 import { apiClient, apiFormClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -131,6 +142,9 @@ export function InvoicesPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [autofillEnabled, setAutofillEnabled] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [autofilled, setAutofilled] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<SupplierInvoice | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -142,6 +156,7 @@ export function InvoicesPage() {
         setInvoices(response.data.invoices || []);
         setClients(response.data.clients || []);
         setSuppliers(response.data.suppliers || []);
+        setAutofillEnabled(!!response.data.autofill_enabled);
       }
     } catch (error: any) {
       if (error.response?.status === 403) {
@@ -209,11 +224,53 @@ export function InvoicesPage() {
       }));
   }, [filtered]);
 
+  const exportUrl = (month?: string) => {
+    const params = new URLSearchParams({ status: statusFilter, client_id: clientFilter });
+    if (month) params.set('month', month);
+    return `/api/invoices/export?${params.toString()}`;
+  };
+
   const openCreate = () => {
     setEditing(null);
     setForm({ ...EMPTY_FORM, invoice_date: todayIso() });
     setFile(null);
+    setAutofilled(false);
     setDialogOpen(true);
+  };
+
+  const handleFileChange = async (selected: File | null) => {
+    setFile(selected);
+    setAutofilled(false);
+    if (!selected || !autofillEnabled || editing) return;
+    try {
+      setExtracting(true);
+      const formData = new FormData();
+      formData.append('file', selected);
+      const response = await apiFormClient.post('/api/invoices/extract', formData);
+      const fields = response.data.success ? response.data.fields || {} : {};
+      if (Object.keys(fields).length === 0) {
+        toast({ title: 'לא נמצאו פרטים בחשבונית', description: 'יש למלא את הפרטים ידנית' });
+        return;
+      }
+      // The file input comes first in the form, so the date is still today's default; other typed fields are kept.
+      setForm((f) => ({
+        ...f,
+        client_id: f.client_id || fields.client_id || '',
+        supplier: f.supplier || fields.supplier || '',
+        invoice_number: f.invoice_number || fields.invoice_number || '',
+        amount: f.amount || (fields.amount != null ? String(fields.amount) : ''),
+        invoice_date: fields.invoice_date || f.invoice_date,
+      }));
+      setAutofilled(true);
+    } catch (error: any) {
+      toast({
+        title: 'קריאת החשבונית נכשלה',
+        description: error.response?.data?.error || 'יש למלא את הפרטים ידנית',
+        variant: 'destructive',
+      });
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const openEdit = (inv: SupplierInvoice) => {
@@ -228,6 +285,7 @@ export function InvoicesPage() {
       notes: inv.notes || '',
     });
     setFile(null);
+    setAutofilled(false);
     setDialogOpen(true);
   };
 
@@ -345,10 +403,18 @@ export function InvoicesPage() {
               </div>
               <p className="text-white/80 text-sm">חשבוניות ספקים לתשלום, לפי חודש התשלום</p>
             </div>
-            <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
-              <Plus className="w-4 h-4 ml-2" />
-              העלאת חשבונית
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" asChild className="bg-white/15 text-white hover:bg-white/25 border-0">
+                <a href={exportUrl()}>
+                  <Download className="w-4 h-4 ml-2" />
+                  ייצוא לאקסל
+                </a>
+              </Button>
+              <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
+                <Plus className="w-4 h-4 ml-2" />
+                העלאת חשבונית
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -423,13 +489,20 @@ export function InvoicesPage() {
               >
                 {monthLabel(group.month)}
               </h2>
-              <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-4 text-sm">
                 <span className="text-gray-700">
                   פתוח: <span className="font-semibold">{formatMoney(group.openSum)}</span>
                 </span>
                 {group.paidSum > 0 && (
                   <span className="text-gray-500">שולם: {formatMoney(group.paidSum)}</span>
                 )}
+                <a
+                  href={exportUrl(group.month)}
+                  className="flex items-center gap-1 text-[#3d817a] hover:underline"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  אקסל
+                </a>
               </div>
             </div>
             <Card className="overflow-hidden">
@@ -515,8 +588,27 @@ export function InvoicesPage() {
                 id="inv-file"
                 type="file"
                 accept="application/pdf,image/*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                disabled={extracting}
               />
+              {autofillEnabled && !editing && !file && (
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  בחירת קובץ תמלא אוטומטית ספק, מספר חשבונית, סכום ותאריך
+                </p>
+              )}
+              {extracting && (
+                <p className="text-sm text-[#3d817a] flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  קורא את החשבונית...
+                </p>
+              )}
+              {autofilled && !extracting && (
+                <p className="text-sm bg-[#FEFAE0] text-[#043841] rounded-md p-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  הפרטים מולאו אוטומטית מהחשבונית. כדאי לבדוק אותם לפני השמירה.
+                </p>
+              )}
               {editing?.file && !file && (
                 <p className="text-xs text-gray-500 flex items-center gap-1">
                   <Paperclip className="w-3 h-3" />
@@ -633,7 +725,7 @@ export function InvoicesPage() {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 ביטול
               </Button>
-              <Button type="submit" disabled={saving} className="bg-[#3d817a] hover:bg-[#2d6159]">
+              <Button type="submit" disabled={saving || extracting} className="bg-[#3d817a] hover:bg-[#2d6159]">
                 {saving ? 'שומר...' : 'שמירה'}
               </Button>
             </DialogFooter>

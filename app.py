@@ -8,6 +8,8 @@ import smtplib
 import secrets
 import base64
 import time
+import urllib.request
+import urllib.error
 from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory, send_file, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -1650,7 +1652,8 @@ def api_invoices():
             key=lambda c: c['name']
         )
         suppliers = sorted({s.get('name', '').strip() for s in load_suppliers() if s.get('name', '').strip()})
-        return jsonify({'success': True, 'invoices': invoices, 'clients': clients, 'suppliers': suppliers})
+        return jsonify({'success': True, 'invoices': invoices, 'clients': clients, 'suppliers': suppliers,
+                        'autofill_enabled': _invoice_autofill_enabled()})
     except Exception as e:
         print(f"Error in api_invoices: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1785,6 +1788,228 @@ def api_invoices_file(invoice_id):
     except Exception as e:
         print(f"Error in api_invoices_file: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+INVOICE_TERMS_LABELS = {'immediate': 'מיידי', 'net30': 'שוטף+30', 'net60': 'שוטף+60', 'net90': 'שוטף+90', 'net120': 'שוטף+120'}
+HEBREW_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
+
+
+def _invoice_month_label(month_key):
+    year, month = month_key.split('-')
+    return f"{HEBREW_MONTHS[int(month) - 1]} {year}"
+
+
+def _format_iso_date(iso):
+    if not iso:
+        return ''
+    try:
+        return datetime.strptime(iso[:10], '%Y-%m-%d').strftime('%d/%m/%Y')
+    except ValueError:
+        return iso
+
+
+def _write_invoices_sheet(ws, title, invoices):
+    ws.sheet_view.rightToLeft = True
+    ws.append([title])
+    ws['A1'].font = Font(bold=True, size=14, color="043841")
+    ws.append([])
+
+    headers = ['ספק', 'מספר חשבונית', 'לקוח', 'סכום', 'תאריך חשבונית', 'תנאי תשלום', 'מועד תשלום', 'סטטוס', 'תאריך תשלום', 'הערות']
+    ws.append(headers)
+    header_row = ws.max_row
+    for cell in ws[header_row]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="043841", end_color="043841", fill_type="solid")
+        cell.alignment = Alignment(horizontal="right", vertical="center")
+
+    paid_fill = PatternFill(start_color="E9ECEF", end_color="E9ECEF", fill_type="solid")
+    for inv in invoices:
+        ws.append([
+            inv.get('supplier', ''),
+            inv.get('invoice_number', ''),
+            inv.get('client_name', ''),
+            float(inv.get('amount') or 0),
+            _format_iso_date(inv.get('invoice_date')),
+            INVOICE_TERMS_LABELS.get(inv.get('payment_terms'), ''),
+            _format_iso_date(inv.get('due_date')),
+            'שולם' if inv.get('is_paid') else 'פתוח',
+            _format_iso_date(inv.get('paid_at')),
+            inv.get('notes', ''),
+        ])
+        ws.cell(row=ws.max_row, column=4).number_format = '#,##0.00 ₪'
+        if inv.get('is_paid'):
+            for cell in ws[ws.max_row]:
+                cell.fill = paid_fill
+
+    open_sum = sum(float(i.get('amount') or 0) for i in invoices if not i.get('is_paid'))
+    paid_sum = sum(float(i.get('amount') or 0) for i in invoices if i.get('is_paid'))
+    ws.append([])
+    for label, value in (('סה״כ פתוח', open_sum), ('סה״כ שולם', paid_sum), ('סה״כ', open_sum + paid_sum)):
+        ws.append(['', '', label, value])
+        ws.cell(row=ws.max_row, column=3).font = Font(bold=True)
+        ws.cell(row=ws.max_row, column=4).font = Font(bold=True)
+        ws.cell(row=ws.max_row, column=4).number_format = '#,##0.00 ₪'
+
+    for col, width in zip('ABCDEFGHIJ', (24, 16, 22, 14, 15, 13, 15, 10, 15, 30)):
+        ws.column_dimensions[col].width = width
+
+
+@app.route('/api/invoices/export')
+@login_required
+def api_invoices_export():
+    """ייצוא לאקסל: גיליון לכל חודש תשלום. month=YYYY-MM מגביל לחודש אחד."""
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        month = (request.args.get('month') or '').strip()
+        status = request.args.get('status') or 'all'
+        client_id = request.args.get('client_id') or ''
+
+        invoices = load_supplier_invoices()
+        if month:
+            invoices = [i for i in invoices if (i.get('due_date') or '').startswith(month)]
+        if status == 'open':
+            invoices = [i for i in invoices if not i.get('is_paid')]
+        elif status == 'paid':
+            invoices = [i for i in invoices if i.get('is_paid')]
+        if client_id and client_id != 'all':
+            invoices = [i for i in invoices if i.get('client_id') == client_id]
+
+        by_month = {}
+        for inv in sorted(invoices, key=lambda i: i.get('due_date', '')):
+            by_month.setdefault((inv.get('due_date') or '')[:7], []).append(inv)
+
+        wb = Workbook()
+        wb.remove(wb.active)
+        if not by_month:
+            _write_invoices_sheet(wb.create_sheet('חשבוניות'), 'אין חשבוניות להצגה', [])
+        for month_key, month_invoices in by_month.items():
+            label = _invoice_month_label(month_key)
+            _write_invoices_sheet(wb.create_sheet(label[:31]), f"חשבוניות לתשלום - {label}", month_invoices)
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        download_name = f"חשבוניות_{month}.xlsx" if month else f"חשבוניות_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+        return send_file(output, as_attachment=True, download_name=download_name,
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    except Exception as e:
+        print(f"Error in api_invoices_export: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+OPENAI_INVOICE_MODEL = os.environ.get('OPENAI_INVOICE_MODEL', 'gpt-4.1-mini')
+INVOICE_EXTRACT_MAX_BYTES = 20 * 1024 * 1024
+
+INVOICE_EXTRACT_SCHEMA = {
+    'type': 'object',
+    'additionalProperties': False,
+    'required': ['supplier', 'invoice_number', 'amount', 'invoice_date', 'client_name'],
+    'properties': {
+        'supplier': {'type': ['string', 'null']},
+        'invoice_number': {'type': ['string', 'null']},
+        'amount': {'type': ['number', 'null']},
+        'invoice_date': {'type': ['string', 'null']},
+        'client_name': {'type': ['string', 'null']},
+    },
+}
+
+
+def _invoice_autofill_enabled():
+    return bool(os.environ.get('OPENAI_API_KEY'))
+
+
+def _extract_invoice_with_openai(data, content_type, filename, suppliers, client_names):
+    b64 = base64.b64encode(data).decode('ascii')
+    if content_type == 'application/pdf' or filename.lower().endswith('.pdf'):
+        file_part = {'type': 'file', 'file': {'filename': filename or 'invoice.pdf',
+                                              'file_data': f'data:application/pdf;base64,{b64}'}}
+    elif content_type.startswith('image/'):
+        file_part = {'type': 'image_url', 'image_url': {'url': f'data:{content_type};base64,{b64}'}}
+    else:
+        raise ValueError('ניתן לקרוא רק PDF או תמונה')
+
+    instructions = (
+        'You extract data from supplier invoices (usually Hebrew, Israeli) received by an advertising agency. '
+        'Return: supplier = the issuing business name (not the agency); invoice_number = the invoice / tax-invoice number; '
+        'amount = the total payable including VAT, as a number; invoice_date = the issue date as YYYY-MM-DD; '
+        'client_name = only if the invoice clearly refers to one of the known agency clients, return that exact name. '
+        'If the supplier matches a known supplier, return the known name exactly. Use null for anything you cannot find.'
+    )
+    context = (
+        f"Known suppliers: {', '.join(suppliers[:300]) or 'none'}\n"
+        f"Known agency clients: {', '.join(client_names[:300]) or 'none'}"
+    )
+    body = {
+        'model': OPENAI_INVOICE_MODEL,
+        'messages': [
+            {'role': 'system', 'content': instructions},
+            {'role': 'user', 'content': [{'type': 'text', 'text': context}, file_part]},
+        ],
+        'response_format': {'type': 'json_schema',
+                            'json_schema': {'name': 'invoice', 'strict': True, 'schema': INVOICE_EXTRACT_SCHEMA}},
+    }
+    req = urllib.request.Request(
+        'https://api.openai.com/v1/chat/completions',
+        data=json.dumps(body).encode('utf-8'),
+        headers={'Authorization': f"Bearer {os.environ['OPENAI_API_KEY']}", 'Content-Type': 'application/json'},
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        result = json.loads(resp.read().decode('utf-8'))
+    return json.loads(result['choices'][0]['message']['content'])
+
+
+@app.route('/api/invoices/extract', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_invoices_extract():
+    """קריאת קובץ חשבונית עם OpenAI והחזרת ספק / מספר / סכום / תאריך למילוי הטופס. לא שומר דבר."""
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        if not _invoice_autofill_enabled():
+            return jsonify({'success': False, 'error': 'מילוי אוטומטי לא מוגדר (חסר OPENAI_API_KEY)'}), 400
+        upload = request.files.get('file')
+        if not upload or not upload.filename:
+            return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
+        data = upload.read()
+        if len(data) > INVOICE_EXTRACT_MAX_BYTES:
+            return jsonify({'success': False, 'error': 'הקובץ גדול מדי לקריאה אוטומטית'}), 400
+
+        suppliers = sorted({s.get('name', '').strip() for s in load_suppliers() if s.get('name', '').strip()})
+        clients = [c for c in filter_active_clients(load_data()) if c.get('name')]
+        try:
+            raw = _extract_invoice_with_openai(data, upload.mimetype or '', upload.filename, suppliers,
+                                               [c['name'] for c in clients])
+        except urllib.error.HTTPError as e:
+            print(f"[INVOICES] OpenAI error {e.code}: {e.read().decode('utf-8', 'ignore')[:500]}")
+            return jsonify({'success': False, 'error': 'קריאת החשבונית נכשלה'}), 502
+        except ValueError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+
+        fields = {}
+        supplier = (raw.get('supplier') or '').strip()
+        if supplier:
+            fields['supplier'] = next((s for s in suppliers if s.lower() == supplier.lower()), supplier)
+        if raw.get('invoice_number'):
+            fields['invoice_number'] = str(raw['invoice_number']).strip()
+        if isinstance(raw.get('amount'), (int, float)) and raw['amount'] > 0:
+            fields['amount'] = round(float(raw['amount']), 2)
+        try:
+            if raw.get('invoice_date'):
+                fields['invoice_date'] = datetime.strptime(raw['invoice_date'], '%Y-%m-%d').date().isoformat()
+        except ValueError:
+            pass
+        client_name = (raw.get('client_name') or '').strip()
+        client = next((c for c in clients if c['name'] == client_name), None) if client_name else None
+        if client:
+            fields['client_id'] = client.get('id')
+        return jsonify({'success': True, 'fields': fields})
+    except Exception as e:
+        print(f"Error in api_invoices_extract: {e}")
+        return jsonify({'success': False, 'error': 'קריאת החשבונית נכשלה'}), 500
 
 
 # ==================== STUDIO API ====================
