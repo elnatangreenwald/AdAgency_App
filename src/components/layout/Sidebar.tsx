@@ -16,7 +16,8 @@ import {
   Palette,
   CheckSquare,
   KeyRound,
-  FileCheck
+  FileCheck,
+  Receipt
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,6 +70,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
       })) : []
     },
     { path: '/finance', icon: CreditCard, label: 'כספים' },
+    { path: '/invoices', icon: Receipt, label: 'חשבוניות' },
     { path: '/events', icon: Calendar, label: 'אירועים' },
     { path: '/suppliers', icon: MapPin, label: 'ספקים' },
     { path: '/quotes', icon: FileText, label: 'הצעות מחיר' },

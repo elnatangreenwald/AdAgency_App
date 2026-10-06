@@ -21,6 +21,7 @@ import { Archive } from './pages/Archive';
 import { TimeTrackingReports } from './pages/TimeTrackingReports';
 import { TasksPage } from './pages/TasksPage';
 import { NetworkPasswordsPage } from './pages/NetworkPasswordsPage';
+import { InvoicesPage } from './pages/InvoicesPage';
 import { ResetPassword } from './pages/ResetPassword';
 import { Approvals } from './pages/Approvals';
 import { ApprovalDetail } from './pages/ApprovalDetail';
@@ -45,6 +46,7 @@ function App() {
             <Route path="all_clients" element={<AllClients />} />
             <Route path="client/:clientId" element={<ClientPage />} />
             <Route path="finance" element={<Finance />} />
+            <Route path="invoices" element={<InvoicesPage />} />
             <Route path="events" element={<Events />} />
             <Route path="event/:eventId" element={<EventPage />} />
             <Route path="suppliers" element={<Suppliers />} />

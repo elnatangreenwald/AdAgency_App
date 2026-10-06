@@ -53,7 +53,8 @@ if USE_DATABASE:
         load_material_approvals, save_material_approval, delete_material_approval,
         find_material_approval_by_token,
         load_approval_portal, find_approval_portal_by_token, save_approval_portal,
-        save_approval_blob, load_approval_blob, delete_approval_blob
+        save_approval_blob, load_approval_blob, delete_approval_blob,
+        load_supplier_invoices, save_supplier_invoice, delete_supplier_invoice
     )
 
 # Import notifications module
@@ -100,6 +101,7 @@ STUDIO_FILE = os.path.join(BASE_DIR, 'studio_db.json')
 NETWORK_PASSWORDS_FILE = os.path.join(BASE_DIR, 'network_passwords.json')
 APPROVALS_FILE = os.path.join(BASE_DIR, 'approvals_db.json')
 APPROVAL_PORTALS_FILE = os.path.join(BASE_DIR, 'approval_portals.json')
+SUPPLIER_INVOICES_FILE = os.path.join(BASE_DIR, 'supplier_invoices.json')
 # אחסון מקומי לקבצי אישור חומרים כש-R2 לא מוגדר (פיתוח מקומי). מחוץ ל-static כדי שלא יהיה נגיש ישירות.
 APPROVAL_LOCAL_FILES_FOLDER = os.path.join(BASE_DIR, 'uploads', 'approvals')
 APPROVAL_DB_FILE_MAX_BYTES = 50 * 1024 * 1024
@@ -487,6 +489,32 @@ if not USE_DATABASE:
     def save_network_passwords(entries):
         with open(NETWORK_PASSWORDS_FILE, 'w', encoding='utf-8') as f:
             json.dump(entries, f, ensure_ascii=False, indent=4)
+
+    def load_supplier_invoices():
+        if not os.path.exists(SUPPLIER_INVOICES_FILE) or os.stat(SUPPLIER_INVOICES_FILE).st_size == 0:
+            return []
+        with open(SUPPLIER_INVOICES_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+
+    def _write_supplier_invoices(invoices):
+        with open(SUPPLIER_INVOICES_FILE, 'w', encoding='utf-8') as f:
+            json.dump(invoices, f, ensure_ascii=False, indent=4)
+
+    def save_supplier_invoice(invoice):
+        if not invoice or not invoice.get('id'):
+            return
+        invoices = [i for i in load_supplier_invoices() if i.get('id') != invoice['id']]
+        invoices.append(invoice)
+        _write_supplier_invoices(invoices)
+
+    def delete_supplier_invoice(invoice_id):
+        invoices = load_supplier_invoices()
+        remaining = [i for i in invoices if i.get('id') != invoice_id]
+        if len(remaining) == len(invoices):
+            return False
+        _write_supplier_invoices(remaining)
+        return True
 
 if not USE_DATABASE:
     def load_time_tracking():
@@ -1510,6 +1538,252 @@ def api_admin_network_passwords_delete(entry_id):
         return jsonify({'success': True})
     except Exception as e:
         print(f"Error in api_admin_network_passwords_delete: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============ Supplier Invoices ============
+
+INVOICE_PAYMENT_TERMS = {'immediate': 0, 'net30': 30, 'net60': 60, 'net90': 90, 'net120': 120}
+INVOICE_LOCAL_PREFIX = 'invoices/'
+
+
+def _compute_invoice_due_date(invoice_date, terms):
+    """שוטף+N = סוף החודש של תאריך החשבונית ועוד N ימים. מיידי = תאריך החשבונית."""
+    days = INVOICE_PAYMENT_TERMS.get(terms, 0)
+    if days == 0:
+        return invoice_date
+    next_month = (invoice_date.replace(day=28) + timedelta(days=4)).replace(day=1)
+    end_of_month = next_month - timedelta(days=1)
+    return end_of_month + timedelta(days=days)
+
+
+def _invoices_access_denied():
+    user_role = get_user_role(current_user.id)
+    if not check_permission('/invoices', user_role):
+        return jsonify({'success': False, 'error': 'גישה חסומה'}), 403
+    return None
+
+
+def _apply_invoice_fields(invoice, data):
+    """מעדכן את שדות החשבונית מהטופס ומחשב מחדש את מועד התשלום. מחזיר הודעת שגיאה או None."""
+    try:
+        amount = float(str(data.get('amount', '')).replace(',', '').strip())
+    except ValueError:
+        return 'סכום לא תקין'
+    if amount <= 0:
+        return 'סכום חייב להיות גדול מ-0'
+
+    terms = data.get('payment_terms') or 'immediate'
+    if terms not in INVOICE_PAYMENT_TERMS:
+        return 'תנאי תשלום לא תקינים'
+
+    try:
+        invoice_date = datetime.strptime(data.get('invoice_date') or datetime.now().strftime('%Y-%m-%d'), '%Y-%m-%d').date()
+    except ValueError:
+        return 'תאריך חשבונית לא תקין'
+
+    client_id = (data.get('client_id') or '').strip()
+    if not client_id:
+        return 'יש לבחור לקוח'
+    client = next((c for c in load_data() if c.get('id') == client_id), None)
+    if not client:
+        return 'הלקוח לא נמצא'
+
+    invoice.update({
+        'client_id': client_id,
+        'client_name': client.get('name', ''),
+        'supplier': (data.get('supplier') or '').strip(),
+        'invoice_number': (data.get('invoice_number') or '').strip(),
+        'amount': round(amount, 2),
+        'invoice_date': invoice_date.isoformat(),
+        'payment_terms': terms,
+        'due_date': _compute_invoice_due_date(invoice_date, terms).isoformat(),
+        'notes': (data.get('notes') or '').strip(),
+        'updated_at': datetime.now().isoformat(),
+    })
+    return None
+
+
+def _store_invoice_file(invoice_id, upload):
+    """שומר את קובץ החשבונית ב-DB (פרודקשן) או בדיסק המקומי, ומחזיר metadata."""
+    content_type = upload.mimetype or 'application/octet-stream'
+    if USE_DATABASE:
+        data = upload.read()
+        if len(data) > APPROVAL_DB_FILE_MAX_BYTES:
+            raise ValueError(f'הקובץ גדול מדי (מקסימום {APPROVAL_DB_FILE_MAX_BYTES // (1024 * 1024)}MB)')
+        blob_id = str(uuid.uuid4())
+        save_approval_blob(blob_id, data, content_type)
+        object_key = DB_KEY_PREFIX + blob_id
+        size = len(data)
+    else:
+        safe_name = secure_filename(upload.filename) or 'file'
+        object_key = LOCAL_KEY_PREFIX + f"{INVOICE_LOCAL_PREFIX}{invoice_id}/{uuid.uuid4().hex[:8]}_{safe_name}"
+        path = _local_file_path(object_key)
+        if not path:
+            raise ValueError('שם קובץ לא תקין')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        upload.save(path)
+        size = os.path.getsize(path)
+    return {
+        'object_key': object_key,
+        'original_name': upload.filename,
+        'content_type': content_type,
+        'size': size,
+    }
+
+
+def _find_invoice(invoice_id):
+    return next((i for i in load_supplier_invoices() if i.get('id') == invoice_id), None)
+
+
+@app.route('/api/invoices')
+@login_required
+def api_invoices():
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        invoices = load_supplier_invoices()
+        invoices.sort(key=lambda i: (i.get('due_date', ''), i.get('created_at', '')))
+        clients = sorted(
+            [{'id': c.get('id'), 'name': c.get('name', '')} for c in filter_active_clients(load_data())],
+            key=lambda c: c['name']
+        )
+        suppliers = sorted({s.get('name', '').strip() for s in load_suppliers() if s.get('name', '').strip()})
+        return jsonify({'success': True, 'invoices': invoices, 'clients': clients, 'suppliers': suppliers})
+    except Exception as e:
+        print(f"Error in api_invoices: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invoices', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_invoices_create():
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        now = datetime.now().isoformat()
+        invoice = {
+            'id': str(uuid.uuid4()),
+            'is_paid': False,
+            'paid_at': None,
+            'paid_by': None,
+            'file': None,
+            'created_at': now,
+            'created_by': current_user.id,
+        }
+        error = _apply_invoice_fields(invoice, request.form.to_dict())
+        if error:
+            return jsonify({'success': False, 'error': error}), 400
+
+        upload = request.files.get('file')
+        if upload and upload.filename:
+            try:
+                invoice['file'] = _store_invoice_file(invoice['id'], upload)
+            except ValueError as e:
+                return jsonify({'success': False, 'error': str(e)}), 400
+
+        save_supplier_invoice(invoice)
+        return jsonify({'success': True, 'invoice': invoice})
+    except Exception as e:
+        print(f"Error in api_invoices_create: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invoices/<invoice_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_invoices_update(invoice_id):
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        invoice = _find_invoice(invoice_id)
+        if not invoice:
+            return jsonify({'success': False, 'error': 'החשבונית לא נמצאה'}), 404
+
+        error = _apply_invoice_fields(invoice, request.form.to_dict())
+        if error:
+            return jsonify({'success': False, 'error': error}), 400
+
+        upload = request.files.get('file')
+        if upload and upload.filename:
+            try:
+                new_file = _store_invoice_file(invoice_id, upload)
+            except ValueError as e:
+                return jsonify({'success': False, 'error': str(e)}), 400
+            if invoice.get('file'):
+                _delete_approval_file(invoice['file'])
+            invoice['file'] = new_file
+
+        save_supplier_invoice(invoice)
+        return jsonify({'success': True, 'invoice': invoice})
+    except Exception as e:
+        print(f"Error in api_invoices_update: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invoices/<invoice_id>/toggle_paid', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_invoices_toggle_paid(invoice_id):
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        invoice = _find_invoice(invoice_id)
+        if not invoice:
+            return jsonify({'success': False, 'error': 'החשבונית לא נמצאה'}), 404
+
+        data = request.get_json(silent=True) or {}
+        is_paid = bool(data['is_paid']) if 'is_paid' in data else not invoice.get('is_paid')
+        invoice['is_paid'] = is_paid
+        invoice['paid_at'] = datetime.now().isoformat() if is_paid else None
+        invoice['paid_by'] = current_user.id if is_paid else None
+        invoice['updated_at'] = datetime.now().isoformat()
+        save_supplier_invoice(invoice)
+        return jsonify({'success': True, 'invoice': invoice})
+    except Exception as e:
+        print(f"Error in api_invoices_toggle_paid: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invoices/<invoice_id>/delete', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_invoices_delete(invoice_id):
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        invoice = _find_invoice(invoice_id)
+        if not invoice:
+            return jsonify({'success': False, 'error': 'החשבונית לא נמצאה'}), 404
+        if invoice.get('file'):
+            _delete_approval_file(invoice['file'])
+        delete_supplier_invoice(invoice_id)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error in api_invoices_delete: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/invoices/<invoice_id>/file')
+@login_required
+def api_invoices_file(invoice_id):
+    try:
+        denied = _invoices_access_denied()
+        if denied:
+            return denied
+        inline = request.args.get('inline') == '1'
+        invoice = _find_invoice(invoice_id)
+        if not invoice or not invoice.get('file'):
+            return _missing_file_response(inline)
+        return _serve_approval_file(invoice['file'], inline=inline)
+    except Exception as e:
+        print(f"Error in api_invoices_file: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -7217,7 +7491,8 @@ def load_permissions():
             '/client_assignment': 'עובד',
             '/admin/dashboard': 'מנהל',
             '/admin/users': 'אדמין',
-            '/admin/passwords': 'עובד'
+            '/admin/passwords': 'עובד',
+            '/invoices': 'מנהל'
         }
         save_permissions(default_permissions)
         return default_permissions
@@ -7225,6 +7500,9 @@ def load_permissions():
         permissions = json.load(f)
     if permissions.get('/admin/passwords') != 'עובד':
         permissions['/admin/passwords'] = 'עובד'
+        save_permissions(permissions)
+    if '/invoices' not in permissions:
+        permissions['/invoices'] = 'מנהל'
         save_permissions(permissions)
     return permissions
 

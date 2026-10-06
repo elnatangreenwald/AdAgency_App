@@ -12,7 +12,7 @@ from database import (
     get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity,
     TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest, NetworkPassword,
-    MaterialApproval, ApprovalPortal, ApprovalFileBlob
+    MaterialApproval, ApprovalPortal, ApprovalFileBlob, SupplierInvoice
 )
 from datetime import datetime
 
@@ -1009,6 +1009,69 @@ def save_network_passwords(entries):
             if row.id not in incoming_ids:
                 db.delete(row)
         db.commit()
+    finally:
+        db.close()
+
+
+# ============ Supplier Invoices ============
+
+_supplier_invoices_schema_checked = False
+
+def _ensure_supplier_invoices_schema():
+    """Lazily create the supplier_invoices table on first use."""
+    global _supplier_invoices_schema_checked
+    if _supplier_invoices_schema_checked:
+        return
+    try:
+        SupplierInvoice.__table__.create(bind=engine, checkfirst=True)
+        _supplier_invoices_schema_checked = True
+    except Exception as e:
+        print(f"[DB] _ensure_supplier_invoices_schema failed: {e}")
+
+
+def load_supplier_invoices():
+    _ensure_supplier_invoices_schema()
+    db = get_db()
+    try:
+        invoices = []
+        for row in db.query(SupplierInvoice).all():
+            data = dict(row.data or {})
+            data['id'] = row.id
+            invoices.append(data)
+        return invoices
+    finally:
+        db.close()
+
+
+def save_supplier_invoice(invoice):
+    """Upsert a single supplier invoice."""
+    _ensure_supplier_invoices_schema()
+    if not invoice or not invoice.get('id'):
+        return
+    db = get_db()
+    try:
+        row = db.query(SupplierInvoice).filter(SupplierInvoice.id == invoice['id']).first()
+        if row:
+            row.data = invoice
+            flag_modified(row, 'data')
+        else:
+            db.add(SupplierInvoice(id=invoice['id'], data=invoice))
+        db.commit()
+    finally:
+        db.close()
+
+
+def delete_supplier_invoice(invoice_id):
+    """Delete a supplier invoice row. Returns True on success."""
+    _ensure_supplier_invoices_schema()
+    db = get_db()
+    try:
+        row = db.query(SupplierInvoice).filter(SupplierInvoice.id == invoice_id).first()
+        if not row:
+            return False
+        db.delete(row)
+        db.commit()
+        return True
     finally:
         db.close()
 

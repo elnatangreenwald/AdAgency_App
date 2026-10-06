@@ -3,6 +3,7 @@
     "/all_clients": "עובד",
     "/client/": "עובד",
     "/finance": "מנהל",
+    "/invoices": "מנהל",
     "/events": "עובד",
     "/suppliers": "עובד",
     "/quotes": "עובד",
