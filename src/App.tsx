@@ -22,6 +22,7 @@ import { TimeTrackingReports } from './pages/TimeTrackingReports';
 import { TasksPage } from './pages/TasksPage';
 import { NetworkPasswordsPage } from './pages/NetworkPasswordsPage';
 import { InvoicesPage } from './pages/InvoicesPage';
+import { InfluencersPage } from './pages/InfluencersPage';
 import { ResetPassword } from './pages/ResetPassword';
 import { Approvals } from './pages/Approvals';
 import { ApprovalDetail } from './pages/ApprovalDetail';
@@ -50,6 +51,7 @@ function App() {
             <Route path="events" element={<Events />} />
             <Route path="event/:eventId" element={<EventPage />} />
             <Route path="suppliers" element={<Suppliers />} />
+            <Route path="influencers" element={<InfluencersPage />} />
             <Route path="quotes" element={<Quotes />} />
             <Route path="forms" element={<Forms />} />
             <Route path="studio" element={<Studio />} />

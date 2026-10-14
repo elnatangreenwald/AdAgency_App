@@ -17,7 +17,8 @@ import {
   CheckSquare,
   KeyRound,
   FileCheck,
-  Receipt
+  Receipt,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,6 +74,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/invoices', icon: Receipt, label: 'חשבוניות' },
     { path: '/events', icon: Calendar, label: 'אירועים' },
     { path: '/suppliers', icon: MapPin, label: 'ספקים' },
+    { path: '/influencers', icon: Megaphone, label: 'משפיענים' },
     { path: '/quotes', icon: FileText, label: 'הצעות מחיר' },
     { path: '/forms', icon: ClipboardList, label: 'טפסים' },
     { path: '/studio', icon: Palette, label: 'סטודיו' },

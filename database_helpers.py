@@ -12,7 +12,7 @@ from database import (
     get_db, engine, User, Client, Supplier, Quote, Message, Event,
     Equipment, ChecklistTemplate, Form, Permission, UserActivity,
     TimeTrackingEntry, TimeTrackingActiveSession, StudioRequest, NetworkPassword,
-    MaterialApproval, ApprovalPortal, ApprovalFileBlob, SupplierInvoice
+    MaterialApproval, ApprovalPortal, ApprovalFileBlob, SupplierInvoice, Influencer
 )
 from datetime import datetime
 
@@ -1007,6 +1007,79 @@ def save_network_passwords(entries):
 
         for row in db.query(NetworkPassword).all():
             if row.id not in incoming_ids:
+                db.delete(row)
+        db.commit()
+    finally:
+        db.close()
+
+
+# ============ Influencers ============
+
+_influencers_schema_checked = False
+
+def _ensure_influencers_schema():
+    """Lazily create the influencers table on first use."""
+    global _influencers_schema_checked
+    if _influencers_schema_checked:
+        return
+    try:
+        Influencer.__table__.create(bind=engine, checkfirst=True)
+        _influencers_schema_checked = True
+    except Exception as e:
+        print(f"[DB] _ensure_influencers_schema failed: {e}")
+
+
+def _influencers_seed_path():
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'influencers_db.json')
+
+
+def load_influencers():
+    """Load the influencer roster from database. Seeds from JSON if empty."""
+    _ensure_influencers_schema()
+    db = get_db()
+    try:
+        entries = []
+        for row in db.query(Influencer).all():
+            data = dict(row.data or {})
+            data['id'] = row.id
+            entries.append(data)
+    finally:
+        db.close()
+
+    if entries:
+        return entries
+
+    seed_path = _influencers_seed_path()
+    if os.path.exists(seed_path) and os.stat(seed_path).st_size > 0:
+        with open(seed_path, 'r', encoding='utf-8') as f:
+            seeded = json.load(f)
+        if isinstance(seeded, list) and seeded:
+            save_influencers(seeded)
+            return seeded
+    return []
+
+
+def save_influencers(entries):
+    """Replace the full influencer roster in the database."""
+    _ensure_influencers_schema()
+    db = get_db()
+    try:
+        existing = {row.id: row for row in db.query(Influencer).all()}
+        incoming_ids = set()
+        for entry in entries or []:
+            entry_id = entry.get('id')
+            if not entry_id:
+                continue
+            incoming_ids.add(entry_id)
+            row = existing.get(entry_id)
+            if row:
+                row.data = entry
+                flag_modified(row, 'data')
+            else:
+                db.add(Influencer(id=entry_id, data=entry))
+
+        for row_id, row in existing.items():
+            if row_id not in incoming_ids:
                 db.delete(row)
         db.commit()
     finally:

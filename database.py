@@ -256,6 +256,16 @@ class NetworkPassword(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Influencer(Base):
+    """מאגר משפיענים להצעה ללקוחות. כל רשומה ב-JSONB כמו NetworkPassword."""
+    __tablename__ = 'influencers'
+
+    id = Column(String, primary_key=True)
+    data = Column(JSONB)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class SupplierInvoice(Base):
     """חשבוניות ספקים לתשלום. כל רשומה ב-JSONB; הקובץ עצמו ב-approval_file_blobs."""
     __tablename__ = 'supplier_invoices'

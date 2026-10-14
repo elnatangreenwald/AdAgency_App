@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import sys
 import json
 import uuid
@@ -52,6 +53,7 @@ if USE_DATABASE:
         load_time_tracking, save_time_tracking,
         load_studio_requests, save_studio_request, delete_studio_request,
         load_network_passwords, save_network_passwords,
+        load_influencers, save_influencers,
         load_material_approvals, save_material_approval, delete_material_approval,
         find_material_approval_by_token,
         load_approval_portal, find_approval_portal_by_token, save_approval_portal,
@@ -101,6 +103,7 @@ ACTIVITY_LOGS_FILE = os.path.join(BASE_DIR, 'activity_logs.json')
 TIME_TRACKING_FILE = os.path.join(BASE_DIR, 'time_tracking.json')
 STUDIO_FILE = os.path.join(BASE_DIR, 'studio_db.json')
 NETWORK_PASSWORDS_FILE = os.path.join(BASE_DIR, 'network_passwords.json')
+INFLUENCERS_FILE = os.path.join(BASE_DIR, 'influencers_db.json')
 APPROVALS_FILE = os.path.join(BASE_DIR, 'approvals_db.json')
 APPROVAL_PORTALS_FILE = os.path.join(BASE_DIR, 'approval_portals.json')
 SUPPLIER_INVOICES_FILE = os.path.join(BASE_DIR, 'supplier_invoices.json')
@@ -490,6 +493,18 @@ if not USE_DATABASE:
 
     def save_network_passwords(entries):
         with open(NETWORK_PASSWORDS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(entries, f, ensure_ascii=False, indent=4)
+
+    def load_influencers():
+        """טעינת מאגר המשפיענים מקובץ JSON"""
+        if not os.path.exists(INFLUENCERS_FILE) or os.stat(INFLUENCERS_FILE).st_size == 0:
+            return []
+        with open(INFLUENCERS_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+
+    def save_influencers(entries):
+        with open(INFLUENCERS_FILE, 'w', encoding='utf-8') as f:
             json.dump(entries, f, ensure_ascii=False, indent=4)
 
     def load_supplier_invoices():
@@ -1540,6 +1555,137 @@ def api_admin_network_passwords_delete(entry_id):
         return jsonify({'success': True})
     except Exception as e:
         print(f"Error in api_admin_network_passwords_delete: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ==================== INFLUENCERS API ====================
+
+INFLUENCER_TEXT_FIELDS = (
+    'name', 'followers', 'topics', 'notes', 'age', 'group', 'source_url', 'contact', 'price',
+)
+
+
+def _normalize_instagram_handle(value):
+    value = (value or '').strip()
+    match = re.search(r'instagram\.com/([^/?#]+)', value, re.IGNORECASE)
+    if match:
+        value = match.group(1)
+    return value.lstrip('@').strip().strip('/')
+
+
+def _parse_followers_count(text):
+    """'כ־57.6 אלף' -> 57600, 'כמיליון' -> 1000000, '4,350' -> 4350."""
+    text = (text or '').strip()
+    if not text:
+        return None
+    multiplier = 1
+    if 'מיליון' in text or re.search(r'\d\s*[mM]\b', text):
+        multiplier = 1_000_000
+    elif 'אלף' in text or re.search(r'\d\s*[kK]\b', text):
+        multiplier = 1000
+    match = re.search(r'\d[\d,]*(?:\.\d+)?', text)
+    if not match:
+        return 1_000_000 if multiplier == 1_000_000 else None
+    return int(round(float(match.group(0).replace(',', '')) * multiplier))
+
+
+def _sanitize_influencer(payload, existing=None):
+    existing = existing or {}
+    entry = dict(existing)
+    for field in INFLUENCER_TEXT_FIELDS:
+        if field in payload:
+            entry[field] = str(payload.get(field) or '').strip()
+        else:
+            entry.setdefault(field, '')
+    if 'instagram' in payload:
+        entry['instagram'] = _normalize_instagram_handle(payload.get('instagram'))
+    else:
+        entry.setdefault('instagram', '')
+    if 'needs_verification' in payload:
+        entry['needs_verification'] = bool(payload.get('needs_verification'))
+    else:
+        entry.setdefault('needs_verification', False)
+
+    if not entry['name']:
+        return None, 'יש להזין שם'
+
+    entry['followers_count'] = _parse_followers_count(entry['followers'])
+    entry['id'] = existing.get('id') or str(uuid.uuid4())
+    entry['created_at'] = existing.get('created_at') or datetime.now().isoformat()
+    entry['updated_at'] = datetime.now().isoformat()
+    entry['updated_by'] = current_user.id
+    return entry, None
+
+
+@app.route('/api/influencers')
+@login_required
+def api_influencers():
+    """מאגר המשפיענים — כל משתמש מחובר"""
+    try:
+        entries = load_influencers()
+        groups = sorted({e.get('group', '') for e in entries if e.get('group')})
+        return jsonify({'success': True, 'influencers': entries, 'groups': groups})
+    except Exception as e:
+        print(f"Error in api_influencers: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/influencers', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_influencers_create():
+    """הוספת משפיען ידנית — כל משתמש מחובר"""
+    try:
+        entry, error = _sanitize_influencer(_network_password_payload())
+        if error:
+            return jsonify({'success': False, 'error': error}), 400
+        entries = load_influencers()
+        entries.append(entry)
+        save_influencers(entries)
+        return jsonify({'success': True, 'influencer': entry})
+    except Exception as e:
+        print(f"Error in api_influencers_create: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/influencers/<entry_id>', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_influencers_update(entry_id):
+    """עדכון משפיען — כל משתמש מחובר"""
+    try:
+        entries = load_influencers()
+        existing = next((e for e in entries if e.get('id') == entry_id), None)
+        if not existing:
+            return jsonify({'success': False, 'error': 'המשפיען לא נמצא'}), 404
+        entry, error = _sanitize_influencer(_network_password_payload(), existing)
+        if error:
+            return jsonify({'success': False, 'error': error}), 400
+        entries = [entry if e.get('id') == entry_id else e for e in entries]
+        save_influencers(entries)
+        return jsonify({'success': True, 'influencer': entry})
+    except Exception as e:
+        print(f"Error in api_influencers_update: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/influencers/<entry_id>/delete', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_influencers_delete(entry_id):
+    """מחיקת משפיען — מנהל או אדמין בלבד"""
+    try:
+        user_role = get_user_role(current_user.id)
+        if not is_manager_or_admin(current_user.id, user_role):
+            return jsonify({'success': False, 'error': 'מחיקה מותרת למנהל או אדמין בלבד'}), 403
+        entries = load_influencers()
+        new_entries = [e for e in entries if e.get('id') != entry_id]
+        if len(new_entries) == len(entries):
+            return jsonify({'success': False, 'error': 'המשפיען לא נמצא'}), 404
+        save_influencers(new_entries)
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error in api_influencers_delete: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -7717,7 +7863,8 @@ def load_permissions():
             '/admin/dashboard': 'מנהל',
             '/admin/users': 'אדמין',
             '/admin/passwords': 'עובד',
-            '/invoices': 'מנהל'
+            '/invoices': 'מנהל',
+            '/influencers': 'עובד'
         }
         save_permissions(default_permissions)
         return default_permissions
@@ -7728,6 +7875,9 @@ def load_permissions():
         save_permissions(permissions)
     if '/invoices' not in permissions:
         permissions['/invoices'] = 'מנהל'
+        save_permissions(permissions)
+    if '/influencers' not in permissions:
+        permissions['/influencers'] = 'עובד'
         save_permissions(permissions)
     return permissions
 
@@ -7931,6 +8081,7 @@ def api_admin_users():
             {'route': '/admin/dashboard', 'name': 'דוח מנהלים'},
             {'route': '/admin/users', 'name': 'ניהול צוות'},
             {'route': '/admin/passwords', 'name': 'סיסמאות רשתות'},
+            {'route': '/influencers', 'name': 'משפיענים'},
         ]
         
         users_list = [
@@ -8105,6 +8256,7 @@ def manage_users():
         {'route': '/admin/dashboard', 'name': 'דוח מנהלים'},
         {'route': '/admin/users', 'name': 'ניהול צוות'},
         {'route': '/admin/passwords', 'name': 'סיסמאות רשתות'},
+        {'route': '/influencers', 'name': 'משפיענים'},
     ]
     
     # Redirect to React manage users page
@@ -9692,7 +9844,7 @@ def serve_react_app_assets(filename):
 # React SPA catch-all routes - serve index.html for client-side routing
 REACT_ROUTES = ['/dashboard', '/all_clients', '/finance', '/events', '/suppliers', 
                 '/quotes', '/forms', '/studio', '/admin', '/archive', '/my_tasks', '/time_tracking',
-                '/client_assignment', '/admin/passwords']
+                '/client_assignment', '/admin/passwords', '/influencers']
 
 @app.route('/app')
 @app.route('/app/')
