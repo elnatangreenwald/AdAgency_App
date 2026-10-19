@@ -2840,6 +2840,36 @@ def _enrich_approval(users, approval):
     return enriched
 
 
+def _notify_approval_status_change(approval, new_status, actor_id, actor_name, exclude=()):
+    """התראה בתוכנה לכל המשתמשים המשויכים ללקוח + יוצר הבקשה, על שינוי סטטוס של פריט.
+    מי שביצע את השינוי (ו-exclude) לא מקבלים התראה."""
+    try:
+        users = load_users()
+        users_by_lower = {str(uid).lower(): uid for uid in users}
+        client = _find_client(approval.get('client_id')) or {}
+        candidates = normalize_assigned_user(client.get('assigned_user', [])) + [approval.get('created_by')]
+        skip = {str(u).lower() for u in (actor_id, *exclude) if u}
+        recipients = []
+        for uid in candidates:
+            real_uid = users_by_lower.get(str(uid).lower()) if uid else None
+            if real_uid and str(real_uid).lower() not in skip and real_uid not in recipients:
+                recipients.append(real_uid)
+
+        title = approval.get('title', 'אישור חומרים')
+        for uid in recipients:
+            create_notification(
+                user_id=uid,
+                notification_type='approval_status_changed',
+                data={'approval_id': approval['id'], 'link': f"/approvals/{approval['id']}",
+                      'from_user_id': actor_id, 'from_user_name': actor_name,
+                      'task_title': title, 'status': new_status,
+                      'client_id': approval.get('client_id'),
+                      'client_name': approval.get('client_name', '')}
+            )
+    except Exception as e:
+        print(f"[APPROVALS] status notify failed: {e}")
+
+
 def _approval_history_entry(action, by, by_name, **extra):
     entry = {'action': action, 'by': by, 'by_name': by_name, 'at': datetime.now().isoformat()}
     entry.update(extra)
@@ -3251,6 +3281,8 @@ def api_approvals_update(approval_id):
 
         approval['updated_at'] = now
         save_material_approval(approval)
+        if new_status and new_status != old_status:
+            _notify_approval_status_change(approval, new_status, current_user.id, actor_name)
         return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
     except Exception as e:
         print(f"Error in api_approvals_update: {e}")
@@ -3261,14 +3293,11 @@ def api_approvals_update(approval_id):
 @login_required
 @csrf.exempt
 def api_approvals_delete(approval_id):
-    """מחיקת בקשה - היוצר או מנהל/אדמין. מנקה גם את הקבצים מ-R2."""
+    """מחיקת בקשה - כל משתמש מחובר. מנקה גם את הקבצים מהאחסון."""
     try:
         approval = _find_material_approval(approval_id)
         if not approval:
             return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
-        user_role = get_user_role(current_user.id)
-        if not (is_manager_or_admin(current_user.id, user_role) or approval.get('created_by') == current_user.id):
-            return jsonify({'success': False, 'error': 'אין הרשאה למחוק בקשה זו'}), 403
 
         for version in approval.get('versions', []):
             for f in version.get('files', []):
@@ -3314,6 +3343,8 @@ def api_approvals_new_version(approval_id):
             version=number, **{'from': old_status, 'to': ST_DRAFT}))
         approval['updated_at'] = now
         save_material_approval(approval)
+        if old_status != ST_DRAFT:
+            _notify_approval_status_change(approval, ST_DRAFT, current_user.id, actor_name)
         return jsonify({'success': True, 'approval': _enrich_approval(users, approval)})
     except Exception as e:
         print(f"Error in api_approvals_new_version: {e}")
@@ -3324,11 +3355,11 @@ def api_approvals_new_version(approval_id):
 @login_required
 @csrf.exempt
 def api_approvals_delete_version(approval_id, number):
-    """מחיקת גרסה קודמת וקבציה. הגרסה הנוכחית (האחרונה) לא נמחקת."""
+    """מחיקת גרסה קודמת וקבציה - כל משתמש מחובר. הגרסה הנוכחית (האחרונה) לא נמחקת."""
     try:
-        approval, err = _load_approval_for_user(approval_id)
-        if err:
-            return err
+        approval = _find_material_approval(approval_id)
+        if not approval:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
         versions = approval.get('versions', [])
         current = _current_version(approval)
         target = next((v for v in versions if v.get('number') == number), None)
@@ -3503,17 +3534,14 @@ def api_approvals_download_file(approval_id, file_id):
 @login_required
 @csrf.exempt
 def api_approvals_delete_file(approval_id, file_id):
-    """מחיקת קובץ - רק מגרסה שעדיין לא נשלחה ללקוח."""
+    """מחיקת קובץ מכל גרסה - כל משתמש מחובר."""
     try:
-        approval, err = _load_approval_for_user(approval_id)
-        if err:
-            return err
+        approval = _find_material_approval(approval_id)
+        if not approval:
+            return jsonify({'success': False, 'error': 'הבקשה לא נמצאה'}), 404
         version, target = _find_approval_file(approval, file_id)
         if not target:
             return jsonify({'success': False, 'error': 'הקובץ לא נמצא'}), 404
-        if version is not _current_version(approval) or version.get('response') \
-                or approval.get('status') == ST_WAITING:
-            return jsonify({'success': False, 'error': 'לא ניתן למחוק קובץ מגרסה שנשלחה ללקוח'}), 400
 
         version['files'] = [f for f in version.get('files', []) if f.get('id') != file_id]
         _delete_approval_file(target)
@@ -3747,6 +3775,9 @@ def _handle_public_response(approval, file_url_base):
                 )
             except Exception as ee:
                 print(f"[APPROVALS] email failed: {ee}")
+
+        # היוצר כבר קיבל התראת approval_approved/approval_changes
+        _notify_approval_status_change(approval, new_status, None, f"{name} (לקוח)", exclude=(recipient,))
 
         payload = _public_approval_payload(approval, file_url_base)
         payload['id'] = approval['id']

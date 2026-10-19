@@ -100,6 +100,9 @@ def create_notification(user_id, notification_type, data):
     elif notification_type == 'approval_changes':
         title = task_title or 'חומרים'
         message = f"{from_name} ביקש/ה תיקונים בחומרים: {title}{client_suffix}"
+    elif notification_type == 'approval_status_changed':
+        title = task_title or 'חומרים'
+        message = f"{from_name} עדכן/ה סטטוס ל\"{data.get('status', '')}\" בחומרים: {title}{client_suffix}"
     else:
         message = data.get('message', 'התראה חדשה')
 
@@ -112,6 +115,7 @@ def create_notification(user_id, notification_type, data):
         'project_id': data.get('project_id'),
         'studio_request_id': data.get('studio_request_id'),
         'approval_id': data.get('approval_id'),
+        'status': data.get('status'),
         'link': data.get('link'),
         'from_user_id': data.get('from_user_id'),
         'from_user_name': data.get('from_user_name'),

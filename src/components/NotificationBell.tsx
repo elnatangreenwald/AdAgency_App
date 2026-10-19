@@ -4,8 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Notification } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 
 const API_BASE = '';
+
+const TOAST_TITLES: Partial<Record<Notification['type'], string>> = {
+  task_assigned: 'משימה חדשה הוקצתה לך',
+  approval_approved: 'הלקוח אישר חומרים',
+  approval_changes: 'הלקוח ביקש תיקונים',
+  approval_status_changed: 'עדכון סטטוס באישור חומרים',
+};
+
+function notificationPath(notification: Notification): string | null {
+  if (notification.link) return notification.link;
+  if (notification.studio_request_id) return `/studio/${notification.studio_request_id}`;
+  if (notification.approval_id) return `/approvals/${notification.approval_id}`;
+  if (notification.client_id) return `/client/${notification.client_id}`;
+  return null;
+}
 
 interface NotificationBellProps {
   className?: string;
@@ -53,11 +69,17 @@ export function NotificationBell({ className }: NotificationBellProps) {
         if (data.success && data.notifications && data.notifications.length > 0) {
           // Show toast for each new notification
           data.notifications.forEach((notification: Notification) => {
+            const path = notificationPath(notification);
             toast({
-              title: 'משימה חדשה הוקצתה לך',
+              title: TOAST_TITLES[notification.type] || 'התראה חדשה',
               description: notification.message,
               variant: 'default',
-              duration: 5000,
+              duration: notification.type?.startsWith('approval_') ? 10000 : 5000,
+              action: path ? (
+                <ToastAction altText="פתיחה" onClick={() => navigate(path)}>
+                  פתיחה
+                </ToastAction>
+              ) : undefined,
             });
           });
           
@@ -70,7 +92,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
     } catch (error) {
       console.error('Error fetching new notifications:', error);
     }
-  }, [lastChecked, toast]);
+  }, [lastChecked, toast, navigate]);
 
   // Fetch all notifications for dropdown
   const fetchNotifications = useCallback(async () => {
@@ -131,16 +153,8 @@ export function NotificationBell({ className }: NotificationBellProps) {
       markAsRead([notification.id]);
     }
     
-    // Navigate: prefer explicit link (e.g. studio requests), fallback to client page
-    if (notification.link) {
-      navigate(notification.link);
-    } else if (notification.studio_request_id) {
-      navigate(`/studio/${notification.studio_request_id}`);
-    } else if (notification.approval_id) {
-      navigate(`/approvals/${notification.approval_id}`);
-    } else if (notification.client_id) {
-      navigate(`/client/${notification.client_id}`);
-    }
+    const path = notificationPath(notification);
+    if (path) navigate(path);
     
     setIsOpen(false);
   };

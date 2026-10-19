@@ -418,12 +418,14 @@ export interface Notification {
     | 'studio_ready'
     | 'studio_revisions'
     | 'approval_approved'
-    | 'approval_changes';
+    | 'approval_changes'
+    | 'approval_status_changed';
   task_id?: string;
   client_id?: string;
   project_id?: string;
   studio_request_id?: string;
   approval_id?: string;
+  status?: string;
   link?: string;
   from_user_id?: string;
   from_user_name?: string;

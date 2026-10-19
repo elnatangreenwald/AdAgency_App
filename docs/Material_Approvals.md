@@ -83,7 +83,8 @@
 | יוצר הבקשה | הבקשות שלו |
 | עובד משויך ללקוח | בקשות של הלקוחות שמשויכים אליו |
 
-מחיקת בקשה: היוצר או מנהל/אדמין בלבד. ההרשאות נאכפות בשרת בכל ראוט.
+מחיקה: כל משתמש מחובר יכול למחוק בקשה, גרסה קודמת או קובץ מכל גרסה (גם מגרסה שנשלחה ללקוח),
+בלי קשר ליוצר הבקשה או לשיוך ללקוח. ההרשאות נאכפות בשרת בכל ראוט.
 
 ## מודל הנתונים
 
@@ -161,14 +162,14 @@
 | POST | `/api/approvals` | יצירה (`client_id`, `title`, `project_name` חובה). טיוטה + גרסה 1 ריקה + token |
 | GET | `/api/approvals/<id>` | פרטי בקשה |
 | PATCH | `/api/approvals/<id>` | עדכון `title` / `description` / `project_name`, ושינוי `status` (עם `comment` בעדכון ידני). `action: "send"` שקול ל-`status: "ממתין לאישור לקוח"` |
-| DELETE | `/api/approvals/<id>` | מחיקה (כולל ניקוי קבצים מ-R2) |
+| DELETE | `/api/approvals/<id>` | מחיקה (כל משתמש מחובר, כולל ניקוי הקבצים מהאחסון) |
 | POST | `/api/approvals/<id>/versions` | פתיחת גרסה חדשה (`note` אופציונלי) |
 | DELETE | `/api/approvals/<id>/versions/<number>` | מחיקת גרסה קודמת, כולל הקבצים והתגובה שלה. הגרסה הנוכחית לא נמחקת (400). נרשם בהיסטוריה כ-`version_deleted` |
 | POST | `/api/approvals/uploads/presign` | presigned PUT URL (`approval_id`, `filename`, `content_type`). מחזיר `mode: "r2"` או `mode: "local"` |
 | POST | `/api/approvals/<id>/files` | רישום קובץ שהועלה ל-R2 לגרסה הנוכחית |
 | POST | `/api/approvals/<id>/files/upload_local` | העלאת קובץ (multipart, שדה `file`) דרך השרת, ל-DB או לדיסק. רק כש-R2 לא מוגדר |
 | GET | `/api/approvals/<id>/files/<file_id>/download` | הורדה. עם `?inline=1` לצפייה בדפדפן |
-| DELETE | `/api/approvals/<id>/files/<file_id>` | מחיקת קובץ (רק מגרסה שלא נשלחה) |
+| DELETE | `/api/approvals/<id>/files/<file_id>` | מחיקת קובץ מכל גרסה (כל משתמש מחובר) |
 
 כל השדות הפנימיים מוחזרים בתוספת `public_url`, `current_version`, `files_count`, `preview_files`, `created_by_name`.
 
@@ -243,6 +244,22 @@
 |-----|-----|-----|
 | `approval_approved` | הלקוח אישר | יוצר הבקשה |
 | `approval_changes` | הלקוח ביקש תיקונים | יוצר הבקשה |
+| `approval_status_changed` | כל שינוי סטטוס של פריט | כל המשתמשים המשויכים ללקוח (`assigned_user`) + יוצר הבקשה |
+
+**התראת שינוי סטטוס** (`_notify_approval_status_change` ב-app.py):
+- נשלחת בכל שינוי סטטוס:
+  - שינוי ידני מתוך דף הבקשה, כולל "שליחה ללקוח".
+  - פתיחת גרסה חדשה, שמחזירה את הפריט לטיוטה.
+  - תגובת הלקוח מהקישור החיצוני.
+- מי שביצע את השינוי לא מקבל התראה.
+- בתגובת לקוח, היוצר מקבל רק את `approval_approved` / `approval_changes`, כדי שלא יקבל התראה כפולה.
+- ההתראה כוללת `status` (הסטטוס החדש) ו-`link` לדף הבקשה.
+- עריכת כותרת, תיאור או פרויקט בלי שינוי סטטוס לא שולחת התראה.
+
+**הודעה קופצת:** הפעמון (`NotificationBell`) בודק כל 15 שניות אם יש התראות חדשות, ומקפיץ הודעה (toast):
+- הכותרת נקבעת לפי סוג ההתראה. לשינוי סטטוס: "עדכון סטטוס באישור חומרים".
+- בהודעה יש כפתור "פתיחה" שמנווט לפריט.
+- התראות של אישור חומרים נשארות על המסך 10 שניות.
 
 ההתראה כוללת `approval_id` ו-`link`, ולחיצה עליה בפעמון מנווטת לדף הבקשה. המייל נשלח
 דרך `send_studio_notification_email` (אותן הגדרות SMTP) וכולל את הערות הלקוח וקישור לבקשה.

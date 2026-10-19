@@ -249,7 +249,7 @@ export function ApprovalDetail() {
   const hasFiles = (current?.files?.length || 0) > 0;
   const canNewVersion = !!current && (!!current.response || !!current.sent_at);
 
-  const renderFile = (f: ApprovalFile, editable: boolean) => {
+  const renderFile = (f: ApprovalFile) => {
     const viewUrl = `/api/approvals/${approval.id}/files/${f.id}/download?inline=1`;
     const openViewer = () =>
       setViewerFile({
@@ -284,16 +284,14 @@ export function ApprovalDetail() {
           >
             <Download className="w-4 h-4" />
           </a>
-          {editable && (
-            <button
-              type="button"
-              onClick={() => setFileToDelete(f.id)}
-              className="p-2 text-gray-400 hover:text-red-600"
-              title="מחיקה"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setFileToDelete(f.id)}
+            className="p-2 text-gray-400 hover:text-red-600"
+            title="מחיקה"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
     );
@@ -452,7 +450,7 @@ export function ApprovalDetail() {
               </div>
             )}
             {current.files.length > 0 ? (
-              <div className="space-y-2">{current.files.map((f) => renderFile(f, isEditable))}</div>
+              <div className="space-y-2">{current.files.map((f) => renderFile(f))}</div>
             ) : (
               <div className="text-sm text-gray-400">אין קבצים בגרסה זו עדיין</div>
             )}
@@ -484,7 +482,7 @@ export function ApprovalDetail() {
                   </div>
                 </div>
                 {v.note && <div className="text-xs text-gray-600">{v.note}</div>}
-                <div className="space-y-2">{v.files.map((f) => renderFile(f, false))}</div>
+                <div className="space-y-2">{v.files.map((f) => renderFile(f))}</div>
                 {renderResponse(v)}
               </div>
             ))}
