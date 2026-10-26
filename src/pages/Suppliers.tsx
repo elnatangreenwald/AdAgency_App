@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Phone, Mail, MapPin } from 'lucide-react';
+import { Plus, Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 
 interface Supplier {
   id: string;
@@ -24,6 +24,25 @@ interface Supplier {
   email?: string;
   address?: string;
   notes?: string;
+}
+
+const ALL_CATEGORIES = '__all__';
+const NO_CATEGORY = '__none__';
+
+function toWhatsAppNumber(raw: string): string | null {
+  const normalized = raw
+    .split(/[\/,;|]/)
+    .map((part) => {
+      let digits = part.replace(/\D/g, '');
+      if (digits.startsWith('00')) digits = digits.slice(2);
+      if (digits.startsWith('972')) return digits;
+      if (digits.startsWith('0')) return '972' + digits.slice(1);
+      if (digits.length === 8 || digits.length === 9) return '972' + digits;
+      return digits;
+    })
+    .filter((d) => d.length >= 11);
+
+  return normalized.find((d) => d.startsWith('9725')) ?? normalized[0] ?? null;
 }
 
 export function Suppliers() {
@@ -38,7 +57,40 @@ export function Suppliers() {
     address: '',
     notes: '',
   });
+  const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES);
   const { toast } = useToast();
+
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    let uncategorized = 0;
+    suppliers.forEach((s) => {
+      const cat = s.category?.trim();
+      if (cat) counts.set(cat, (counts.get(cat) || 0) + 1);
+      else uncategorized++;
+    });
+    const list = Array.from(counts.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], 'he'))
+      .map(([name, count]) => ({ key: name, label: name, count }));
+    if (uncategorized > 0) {
+      list.push({ key: NO_CATEGORY, label: 'ללא קטגוריה', count: uncategorized });
+    }
+    return list;
+  }, [suppliers]);
+
+  const filteredSuppliers = useMemo(() => {
+    if (selectedCategory === ALL_CATEGORIES) return suppliers;
+    if (selectedCategory === NO_CATEGORY) return suppliers.filter((s) => !s.category?.trim());
+    return suppliers.filter((s) => s.category?.trim() === selectedCategory);
+  }, [suppliers, selectedCategory]);
+
+  useEffect(() => {
+    if (
+      selectedCategory !== ALL_CATEGORIES &&
+      !categories.some((c) => c.key === selectedCategory)
+    ) {
+      setSelectedCategory(ALL_CATEGORIES);
+    }
+  }, [categories, selectedCategory]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -133,7 +185,35 @@ export function Suppliers() {
         </Button>
       </div>
 
-      {suppliers.length === 0 ? (
+      {categories.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-gray-600 ml-1">סינון לפי קטגוריה:</span>
+          {[{ key: ALL_CATEGORIES, label: 'הכל', count: suppliers.length }, ...categories].map(
+            (cat) => {
+              const active = selectedCategory === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    active
+                      ? 'bg-[#292f4c] text-white border-[#292f4c]'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.label}
+                  <span className={`mr-1.5 text-xs ${active ? 'text-gray-200' : 'text-gray-400'}`}>
+                    ({cat.count})
+                  </span>
+                </button>
+              );
+            }
+          )}
+        </div>
+      )}
+
+      {filteredSuppliers.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-gray-500">
             אין ספקים להצגה
@@ -141,12 +221,28 @@ export function Suppliers() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-          {suppliers.map((supplier) => (
+          {filteredSuppliers.map((supplier) => {
+            const whatsappNumber = supplier.phone ? toWhatsAppNumber(supplier.phone) : null;
+            return (
             <Card key={supplier.id} className="hover:shadow-md transition-all">
               <CardContent className="p-4 md:p-5">
-                <h3 className="text-lg md:text-xl font-bold text-[#292f4c] mb-3">
-                  {supplier.name}
-                </h3>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <h3 className="text-lg md:text-xl font-bold text-[#292f4c]">
+                    {supplier.name}
+                  </h3>
+                  {whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${whatsappNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`שליחת הודעת וואטסאפ ל${supplier.name}`}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#25D366] hover:bg-[#1ebe5b] text-white text-xs font-medium px-2.5 py-1 transition-colors"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      וואטסאפ
+                    </a>
+                  )}
+                </div>
                 {supplier.category && (
                   <div className="text-sm text-gray-600 mb-2">
                     קטגוריה: {supplier.category}
@@ -179,7 +275,8 @@ export function Suppliers() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
