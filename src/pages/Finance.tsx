@@ -529,19 +529,20 @@ export function Finance() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] mb-6 sm:mb-8">
+      <h1 data-tour="finance-header" className="text-2xl sm:text-3xl font-bold text-[#292f4c] mb-6 sm:mb-8">
         ריכוז כספי לקוחות
       </h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-        <Card className="bg-gradient-to-br from-[#d66b74] to-[#c55a65] text-white border-0">
+        <Card data-tour="finance-open-charges" className="bg-gradient-to-br from-[#d66b74] to-[#c55a65] text-white border-0">
           <CardContent className="p-5 sm:p-8">
             <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-5">כמה חייבים לנו?</h2>
             <div className="text-3xl sm:text-5xl font-bold mb-3 sm:mb-5">
               ₪{(monthFilter === 'all' ? data.total_open_charges : totalFilteredOpenCharges).toLocaleString()}
             </div>
             <Button
+              data-tour="finance-export-excel"
               onClick={handleExportOpenCharges}
               className="bg-white text-[#d66b74] hover:bg-gray-100 font-bold text-sm sm:text-base"
             >
@@ -552,7 +553,7 @@ export function Finance() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-[#28a745] to-[#218838] text-white border-0">
+        <Card data-tour="finance-monthly-revenue" className="bg-gradient-to-br from-[#28a745] to-[#218838] text-white border-0">
           <CardContent className="p-5 sm:p-8">
             <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-5">כמה הרווחנו החודש?</h2>
             <div className="text-3xl sm:text-5xl font-bold">
@@ -563,7 +564,7 @@ export function Finance() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card data-tour="finance-filters">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
             <div className="relative flex-1 min-w-0 sm:min-w-[250px]">
@@ -598,7 +599,7 @@ export function Finance() {
       </Card>
 
       {/* Clients Table */}
-      <Card>
+      <Card data-tour="finance-clients-table">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -866,7 +867,7 @@ export function Finance() {
 
       {/* Archive Section */}
       {totalArchivedCharges > 0 && (
-        <Card>
+        <Card data-tour="finance-archive">
           <CardContent className="p-0">
             <button
               onClick={() => setShowArchive(!showArchive)}

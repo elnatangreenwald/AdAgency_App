@@ -458,12 +458,12 @@ export function TimeTrackingReports() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">דוחות מדידת זמן</h1>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <Button onClick={openAddModal} className="bg-[#0073ea] hover:bg-[#0060c0] w-full md:w-auto">
+          <Button data-tour="time-reports-add-manual" onClick={openAddModal} className="bg-[#0073ea] hover:bg-[#0060c0] w-full md:w-auto">
             <Plus className="w-4 h-4 ml-2" />
             הוספה ידנית
           </Button>
           {reportData && (
-            <Button onClick={exportToExcel} className="bg-[#00c875] hover:bg-[#00b368] w-full md:w-auto">
+            <Button data-tour="time-reports-export" onClick={exportToExcel} className="bg-[#00c875] hover:bg-[#00b368] w-full md:w-auto">
               <Download className="w-4 h-4 ml-2" />
               ייצא ל-Excel
             </Button>
@@ -472,7 +472,7 @@ export function TimeTrackingReports() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card data-tour="time-reports-filters">
         <CardHeader>
           <CardTitle>סינון דוח</CardTitle>
         </CardHeader>
@@ -530,7 +530,7 @@ export function TimeTrackingReports() {
       ) : reportData ? (
         <div className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div data-tour="time-reports-summary" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-center gap-3">
@@ -627,7 +627,7 @@ export function TimeTrackingReports() {
           )}
 
           {/* Detailed Entries */}
-          <Card>
+          <Card data-tour="time-reports-table">
             <CardHeader>
               <CardTitle>פירוט מלא</CardTitle>
             </CardHeader>
@@ -665,7 +665,7 @@ export function TimeTrackingReports() {
                           {entry.note || '-'}
                         </td>
                         <td className="border p-2 text-xs md:text-sm whitespace-nowrap">
-                          <div className="flex items-center gap-1">
+                          <div data-tour="time-reports-row-actions" className="flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="sm"

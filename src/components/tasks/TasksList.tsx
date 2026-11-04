@@ -66,7 +66,7 @@ export function TasksList({
   }
 
   return (
-    <div className="space-y-5">
+    <div data-tour="tasks-list" className="space-y-5">
       {groups.map((group) => (
         <section
           key={group.clientId || group.clientName}
@@ -113,7 +113,7 @@ export function TasksList({
                           {task.note ? ' · יש הערה' : ''}
                         </div>
                       </td>
-                      <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td data-tour="tasks-list-status" className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={statusValue}
                           onValueChange={(value) => onStatusChange(task, value)}

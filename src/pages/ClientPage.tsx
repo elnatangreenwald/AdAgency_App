@@ -1101,7 +1101,7 @@ export function ClientPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Client Header */}
-      <Card className="relative">
+      <Card data-tour="client-header" className="relative">
         <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-l from-[#3d817a] to-[#2d6159] rounded-t-lg" />
         <CardContent className="p-4 sm:p-6 pt-6 sm:pt-8">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
@@ -1121,6 +1121,7 @@ export function ClientPage() {
             )}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 flex-1">
               <div
+                data-tour="client-logo"
                 className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl sm:rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#0073ea] hover:scale-105 transition-all relative overflow-hidden group flex-shrink-0"
                 onClick={() => document.getElementById('logoInput')?.click()}
               >
@@ -1167,7 +1168,7 @@ export function ClientPage() {
             </div>
             {/* Desktop: Switch at side */}
             {isAdminOrManager && (
-              <div className="hidden sm:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm flex-shrink-0">
+              <div data-tour="client-active-toggle" className="hidden sm:flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-sm flex-shrink-0">
                 <Switch
                   id="client-active"
                   checked={!client.archived}
@@ -1188,7 +1189,7 @@ export function ClientPage() {
         <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
             <CardTitle className="text-lg sm:text-xl">פרויקטים ומשימות</CardTitle>
-            <form onSubmit={handleAddProject} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-end">
+            <form data-tour="client-add-project" onSubmit={handleAddProject} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-end">
               <Input
                 type="text"
                 placeholder="שם פרויקט חדש..."
@@ -1222,6 +1223,7 @@ export function ClientPage() {
           {client.projects && client.projects.length > 0 ? (
             client.projects.map((project) => (
               <Card
+                data-tour="client-project-card"
                 key={project.id}
                 className={cn(
                   'bg-gray-50 border-2 border-gray-200 transition-all',
@@ -1444,7 +1446,7 @@ export function ClientPage() {
       </Card>
 
       {/* Finance Section */}
-      <Card>
+      <Card data-tour="client-finance">
         <CardHeader>
           <CardTitle>כספים</CardTitle>
         </CardHeader>
@@ -1581,7 +1583,7 @@ export function ClientPage() {
       </Card>
 
       {/* Documents Section */}
-      <Card>
+      <Card data-tour="client-documents">
         <CardHeader>
           <CardTitle>מסמכים</CardTitle>
         </CardHeader>
@@ -1635,7 +1637,7 @@ export function ClientPage() {
       </Card>
 
       {/* Contacts Section */}
-      <Card>
+      <Card data-tour="client-contacts">
         <CardHeader>
           <CardTitle>יצירת קשר</CardTitle>
         </CardHeader>
@@ -1724,7 +1726,7 @@ export function ClientPage() {
       </Card>
 
       {/* Activity History Section */}
-      <Card>
+      <Card data-tour="client-history">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>היסטוריית קשר</CardTitle>

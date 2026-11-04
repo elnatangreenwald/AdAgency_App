@@ -136,7 +136,7 @@ export function QuickUpdate() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c] mb-4 md:mb-6">
+      <h1 data-tour="quick-update-header" className="text-2xl md:text-3xl font-bold text-[#292f4c] mb-4 md:mb-6">
         עדכון משימות מהיר (כל הלקוחות)
       </h1>
 
@@ -147,7 +147,7 @@ export function QuickUpdate() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div data-tour="quick-update-list" className="space-y-3">
           {tasks.map((item) => (
             <Card
               key={`${item.client_id}-${item.project_id}-${item.task.id}`}
@@ -161,7 +161,7 @@ export function QuickUpdate() {
                   className="flex flex-col gap-3 md:grid md:grid-cols-4 md:gap-5 md:items-center"
                 >
                   {/* Task Info */}
-                  <div className="md:col-span-1">
+                  <div data-tour="quick-update-task-info" className="md:col-span-1">
                     <div className="text-xs md:text-sm text-[#0073ea] mb-1">
                       {item.client_name} • {item.project_title}
                     </div>
@@ -176,7 +176,7 @@ export function QuickUpdate() {
                   </div>
 
                   {/* Status Select */}
-                  <div>
+                  <div data-tour="quick-update-status">
                     <Select
                       name="status"
                       defaultValue={item.task.status}
@@ -208,7 +208,7 @@ export function QuickUpdate() {
                   </div>
 
                   {/* Notes and Save */}
-                  <div className="flex flex-col sm:flex-row gap-2 md:gap-2.5 items-stretch sm:items-center">
+                  <div data-tour="quick-update-timer-notes" className="flex flex-col sm:flex-row gap-2 md:gap-2.5 items-stretch sm:items-center">
                     <TimeTracker
                       clientId={item.client_id}
                       projectId={item.project_id}
@@ -224,6 +224,7 @@ export function QuickUpdate() {
                     />
                     <Button
                       type="submit"
+                      data-tour="quick-update-save"
                       className="bg-[#0073ea] hover:bg-[#005bb5] w-full sm:w-auto"
                       disabled={
                         updating[

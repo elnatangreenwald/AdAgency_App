@@ -122,7 +122,7 @@ export function ClientAssignmentPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">
+      <h1 data-tour="client-assignment-header" className="text-2xl sm:text-3xl font-bold text-[#292f4c]">
         שיוך לקוחות לעובדים
       </h1>
 
@@ -139,7 +139,7 @@ export function ClientAssignmentPage() {
             <CardContent className="p-4 sm:p-6 pt-0">
               <form onSubmit={handleAssignClient} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div data-tour="client-assignment-client-select">
                     <Label>בחר לקוח:</Label>
                     <Select value={selectedClient} onValueChange={setSelectedClient}>
                       <SelectTrigger>
@@ -154,7 +154,7 @@ export function ClientAssignmentPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
+                  <div data-tour="client-assignment-users">
                     <Label>שייך לעובדים (ניתן לבחור כמה):</Label>
                     <div className="border rounded-lg p-4 max-h-[200px] overflow-y-auto space-y-2">
                       {users.map((user) => (
@@ -191,7 +191,7 @@ export function ClientAssignmentPage() {
                     )}
                   </div>
                 </div>
-                <Button type="submit" disabled={submitting}>
+                <Button data-tour="client-assignment-submit" type="submit" disabled={submitting}>
                   {submitting ? 'מבצע שיוך...' : 'בצע שיוך'}
                 </Button>
               </form>
@@ -201,7 +201,7 @@ export function ClientAssignmentPage() {
 
         {/* Current Assignments Overview */}
         <div className="lg:col-span-1">
-          <Card>
+          <Card data-tour="client-assignment-status">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="text-lg sm:text-xl">סטטוס שיוכים</CardTitle>
             </CardHeader>

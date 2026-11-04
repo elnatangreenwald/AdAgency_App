@@ -49,21 +49,21 @@ export function Approvals() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
+        <div data-tour="approvals-header">
           <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c] flex items-center gap-2">
             <FileCheck className="w-7 h-7 text-[#043841]" />
             אישור חומרים
           </h1>
           <p className="text-sm text-gray-500 mt-1">לקוחות עם חומרים לאישור. לכל לקוח עמוד שאפשר לשתף איתו.</p>
         </div>
-        <Button onClick={() => setAddOpen(true)} className="w-full md:w-auto">
+        <Button data-tour="approvals-new-request" onClick={() => setAddOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           בקשת אישור חדשה
         </Button>
       </div>
 
       {clients.length > 0 && (
-        <div className="relative max-w-sm">
+        <div data-tour="approvals-search" className="relative max-w-sm">
           <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לקוח" className="pr-9" />
         </div>
@@ -78,7 +78,7 @@ export function Approvals() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div data-tour="approvals-clients-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {visible.map((c) => (
             <Card
               key={c.client_id}

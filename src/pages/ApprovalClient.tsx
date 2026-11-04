@@ -108,7 +108,7 @@ export function ApprovalClient() {
       <Card>
         <CardContent className="p-5 space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
+            <div data-tour="approval-client-header" className="flex items-center gap-3">
               {client.logo_url && (
                 <img src={client.logo_url} alt={client.name} className="w-14 h-14 object-contain rounded-lg border border-gray-100" />
               )}
@@ -119,12 +119,12 @@ export function ApprovalClient() {
                 </p>
               </div>
             </div>
-            <Button onClick={() => setAddOpen(true)} className="w-full md:w-auto">
+            <Button data-tour="approval-client-new-request" onClick={() => setAddOpen(true)} className="w-full md:w-auto">
               <Plus className="w-4 h-4 ml-2" /> בקשת אישור חדשה
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <div data-tour="approval-client-portal-link" className="space-y-2">
             <Label>קישור לעמוד הלקוח (לשיתוף עם הלקוח)</Label>
             <div className="flex gap-2">
               <Input value={portalUrl} readOnly dir="ltr" className="text-xs" onFocus={(e) => e.target.select()} />
@@ -146,7 +146,7 @@ export function ApprovalClient() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div data-tour="approval-client-filters" className="flex flex-col sm:flex-row gap-3">
         <Select value={projectFilter} onValueChange={setProjectFilter}>
           <SelectTrigger className="sm:w-56">
             <SelectValue placeholder="כל הפרויקטים" />
@@ -178,7 +178,7 @@ export function ApprovalClient() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div data-tour="approval-client-items" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {visible.map((a) => (
             <Card
               key={a.id}

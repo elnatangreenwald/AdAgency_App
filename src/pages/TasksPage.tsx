@@ -247,7 +247,7 @@ export function TasksPage() {
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div data-tour="tasks-header">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] flex items-center gap-2">
             <CheckSquare className="w-7 h-7 text-[#3d817a]" />
             משימות
@@ -261,7 +261,7 @@ export function TasksPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           {isManagerOrAdmin && (
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+            <div data-tour="tasks-admin-mode" className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
               <Switch
                 id="admin-mode"
                 checked={adminMode}
@@ -273,7 +273,7 @@ export function TasksPage() {
             </div>
           )}
 
-          <div className="flex rounded-lg border border-slate-200 bg-white p-1">
+          <div data-tour="tasks-view-toggle" className="flex rounded-lg border border-slate-200 bg-white p-1">
             <Button
               type="button"
               variant={viewMode === 'board' ? 'default' : 'ghost'}
@@ -306,7 +306,7 @@ export function TasksPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm">
+      <div data-tour="tasks-stats" className="flex flex-wrap gap-3 text-sm">
         <div className="rounded-lg bg-white border border-slate-200 px-3 py-2">
           <span className="text-slate-500">פתוחות </span>
           <span className="font-semibold text-[#292f4c]">{stats.open}</span>
@@ -321,7 +321,7 @@ export function TasksPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div data-tour="tasks-filters" className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input

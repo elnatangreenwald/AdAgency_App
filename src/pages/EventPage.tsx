@@ -236,9 +236,9 @@ export function EventPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
+      <div data-tour="event-header" className="flex flex-col gap-4">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/events')}>
+          <Button data-tour="event-back-button" variant="ghost" size="sm" onClick={() => navigate('/events')}>
             <ArrowRight className="w-4 h-4" />
           </Button>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">
@@ -271,7 +271,7 @@ export function EventPage() {
         </div>
 
         {/* Progress Bar */}
-        <div className="flex items-center gap-3">
+        <div data-tour="event-progress" className="flex items-center gap-3">
           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-[#3d817a] transition-all"
@@ -285,7 +285,7 @@ export function EventPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div data-tour="event-tabs" className="flex gap-2 overflow-x-auto pb-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -304,7 +304,7 @@ export function EventPage() {
       </div>
 
       {/* Tab Content */}
-      <Card>
+      <Card data-tour="event-tab-content">
         <CardContent className="p-4 sm:p-6">
           {activeTab === 'details' && (
             <div className="space-y-4">
@@ -374,7 +374,7 @@ export function EventPage() {
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline" onClick={() => setIsEditing(true)}>
+                  <Button data-tour="event-edit-details" variant="outline" onClick={() => setIsEditing(true)}>
                     <Edit className="w-4 h-4 ml-1" />
                     ערוך פרטים
                   </Button>

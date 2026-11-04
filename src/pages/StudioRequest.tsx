@@ -243,7 +243,7 @@ export function StudioRequestPage() {
       </div>
 
       {/* Header */}
-      <Card>
+      <Card data-tour="studio-request-header">
         <CardContent className="p-5">
           <div className="flex flex-col md:flex-row justify-between items-start gap-3">
             <div className="flex-1">
@@ -287,7 +287,7 @@ export function StudioRequestPage() {
       </Card>
 
       {/* Actions: status + assign */}
-      <Card>
+      <Card data-tour="studio-request-manage">
         <CardContent className="p-5 space-y-4">
           <h2 className="font-bold text-[#292f4c]">ניהול הבקשה</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -303,7 +303,7 @@ export function StudioRequestPage() {
               </Select>
             </div>
             {canManage && (
-              <div className="space-y-2">
+              <div data-tour="studio-request-assign" className="space-y-2">
                 <Label>הקצאת מעצבת</Label>
                 <div className="flex gap-2">
                   <Select value={selectedDesigner} onValueChange={setSelectedDesigner}>
@@ -324,7 +324,7 @@ export function StudioRequestPage() {
 
       {/* Files */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+        <Card data-tour="studio-request-source-files">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-[#292f4c]">חומר גלם</h2>
@@ -342,7 +342,7 @@ export function StudioRequestPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="studio-request-deliverables">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-[#292f4c]">קבצים מוגמרים</h2>
@@ -362,7 +362,7 @@ export function StudioRequestPage() {
       </div>
 
       {/* Comments */}
-      <Card>
+      <Card data-tour="studio-request-comments">
         <CardContent className="p-5">
           <h2 className="font-bold text-[#292f4c] mb-3">הערות ותקשורת</h2>
           <div className="space-y-3 mb-4">

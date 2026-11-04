@@ -136,8 +136,8 @@ export function AllClients() {
     <div className="space-y-6 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c] m-0">לוח לקוחות המשרד</h1>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+        <h1 data-tour="all-clients-title" className="text-2xl sm:text-3xl font-bold text-[#292f4c] m-0">לוח לקוחות המשרד</h1>
+        <div data-tour="all-clients-toolbar" className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
@@ -146,6 +146,7 @@ export function AllClients() {
           />
           {isAdminOrManager && (
             <Button
+              data-tour="all-clients-add-client"
               onClick={() => setAddClientOpen(true)}
               className="bg-black hover:bg-gray-800 whitespace-nowrap w-full sm:w-auto"
             >
@@ -161,12 +162,13 @@ export function AllClients() {
         // Filtered by user
         filteredClients.length > 0 ? (
           <div>
-            <div className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2 sm:pb-2.5 mb-4 sm:mb-5 text-xl sm:text-2xl font-bold">
+            <div data-tour="all-clients-group-title" className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2 sm:pb-2.5 mb-4 sm:mb-5 text-xl sm:text-2xl font-bold">
               {users[filterUser]?.name || filterUser}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+            <div data-tour="all-clients-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
               {filteredClients.map((client) => (
                 <Link
+                  data-tour="all-clients-client-card"
                   key={client.id}
                   to={`/client/${client.id}`}
                   className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group text-sm sm:text-base"
@@ -190,12 +192,13 @@ export function AllClients() {
           <div className="space-y-6 sm:space-y-8">
             {Object.entries(filteredClientsByUser).map(([userId, userClients]) => (
               <div key={userId}>
-                <div className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2 sm:pb-2.5 mb-4 sm:mb-5 text-xl sm:text-2xl font-bold">
+                <div data-tour="all-clients-group-title" className="border-b-4 border-[#3d817a] text-[#3d817a] pb-2 sm:pb-2.5 mb-4 sm:mb-5 text-xl sm:text-2xl font-bold">
                   {users[userId]?.name || userId}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+                <div data-tour="all-clients-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
                   {userClients.map((client) => (
                     <Link
+                      data-tour="all-clients-client-card"
                       key={client.id}
                       to={`/client/${client.id}`}
                       className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl text-center font-bold text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95 border border-gray-200 hover:border-[#0073ea] relative overflow-hidden group text-sm sm:text-base"

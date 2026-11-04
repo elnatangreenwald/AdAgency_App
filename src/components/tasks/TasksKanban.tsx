@@ -139,7 +139,7 @@ export function TasksKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+      <div data-tour="tasks-board" className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
         {BOARD_STATUSES.map((status) => (
           <Column
             key={status}

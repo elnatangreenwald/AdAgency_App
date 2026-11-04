@@ -24,7 +24,7 @@ export function ClientsGrid({ clients, title = 'הלקוחות שלך:' }: Clien
     <div className="space-y-4 sm:space-y-5">
       <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
         <h3 className="text-lg sm:text-xl font-bold">{title}</h3>
-        <div className="relative w-full sm:w-[300px]">
+        <div data-tour="dashboard-clients-search" className="relative w-full sm:w-[300px]">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             type="text"
@@ -35,7 +35,7 @@ export function ClientsGrid({ clients, title = 'הלקוחות שלך:' }: Clien
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
+      <div data-tour="dashboard-clients-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5">
         {filteredClients.map((client) => (
           <Link
             key={client.id}

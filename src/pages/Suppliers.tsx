@@ -177,16 +177,16 @@ export function Suppliers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div data-tour="suppliers-header" className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">ספקים</h1>
-        <Button onClick={() => setAddSupplierOpen(true)} className="w-full md:w-auto">
+        <Button data-tour="suppliers-new-button" onClick={() => setAddSupplierOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           ספק חדש
         </Button>
       </div>
 
       {categories.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-tour="suppliers-category-filter" className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-gray-600 ml-1">סינון לפי קטגוריה:</span>
           {[{ key: ALL_CATEGORIES, label: 'הכל', count: suppliers.length }, ...categories].map(
             (cat) => {
@@ -214,13 +214,13 @@ export function Suppliers() {
       )}
 
       {filteredSuppliers.length === 0 ? (
-        <Card>
+        <Card data-tour="suppliers-list">
           <CardContent className="p-8 text-center text-gray-500">
             אין ספקים להצגה
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+        <div data-tour="suppliers-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
           {filteredSuppliers.map((supplier) => {
             const whatsappNumber = supplier.phone ? toWhatsAppNumber(supplier.phone) : null;
             return (
@@ -232,6 +232,7 @@ export function Suppliers() {
                   </h3>
                   {whatsappNumber && (
                     <a
+                      data-tour="suppliers-whatsapp"
                       href={`https://wa.me/${whatsappNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"

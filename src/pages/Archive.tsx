@@ -63,7 +63,7 @@ export function Archive() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+      <Card data-tour="archive-header" className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
         <CardContent className="p-4 md:p-6">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-600 mb-2">ארכיון לקוחות</h1>
           <p className="text-gray-500 text-xs md:text-sm">
@@ -73,7 +73,7 @@ export function Archive() {
       </Card>
 
       {clients.length === 0 ? (
-        <Card>
+        <Card data-tour="archive-empty">
           <CardContent className="p-8 md:p-16 text-center">
             <ArchiveIcon className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 text-gray-300" />
             <h2 className="text-lg md:text-xl font-semibold text-gray-600 mb-2">
@@ -85,10 +85,11 @@ export function Archive() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
+        <div data-tour="archive-list" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
           {clients.map((client) => (
             <Link
               key={client.id}
+              data-tour="archive-client-card"
               to={`/client/${client.id}`}
               className="bg-white p-4 md:p-6 rounded-xl md:rounded-2xl text-center font-bold text-sm md:text-base text-gray-800 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 border border-gray-200 hover:border-gray-400 relative overflow-hidden group opacity-80 hover:opacity-100"
             >

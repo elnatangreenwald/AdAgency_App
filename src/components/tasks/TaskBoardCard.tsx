@@ -37,6 +37,7 @@ function TaskCardVisual({
   return (
     <button
       type="button"
+      data-tour="tasks-board-card"
       ref={innerRef as React.Ref<HTMLButtonElement>}
       style={{
         ...style,

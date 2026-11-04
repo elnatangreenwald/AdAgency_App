@@ -402,7 +402,7 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6 sm:space-y-10">
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">
+      <h1 data-tour="dashboard-header" className="text-2xl sm:text-3xl font-bold text-[#292f4c]">
         שלום, משתמש
       </h1>
 

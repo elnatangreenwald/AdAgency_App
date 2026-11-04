@@ -335,7 +335,7 @@ export function ApprovalDetail() {
       <Card>
         <CardContent className="p-5 space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start gap-3">
-            <div className="flex-1 min-w-0">
+            <div data-tour="approval-detail-header" className="flex-1 min-w-0">
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${approvalStatusColor(approval.status)}`}>
                 {approval.status}
               </span>
@@ -377,7 +377,7 @@ export function ApprovalDetail() {
             <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-lg p-3">{approval.description}</div>
           )}
 
-          <div className="space-y-2">
+          <div data-tour="approval-detail-client-link" className="space-y-2">
             <Label>קישור ללקוח</Label>
             <div className="flex gap-2">
               <Input value={approval.public_url || ''} readOnly dir="ltr" className="text-xs" onFocus={(e) => e.target.select()} />
@@ -389,7 +389,7 @@ export function ApprovalDetail() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour="approval-detail-status">
         <CardContent className="p-5 space-y-3">
           <h2 className="font-bold text-[#292f4c]">סטטוס</h2>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -411,7 +411,7 @@ export function ApprovalDetail() {
             </p>
           )}
           {approval.status === ST_DRAFT && hasFiles && isEditable && (
-            <Button type="button" size="sm" onClick={() => changeStatus(ST_WAITING)} disabled={busy || uploading}>
+            <Button data-tour="approval-detail-send-to-client" type="button" size="sm" onClick={() => changeStatus(ST_WAITING)} disabled={busy || uploading}>
               <Send className="w-4 h-4 ml-1" /> שליחה ללקוח
             </Button>
           )}
@@ -419,11 +419,11 @@ export function ApprovalDetail() {
       </Card>
 
       {current && (
-        <Card>
+        <Card data-tour="approval-detail-current-version">
           <CardContent className="p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="font-bold text-[#292f4c]">גרסה נוכחית: {current.number}</h2>
-              <div className="flex flex-wrap gap-2">
+              <div data-tour="approval-detail-version-actions" className="flex flex-wrap gap-2">
                 {isEditable && (
                   <label className="inline-flex items-center gap-1 cursor-pointer text-sm px-3 h-9 rounded-md border border-gray-200 hover:bg-gray-50">
                     <Upload className="w-4 h-4" /> העלאת קבצים
@@ -460,7 +460,7 @@ export function ApprovalDetail() {
       )}
 
       {versions.length > 1 && (
-        <Card>
+        <Card data-tour="approval-detail-previous-versions">
           <CardContent className="p-5 space-y-4">
             <h2 className="font-bold text-[#292f4c]">גרסאות קודמות</h2>
             {versions.slice(0, -1).reverse().map((v) => (

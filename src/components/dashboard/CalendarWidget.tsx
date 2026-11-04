@@ -76,7 +76,7 @@ export function CalendarWidget({ tasks, onTaskClick }: CalendarWidgetProps) {
   return (
     <div className="space-y-4 sm:space-y-5">
       <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">לוח שנה - משימות</h2>
-      <Card>
+      <Card data-tour="dashboard-calendar">
         <CardContent className="p-2 sm:p-6 overflow-x-auto">
           <FullCalendar
             ref={calendarRef}

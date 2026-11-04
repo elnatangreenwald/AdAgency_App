@@ -167,21 +167,21 @@ export function Quotes() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">הצעות מחיר</h1>
-        <Button onClick={() => setAddQuoteOpen(true)} className="w-full md:w-auto">
+        <h1 data-tour="quotes-header" className="text-2xl md:text-3xl font-bold text-[#292f4c]">הצעות מחיר</h1>
+        <Button data-tour="quotes-new-button" onClick={() => setAddQuoteOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           הצעה חדשה
         </Button>
       </div>
 
       {quotes.length === 0 ? (
-        <Card>
+        <Card data-tour="quotes-list">
           <CardContent className="p-8 text-center text-gray-500">
             אין הצעות מחיר להצגה
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div data-tour="quotes-list" className="space-y-4">
           {quotes.map((quote) => (
             <Card key={quote.id} className="hover:shadow-md transition-all">
               <CardContent className="p-4 md:p-5">
@@ -200,6 +200,7 @@ export function Quotes() {
                     </div>
                   </div>
                   <span
+                    data-tour="quotes-status"
                     className={`px-3 py-1 rounded-full text-xs md:text-sm font-bold ${getStatusColor(
                       quote.status
                     )}`}

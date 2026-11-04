@@ -350,7 +350,7 @@ export function NetworkPasswordsPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-br from-[#043841] to-[#3d817a] border-0 text-white">
+      <Card data-tour="passwords-header" className="bg-gradient-to-br from-[#043841] to-[#3d817a] border-0 text-white">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -367,6 +367,7 @@ export function NetworkPasswordsPage() {
             {admin && (
               <div className="flex flex-wrap gap-2">
                 <Button
+                  data-tour="passwords-reveal-all"
                   variant="secondary"
                   onClick={() => setRevealAll((v) => !v)}
                   className="bg-white/15 text-white hover:bg-white/25 border-0"
@@ -374,7 +375,7 @@ export function NetworkPasswordsPage() {
                   {revealAll ? <EyeOff className="w-4 h-4 ml-2" /> : <Eye className="w-4 h-4 ml-2" />}
                   {revealAll ? 'הסתר הכל' : 'הצג הכל'}
                 </Button>
-                <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
+                <Button data-tour="passwords-add" onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
                   <Plus className="w-4 h-4 ml-2" />
                   רשומה חדשה
                 </Button>
@@ -385,7 +386,7 @@ export function NetworkPasswordsPage() {
       </Card>
 
       {!admin && (
-        <Card className="max-w-xl">
+        <Card data-tour="passwords-submit-form" className="max-w-xl">
           <CardContent className="p-4 md:p-6">
             <h2 className="text-lg font-semibold text-[#043841] mb-4">הוספת סיסמה</h2>
             <form onSubmit={handleSave} className="space-y-4">
@@ -406,7 +407,7 @@ export function NetworkPasswordsPage() {
 
       {admin && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div data-tour="passwords-filters" className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="relative md:col-span-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
@@ -467,7 +468,7 @@ export function NetworkPasswordsPage() {
                   {clientEntries.map((entry) => {
                     const shown = revealAll || revealed[entry.id];
                     return (
-                      <Card key={entry.id} className="border-gray-200 shadow-sm">
+                      <Card key={entry.id} data-tour="passwords-entry-card" className="border-gray-200 shadow-sm">
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <span

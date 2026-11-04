@@ -161,22 +161,22 @@ export function Events() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+      <div data-tour="events-header" className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">אירועים</h1>
-        <Button onClick={() => setAddEventOpen(true)} className="w-full sm:w-auto">
+        <Button data-tour="events-new-button" onClick={() => setAddEventOpen(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           אירוע חדש
         </Button>
       </div>
 
       {events.length === 0 ? (
-        <Card>
+        <Card data-tour="events-list">
           <CardContent className="p-6 sm:p-8 text-center text-gray-500">
             אין אירועים להצגה
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3 sm:space-y-4">
+        <div data-tour="events-list" className="space-y-3 sm:space-y-4">
           {events.map((event) => (
             <Card
               key={event.id}
@@ -203,6 +203,7 @@ export function Events() {
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
                           <Link
+                            data-tour="events-client-link"
                             to={`/client/${event.client_id}`}
                             className="text-[#0073ea] hover:underline"
                           >
@@ -213,6 +214,7 @@ export function Events() {
                     </div>
                   </div>
                   <span
+                    data-tour="events-type-badge"
                     className={`px-3 py-1 rounded-full text-xs sm:text-sm font-bold self-start ${getTypeColor(
                       event.type
                     )}`}
@@ -222,6 +224,7 @@ export function Events() {
                 </div>
                 <div className="flex gap-2">
                   <Button
+                    data-tour="events-details-button"
                     variant="outline"
                     size="sm"
                     asChild

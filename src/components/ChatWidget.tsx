@@ -224,6 +224,7 @@ export default function ChatWidget() {
         onClick={openChat}
         className="fixed bottom-5 left-5 w-[60px] h-[60px] bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 z-50 border-[3px] border-[#3d817a] flex items-center justify-center p-2 overflow-hidden"
         title="צ'אט פנימי"
+        data-tour="chat-widget"
       >
         <img 
           src="/static/Vatkin_Logo.jpg" 

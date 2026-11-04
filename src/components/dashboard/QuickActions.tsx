@@ -40,7 +40,7 @@ export function QuickActions({ onAddTask, onAddCharge }: QuickActionsProps) {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div data-tour="dashboard-quick-actions" className="space-y-4 sm:space-y-5">
       <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">פעולות מהירות</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 max-w-4xl">
         {actions.map((action) => {
@@ -48,6 +48,7 @@ export function QuickActions({ onAddTask, onAddCharge }: QuickActionsProps) {
           return (
             <Card
               key={action.id}
+              data-tour={`dashboard-quick-${action.id}`}
               className={`${action.color} text-white cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 active:scale-95`}
               onClick={action.onClick}
             >

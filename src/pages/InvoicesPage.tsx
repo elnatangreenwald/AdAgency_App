@@ -393,7 +393,7 @@ export function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-br from-[#043841] to-[#3d817a] border-0 text-white">
+      <Card data-tour="invoices-header" className="bg-gradient-to-br from-[#043841] to-[#3d817a] border-0 text-white">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -404,13 +404,13 @@ export function InvoicesPage() {
               <p className="text-white/80 text-sm">חשבוניות ספקים לתשלום, לפי חודש התשלום</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" asChild className="bg-white/15 text-white hover:bg-white/25 border-0">
+              <Button data-tour="invoices-export-excel" variant="secondary" asChild className="bg-white/15 text-white hover:bg-white/25 border-0">
                 <a href={exportUrl()}>
                   <Download className="w-4 h-4 ml-2" />
                   ייצוא לאקסל
                 </a>
               </Button>
-              <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
+              <Button data-tour="invoices-upload" onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
                 <Plus className="w-4 h-4 ml-2" />
                 העלאת חשבונית
               </Button>
@@ -419,7 +419,7 @@ export function InvoicesPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div data-tour="invoices-summary" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <SummaryCard label="סה״כ בחשבוניות פתוחות" value={formatMoney(summary.openTotal)} highlight />
         <SummaryCard label="חשבוניות פתוחות" value={String(summary.openCount)} />
         <SummaryCard label={`לתשלום ב${monthLabel(currentMonth)}`} value={formatMoney(summary.thisMonth)} />
@@ -430,7 +430,7 @@ export function InvoicesPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div data-tour="invoices-filters" className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input

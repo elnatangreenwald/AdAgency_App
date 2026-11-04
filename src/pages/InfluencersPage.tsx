@@ -291,7 +291,7 @@ export function InfluencersPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-to-br from-[#043841] to-[#3d817a] border-0 text-white">
+      <Card data-tour="influencers-header" className="bg-gradient-to-br from-[#043841] to-[#3d817a] border-0 text-white">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -303,7 +303,7 @@ export function InfluencersPage() {
                 ריכוז משפיענים להצעה ללקוחות · {influencers.length} במאגר
               </p>
             </div>
-            <Button onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
+            <Button data-tour="influencers-new-button" onClick={openCreate} className="bg-white text-[#043841] hover:bg-[#FEFAE0]">
               <Plus className="w-4 h-4 ml-2" />
               משפיען חדש
             </Button>
@@ -311,8 +311,8 @@ export function InfluencersPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div className="relative">
+      <div data-tour="influencers-filters" className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div data-tour="influencers-search" className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             value={search}
@@ -359,7 +359,7 @@ export function InfluencersPage() {
       </div>
 
       {selected.size > 0 && (
-        <div className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#3d817a]/30 bg-[#FEFAE0] px-4 py-3 shadow-sm">
+        <div data-tour="influencers-selection-bar" className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#3d817a]/30 bg-[#FEFAE0] px-4 py-3 shadow-sm">
           <span className="text-sm font-medium text-[#043841]">
             {selected.size} משפיענים נבחרו להצעה
           </span>
@@ -377,7 +377,7 @@ export function InfluencersPage() {
       )}
 
       {filtered.length === 0 ? (
-        <Card>
+        <Card data-tour="influencers-list">
           <CardContent>
             <EmptyState
               icon={Megaphone}
@@ -391,7 +391,7 @@ export function InfluencersPage() {
       ) : (
         <>
           <p className="text-sm text-gray-500">{filtered.length} תוצאות</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div data-tour="influencers-list" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {filtered.map((inf) => (
               <InfluencerCard
                 key={inf.id}
@@ -465,6 +465,7 @@ function InfluencerCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-3 min-w-0">
             <Checkbox
+              data-tour="influencers-select-checkbox"
               checked={selected}
               onCheckedChange={onToggle}
               className="mt-1"

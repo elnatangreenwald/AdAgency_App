@@ -348,10 +348,10 @@ export function ManageUsers() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <h1 className="text-2xl sm:text-3xl font-bold text-[#292f4c]">ניהול צוות והקצאות</h1>
+      <h1 data-tour="users-header" className="text-2xl sm:text-3xl font-bold text-[#292f4c]">ניהול צוות והקצאות</h1>
 
       {/* Add User */}
-      <Card>
+      <Card data-tour="users-add-form">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-lg sm:text-xl">+ הוספת עובד חדש</CardTitle>
         </CardHeader>
@@ -436,7 +436,7 @@ export function ManageUsers() {
       </Card>
 
       {/* Users List */}
-      <Card>
+      <Card data-tour="users-list">
         <CardHeader>
           <CardTitle>רשימת עובדים</CardTitle>
         </CardHeader>
@@ -542,7 +542,7 @@ export function ManageUsers() {
                       )}
                     </td>
                     <td className="p-3 text-center">
-                      <div className="flex gap-2 justify-center">
+                      <div data-tour="users-row-actions" className="flex gap-2 justify-center">
                         <Button
                           size="sm"
                           variant="outline"
@@ -580,7 +580,7 @@ export function ManageUsers() {
       </Card>
 
       {/* Permissions */}
-      <Card>
+      <Card data-tour="users-permissions">
         <CardHeader>
           <CardTitle>🔐 הרשאות דפים</CardTitle>
         </CardHeader>

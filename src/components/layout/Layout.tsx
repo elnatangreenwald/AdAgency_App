@@ -7,6 +7,13 @@ import ChatWidget from '@/components/ChatWidget';
 import { TimeTrackingIndicator } from '@/components/dashboard/TimeTrackingIndicator';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Menu, X } from 'lucide-react';
+import {
+  LEARNING_MODE_AVAILABLE,
+  LearningModeProvider,
+  LearningModeButton,
+  TourOverlay,
+  Hotspots,
+} from '@/components/learning';
 
 export function Layout() {
   const { user, loading } = useAuth();
@@ -57,12 +64,14 @@ export function Layout() {
   }
 
   return (
+    <LearningModeProvider>
     <div className="min-h-screen bg-[#fafafa] rtl" dir="rtl">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 right-0 left-0 h-16 bg-[#043841] z-[1001] flex items-center justify-between px-4 shadow-lg">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
+          data-tour="mobile-menu"
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -71,11 +80,13 @@ export function Layout() {
           alt="Vatkin Logo" 
           className="h-10 rounded-lg bg-white p-1"
         />
-        <NotificationBell />
+        <div data-tour="notifications">
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Desktop Notification Bell */}
-      <div className="hidden lg:block fixed top-4 left-4 z-[1001]">
+      <div className="hidden lg:block fixed top-4 left-4 z-[1001]" data-tour="notifications">
         <div className="bg-[#043841] rounded-full shadow-lg">
           <NotificationBell />
         </div>
@@ -106,13 +117,24 @@ export function Layout() {
       <main className="min-h-screen pt-16 lg:pt-0 lg:pr-[260px]">
         <div className="p-4 sm:p-6 lg:p-10">
           <div className="mb-4">
-            <TimeTrackingIndicator />
+            <div className="inline-block" data-tour="time-tracker">
+              <TimeTrackingIndicator />
+            </div>
           </div>
           <Outlet />
         </div>
       </main>
 
       <ChatWidget />
+
+      {LEARNING_MODE_AVAILABLE && (
+        <>
+          <LearningModeButton />
+          <Hotspots />
+          <TourOverlay />
+        </>
+      )}
     </div>
+    </LearningModeProvider>
   );
 }

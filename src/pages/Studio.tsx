@@ -187,14 +187,14 @@ export function Studio() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
+        <div data-tour="studio-header">
           <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c] flex items-center gap-2">
             <Palette className="w-7 h-7 text-[#043841]" />
             סטודיו
           </h1>
           <p className="text-sm text-gray-500 mt-1">ניהול בקשות העיצוב של המשרד</p>
         </div>
-        <Button onClick={() => setAddOpen(true)} className="w-full md:w-auto">
+        <Button data-tour="studio-new-request" onClick={() => setAddOpen(true)} className="w-full md:w-auto">
           <Plus className="w-4 h-4 ml-2" />
           בקשת עיצוב חדשה
         </Button>
@@ -207,7 +207,7 @@ export function Studio() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div data-tour="studio-board" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {columns.map((col) => (
             <div key={col.status} className="bg-gray-50 rounded-xl p-3 min-h-[120px]">
               <div className="flex items-center justify-between mb-3 px-1">
@@ -219,6 +219,7 @@ export function Studio() {
               <div className="space-y-3">
                 {col.items.map((req) => (
                   <Card
+                    data-tour="studio-request-card"
                     key={req.id}
                     className="cursor-pointer hover:shadow-md transition-all"
                     onClick={() => navigate(`/studio/${req.id}`)}

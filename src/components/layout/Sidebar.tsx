@@ -115,14 +115,14 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
       <div className="lg:hidden h-16" />
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-0 py-4">
+      <nav className="flex-1 px-0 py-4" data-tour="sidebar-nav">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
           
           if (item.hasDropdown && item.dropdownItems) {
             return (
-              <div key={item.path} className="nav-item">
+              <div key={item.path} className="nav-item" data-tour="sidebar-clients">
                 <Link
                   to={item.path}
                   onClick={handleNavClick}

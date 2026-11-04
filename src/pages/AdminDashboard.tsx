@@ -90,10 +90,10 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-[#292f4c]">דוח מנהלים</h1>
+      <h1 data-tour="admin-dashboard-header" className="text-2xl md:text-3xl font-bold text-[#292f4c]">דוח מנהלים</h1>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+      <div data-tour="admin-dashboard-summary" className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
         <Card>
           <CardHeader className="p-3 md:p-6 pb-2">
             <CardTitle className="text-sm md:text-lg">לקוחות פעילים</CardTitle>
@@ -116,7 +116,7 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="admin-dashboard-revenue">
           <CardHeader className="p-3 md:p-6 pb-2">
             <CardTitle className="text-sm md:text-lg">הכנסות חודשיות</CardTitle>
           </CardHeader>
@@ -140,7 +140,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Task Statistics by User */}
-      <Card>
+      <Card data-tour="admin-dashboard-workload">
         <CardHeader className="p-4 md:p-6">
           <CardTitle className="text-base md:text-lg">פילוח משימות לפי עובד</CardTitle>
         </CardHeader>
@@ -186,7 +186,7 @@ export function AdminDashboard() {
       </Card>
 
       {/* Calendar */}
-      <Card>
+      <Card data-tour="admin-dashboard-calendar">
         <CardHeader className="p-4 md:p-6">
           <CardTitle className="text-base md:text-lg">לוח שנה - משימות</CardTitle>
         </CardHeader>
