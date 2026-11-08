@@ -7246,6 +7246,7 @@ def event_page(event_id):
 
 @app.route('/add_event', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def add_event():
     """יצירת אירוע חדש"""
     try:
@@ -7290,6 +7291,7 @@ def add_event():
 
 @app.route('/update_event/<event_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def update_event(event_id):
     """עדכון פרטי אירוע"""
     try:
@@ -7297,6 +7299,7 @@ def update_event(event_id):
         for event in events_list:
             if event['id'] == event_id:
                 event['name'] = request.form.get('name', event.get('name', ''))
+                event['title'] = event['name']
                 event['client_id'] = request.form.get('client_id', event.get('client_id', ''))
                 event['date'] = request.form.get('date', event.get('date', ''))
                 event['location'] = request.form.get('location', event.get('location', ''))
@@ -7311,23 +7314,28 @@ def update_event(event_id):
 
 @app.route('/update_event_checklist/<event_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def update_event_checklist(event_id):
     """עדכון צ'ק-ליסט של אירוע"""
     try:
         events_list = load_events()
         for event in events_list:
             if event['id'] == event_id:
-                checklist_data = request.get_json()
+                checklist_data = request.get_json(silent=True)
+                if checklist_data is None and 'checklist' in request.form:
+                    checklist_data = {'checklist': json.loads(request.form['checklist'])}
                 if checklist_data and 'checklist' in checklist_data:
                     event['checklist'] = checklist_data['checklist']
                     save_events(events_list)
                     return jsonify({'success': True})
+                return jsonify({'success': False, 'error': 'צ\'ק-ליסט חסר'}), 400
         return jsonify({'success': False, 'error': 'אירוע לא נמצא'}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/add_checklist_item/<event_id>', methods=['POST'])
 @login_required
+@csrf.exempt  # פטור מ-CSRF כי זה API call מ-JavaScript
 def add_checklist_item(event_id):
     """הוספת פריט חדש לצ'ק-ליסט של אירוע ולתבנית הכללית"""
     try:
