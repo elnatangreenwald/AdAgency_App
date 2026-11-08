@@ -87,7 +87,7 @@ interface Contact {
 interface Document {
   id: string;
   display_name: string;
-  file_path: string;
+  file_path?: string;
   upload_date: string;
 }
 
@@ -133,6 +133,7 @@ export function ClientPage() {
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [activityModalOpen, setActivityModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<{
     clientId: string;
     projectId: string;
@@ -669,6 +670,8 @@ export function ClientPage() {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
+    if (uploadingDocument) return;
+    setUploadingDocument(true);
 
     try {
       const response = await apiFormClient.post(`/upload_document/${clientId}`, formData);
@@ -688,6 +691,8 @@ export function ClientPage() {
         description: error.response?.data?.error || 'שגיאה בהעלאת המסמך',
         variant: 'destructive',
       });
+    } finally {
+      setUploadingDocument(false);
     }
   };
 
@@ -1595,9 +1600,9 @@ export function ClientPage() {
               required
               className="flex-1"
             />
-            <Button type="submit" className="bg-black hover:bg-gray-800">
+            <Button type="submit" disabled={uploadingDocument} className="bg-black hover:bg-gray-800">
               <Upload className="w-4 h-4 ml-2" />
-              העלה מסמך
+              {uploadingDocument ? 'מעלה...' : 'העלה מסמך'}
             </Button>
           </form>
 
@@ -1608,7 +1613,9 @@ export function ClientPage() {
                   <CardContent className="p-4 flex justify-between items-center">
                     <div className="flex-1">
                       <a
-                        href={`/download_doc/${doc.file_path}`}
+                        href={`/download_doc/${clientId}/${doc.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-[#0073ea] font-bold hover:underline block mb-1"
                       >
                         📄 {doc.display_name}

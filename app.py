@@ -1753,7 +1753,11 @@ def _apply_invoice_fields(invoice, data):
 
 
 def _store_invoice_file(invoice_id, upload):
-    """שומר את קובץ החשבונית ב-DB (פרודקשן) או בדיסק המקומי, ומחזיר metadata."""
+    return _store_server_file(f"{INVOICE_LOCAL_PREFIX}{invoice_id}/", upload)
+
+
+def _store_server_file(local_dir, upload):
+    """שומר קובץ ב-DB (פרודקשן) או בדיסק המקומי תחת local_dir, ומחזיר metadata."""
     content_type = upload.mimetype or 'application/octet-stream'
     if USE_DATABASE:
         data = upload.read()
@@ -1765,7 +1769,7 @@ def _store_invoice_file(invoice_id, upload):
         size = len(data)
     else:
         safe_name = secure_filename(upload.filename) or 'file'
-        object_key = LOCAL_KEY_PREFIX + f"{INVOICE_LOCAL_PREFIX}{invoice_id}/{uuid.uuid4().hex[:8]}_{safe_name}"
+        object_key = LOCAL_KEY_PREFIX + f"{local_dir}{uuid.uuid4().hex[:8]}_{safe_name}"
         path = _local_file_path(object_key)
         if not path:
             raise ValueError('שם קובץ לא תקין')
@@ -5288,64 +5292,74 @@ def delete_task(client_id, project_id, task_id):
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+CLIENT_DOCS_LOCAL_PREFIX = 'client_docs/'
+
+
 @app.route('/upload_document/<client_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def upload_document(client_id):
     try:
-        if 'document' not in request.files:
+        file = request.files.get('document')
+        doc_name = request.form.get('doc_name', '').strip()
+        if not file or not file.filename:
             return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
-        
-        file = request.files['document']
-        doc_name = request.form.get('doc_name', '')  # שם המסמך האופציונלי מהטופס
-        
-        if not file or file.filename == '':
-            return jsonify({'success': False, 'error': 'לא נבחר קובץ'}), 400
-        
-        # שמירת שם הקובץ המקורי להצגה
-        original_filename = file.filename
-        
-        # יצירת שם קובץ בטוח - UUID + סיומת בלבד (נמנע מבעיות עם שמות בעברית)
-        file_ext = os.path.splitext(original_filename)[1].lower() if '.' in original_filename else ''
-        filename = f"{uuid.uuid4().hex}{file_ext}"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
-        # וידוא שהתיקייה קיימת
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        
-        # שמירת הקובץ
-        file.save(filepath)
-        
-        # עדכון הנתונים ב-JSON
-        data = load_data()
-        client_found = False
-        for c in data:
-            if c['id'] == client_id:
-                client_found = True
-                # וודא שקיימת רשימת מסמכים
-                if 'documents' not in c:
-                    c['documents'] = []
-                
-                new_doc = {
-                    'id': str(uuid.uuid4()),
-                    'display_name': doc_name if doc_name else original_filename,
-                    'file_path': filename,
-                    'upload_date': datetime.now().strftime("%d/%m/%y %H:%M")
-                }
-                c['documents'].append(new_doc)
-                save_client(c)
-                print(f"Document saved: {filename} for client {client_id}")  # Debug
-                return jsonify({'success': True, 'document': new_doc}), 200
-        
-        if not client_found:
+
+        client = next((c for c in load_data() if c.get('id') == client_id), None)
+        if not client:
             return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
-        
-        return jsonify({'success': False, 'error': 'שגיאה לא צפויה'}), 500
-    
+
+        try:
+            stored = _store_server_file(f"{CLIENT_DOCS_LOCAL_PREFIX}{client_id}/", file)
+        except ValueError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+
+        new_doc = {
+            'id': str(uuid.uuid4()),
+            'display_name': doc_name or file.filename,
+            'file': stored,
+            'upload_date': datetime.now().strftime("%d/%m/%y %H:%M"),
+            'uploaded_by': current_user.id,
+        }
+        client.setdefault('documents', []).append(new_doc)
+        save_client(client)
+        return jsonify({'success': True, 'document': new_doc}), 200
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': f'שגיאה: {str(e)}'}), 500
+
+
+def _legacy_client_doc_path(client_id, doc):
+    """נתיב בדיסק למסמך שהועלה במנגנון הישן (static/client_docs או static/documents/<client_id>)."""
+    name = doc.get('file_path') or doc.get('filename') or ''
+    if not name or os.path.basename(name) != name:
+        return None
+    for folder in (app.config['UPLOAD_FOLDER'], os.path.join(DOCUMENTS_FOLDER, client_id)):
+        path = os.path.join(folder, name)
+        if os.path.exists(path):
+            return path
+    return None
+
+
+@app.route('/download_doc/<client_id>/<doc_id>')
+@login_required
+def download_client_document(client_id, doc_id):
+    inline = request.args.get('download') != '1'
+    try:
+        client = next((c for c in load_data() if c.get('id') == client_id), None)
+        doc = next((d for d in (client or {}).get('documents', []) if str(d.get('id')) == str(doc_id)), None)
+        if not doc:
+            return _missing_file_response(False)
+        if doc.get('file'):
+            return _serve_approval_file(doc['file'], inline=inline)
+        path = _legacy_client_doc_path(client_id, doc)
+        if not path:
+            return _missing_file_response(False)
+        return send_file(path, as_attachment=not inline, download_name=doc.get('display_name') or os.path.basename(path))
+    except Exception as e:
+        print(f"Error in download_client_document: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/add_activity/<client_id>', methods=['POST'])
 @login_required
@@ -5487,64 +5501,31 @@ def add_client():
 
 @app.route('/delete_document/<client_id>/<doc_id>', methods=['POST'])
 @login_required
+@csrf.exempt
 def delete_document(client_id, doc_id):
     try:
-        print(f"DEBUG: delete_document called with client_id={client_id}, doc_id={doc_id}")
-        data = load_data()
-        for c in data:
-            if c['id'] == client_id:
-                documents = c.get('documents', [])
-                print(f"DEBUG: Found client, documents count: {len(documents)}")
-                print(f"DEBUG: Looking for doc_id: {doc_id} (type: {type(doc_id)})")
-                
-                # מצא את המסמך - השוואה כפי string
-                doc_to_remove = None
-                for doc in documents:
-                    doc_id_str = str(doc.get('id', ''))
-                    print(f"DEBUG: Comparing doc id: {doc_id_str} (type: {type(doc_id_str)}) with {doc_id}")
-                    if doc_id_str == str(doc_id):
-                        doc_to_remove = doc
-                        break
-                
-                if doc_to_remove:
-                    print(f"DEBUG: Found document to delete: {doc_to_remove}")
-                    # מחיקת הקובץ הפיזי - תמיכה גם במבנה הישן וגם החדש
-                    file_path = doc_to_remove.get('file_path') or doc_to_remove.get('filename', '')
-                    print(f"DEBUG: File path: {file_path}")
-                    
-                    if file_path:
-                        # נסה את הנתיב החדש (UPLOAD_FOLDER)
-                        filepath_new = os.path.join(app.config['UPLOAD_FOLDER'], file_path)
-                        print(f"DEBUG: Trying new path: {filepath_new}")
-                        if os.path.exists(filepath_new):
-                            os.remove(filepath_new)
-                            print(f"DEBUG: File deleted from new path")
-                        else:
-                            # נסה את הנתיב הישן (DOCUMENTS_FOLDER/client_id)
-                            filepath_old = os.path.join(DOCUMENTS_FOLDER, client_id, file_path)
-                            print(f"DEBUG: Trying old path: {filepath_old}")
-                            if os.path.exists(filepath_old):
-                                os.remove(filepath_old)
-                                print(f"DEBUG: File deleted from old path")
-                            else:
-                                print(f"DEBUG: Warning: File not found in either path")
-                    
-                    # מחיקת הרשומה מהנתונים
-                    documents.remove(doc_to_remove)
-                    c['documents'] = documents
-                    save_client(c)
-                    print(f"DEBUG: Document removed from database, returning success")
-                    return jsonify({'status': 'success', 'message': 'המסמך נמחק בהצלחה'})
-                else:
-                    print(f"DEBUG: Document not found in list")
-                    return "מסמך לא נמצא", 404
-        print(f"DEBUG: Client not found")
-        return "לקוח לא נמצא", 404
+        client = next((c for c in load_data() if c.get('id') == client_id), None)
+        if not client:
+            return jsonify({'success': False, 'error': 'לקוח לא נמצא'}), 404
+        documents = client.get('documents', [])
+        doc = next((d for d in documents if str(d.get('id')) == str(doc_id)), None)
+        if not doc:
+            return jsonify({'success': False, 'error': 'מסמך לא נמצא'}), 404
+
+        if doc.get('file'):
+            _delete_approval_file(doc['file'])
+        else:
+            path = _legacy_client_doc_path(client_id, doc)
+            if path:
+                os.remove(path)
+
+        client['documents'] = [d for d in documents if d is not doc]
+        save_client(client)
+        return jsonify({'success': True, 'message': 'המסמך נמחק בהצלחה'})
     except Exception as e:
         import traceback
-        error_msg = f"שגיאה: {str(e)}\n{traceback.format_exc()}"
-        print(f"DEBUG: Exception in delete_document: {error_msg}")
-        return error_msg, 500
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'שגיאה: {str(e)}'}), 500
 
 @app.route('/download_doc/<filename>')
 @login_required
