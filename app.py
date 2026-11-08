@@ -9238,6 +9238,20 @@ def _drop_stale_active_sessions(time_data):
         save_time_tracking(time_data)
 
 
+def _time_entry_project_title(item, project):
+    """כותרת פרויקט למדידה; ריק אם המדידה נעשתה ללקוח בלבד"""
+    if not item.get('project_id'):
+        return ''
+    return project.get('title', 'לא ידוע') if project else 'לא ידוע'
+
+
+def _time_entry_task_title(item, task):
+    """כותרת משימה למדידה; ריק אם המדידה נעשתה בלי משימה"""
+    if not item.get('task_id'):
+        return ''
+    return task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+
+
 def _enrich_time_tracking_session(session, clients_data=None):
     """מוסיף ל-session שמות לקוח/פרויקט/משימה ו-elapsed_seconds (לפי start_time).
     
@@ -9285,8 +9299,8 @@ def _enrich_time_tracking_session(session, clients_data=None):
                     task = t
                     break
             break
-    session['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
-    session['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+    session['project_title'] = _time_entry_project_title(session, project)
+    session['task_title'] = _time_entry_task_title(session, task)
     if session.get('start_time'):
         start = _parse_start_time(session['start_time'])
         if start is not None:
@@ -9302,12 +9316,12 @@ def api_time_tracking_start():
     try:
         data = request.get_json() if request.is_json else request.form.to_dict()
         client_id = data.get('client_id')
-        project_id = data.get('project_id')
-        task_id = data.get('task_id')
+        project_id = data.get('project_id') or None
+        task_id = data.get('task_id') or None
         user_id = current_user.id
-        
-        if not all([client_id, project_id, task_id]):
-            return jsonify({'success': False, 'error': 'חסרים פרמטרים נדרשים'}), 400
+
+        if not client_id:
+            return jsonify({'success': False, 'error': 'יש לבחור לקוח'}), 400
         
         time_data = load_time_tracking()
         _drop_stale_active_sessions(time_data)
@@ -9377,8 +9391,8 @@ def api_time_tracking_stop():
             'id': session['id'],
             'user_id': user_id,
             'client_id': session['client_id'],
-            'project_id': session['project_id'],
-            'task_id': session['task_id'],
+            'project_id': session.get('project_id'),
+            'task_id': session.get('task_id'),
             'start_time': session['start_time'],
             'end_time': end_time_iso,
             'duration_hours': duration_hours,
@@ -9498,16 +9512,16 @@ def api_time_tracking_entries():
             project = None
             task = None
             for p in client.get('projects', []):
-                if p.get('id') == entry['project_id']:
+                if p.get('id') == entry.get('project_id'):
                     project = p
                     for t in p.get('tasks', []):
-                        if t.get('id') == entry['task_id']:
+                        if t.get('id') == entry.get('task_id'):
                             task = t
                             break
                     break
             
-            entry['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
-            entry['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+            entry['project_title'] = _time_entry_project_title(entry, project)
+            entry['task_title'] = _time_entry_task_title(entry, task)
             entry['user_name'] = users.get(entry['user_id'], {}).get('name', 'לא ידוע')
         
         return jsonify({
@@ -9590,16 +9604,16 @@ def api_time_tracking_report():
             project = None
             task = None
             for p in client.get('projects', []):
-                if p.get('id') == entry['project_id']:
+                if p.get('id') == entry.get('project_id'):
                     project = p
                     for t in p.get('tasks', []):
-                        if t.get('id') == entry['task_id']:
+                        if t.get('id') == entry.get('task_id'):
                             task = t
                             break
                     break
             
-            entry['project_title'] = project.get('title', 'לא ידוע') if project else 'לא ידוע'
-            entry['task_title'] = task.get('title', task.get('desc', 'לא ידוע')) if task else 'לא ידוע'
+            entry['project_title'] = _time_entry_project_title(entry, project)
+            entry['task_title'] = _time_entry_task_title(entry, task)
             entry['user_name'] = users.get(entry['user_id'], {}).get('name', 'לא ידוע')
         
         return jsonify({

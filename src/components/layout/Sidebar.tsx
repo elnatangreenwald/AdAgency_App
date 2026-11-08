@@ -18,7 +18,8 @@ import {
   KeyRound,
   FileCheck,
   Receipt,
-  Megaphone
+  Megaphone,
+  Timer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,6 +81,7 @@ export function Sidebar({ currentUser, sidebarUsers, onNavClick }: SidebarProps)
     { path: '/studio', icon: Palette, label: 'סטודיו' },
     { path: '/approvals', icon: FileCheck, label: 'אישור חומרים' },
     { path: '/admin/passwords', icon: KeyRound, label: 'סיסמאות רשתות' },
+    { path: '/timer', icon: Timer, label: 'מדידת זמן' },
     { path: '/time_tracking', icon: Clock, label: 'דוחות שעות עבודה' },
     { path: '/client_assignment', icon: Link2, label: 'שיוך לקוחות' },
     { path: '/admin/dashboard', icon: BarChart3, label: 'דוח מנהלים' },

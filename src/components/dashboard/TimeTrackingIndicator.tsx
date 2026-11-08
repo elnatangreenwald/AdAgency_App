@@ -55,11 +55,11 @@ export function TimeTrackingIndicator() {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const d = (e as CustomEvent).detail?.active_session;
-      if (d) {
-        setSession(d);
-        setElapsed(d.elapsed_seconds ?? 0);
-      }
+      const detail = (e as CustomEvent).detail;
+      if (!detail || !('active_session' in detail)) return;
+      const d = detail.active_session;
+      setSession(d ?? null);
+      setElapsed(d?.elapsed_seconds ?? 0);
     };
     window.addEventListener('time-tracking:active-session', handler);
     return () => window.removeEventListener('time-tracking:active-session', handler);
@@ -103,12 +103,12 @@ export function TimeTrackingIndicator() {
     );
   }
 
-  const label = `${session.client_name} › ${session.project_title} › ${session.task_title}`;
+  const label = [session.client_name, session.project_title, session.task_title].filter(Boolean).join(' › ');
 
   return (
     <button
       type="button"
-      onClick={() => navigate(`/client/${session.client_id}`)}
+      onClick={() => navigate(session.task_id ? `/client/${session.client_id}` : '/timer')}
       className="flex items-center gap-2 text-right rounded-lg px-3 py-2 bg-[#e8f5f3] border border-[#3d817a]/30 hover:bg-[#d4edeb] transition-colors group"
       aria-label={`מדידה פעילה: ${label}`}
     >

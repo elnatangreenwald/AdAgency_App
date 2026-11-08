@@ -3,7 +3,7 @@
  * Displays quick action cards for common operations
  */
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, CreditCard, LucideIcon } from 'lucide-react';
+import { FileText, CreditCard, Timer, LucideIcon } from 'lucide-react';
 
 interface QuickAction {
   id: string;
@@ -17,9 +17,10 @@ interface QuickAction {
 interface QuickActionsProps {
   onAddTask: () => void;
   onAddCharge: () => void;
+  onTimeTracking: () => void;
 }
 
-export function QuickActions({ onAddTask, onAddCharge }: QuickActionsProps) {
+export function QuickActions({ onAddTask, onAddCharge, onTimeTracking }: QuickActionsProps) {
   const actions: QuickAction[] = [
     {
       id: 'task',
@@ -37,12 +38,20 @@ export function QuickActions({ onAddTask, onAddCharge }: QuickActionsProps) {
       color: 'bg-[#14a675]',
       onClick: onAddCharge,
     },
+    {
+      id: 'time',
+      title: 'מדידת זמן',
+      description: 'התחל מדידת זמן ללקוח',
+      icon: Timer,
+      color: 'bg-[#292f4c]',
+      onClick: onTimeTracking,
+    },
   ];
 
   return (
     <div data-tour="dashboard-quick-actions" className="space-y-4 sm:space-y-5">
       <h2 className="text-xl sm:text-2xl font-bold text-[#292f4c]">פעולות מהירות</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 max-w-4xl">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 max-w-6xl">
         {actions.map((action) => {
           const Icon = action.icon;
           return (

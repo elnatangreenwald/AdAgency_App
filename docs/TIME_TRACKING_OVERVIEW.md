@@ -83,7 +83,7 @@
 
 ### Start
 
-- בודק שיש `client_id`, `project_id`, `task_id`.
+- בודק שיש `client_id` (חובה). `project_id` ו-`task_id` אופציונליים, ונשמרים כ-`null` אם לא נשלחו (מדידה ללקוח בלבד, מעמוד `/timer`).
 - בודק שאין למשתמש מדידה פעילה ב-`active_sessions`.
 - יוצר `session` עם `id`, `user_id`, `client_id`, `project_id`, `task_id`, `start_time`.
 - שומר ב-`active_sessions[user_id]`.
@@ -155,7 +155,11 @@
 | כרטיס משימה | `TaskCard.tsx` | `compact`, מקושר ל-client/project/task. |
 | עדכון מהיר | `QuickUpdate.tsx` | ליד כל משימה ברשימה, `compact`. |
 
-בכל המקרים נדרשים `clientId`, `projectId`, `taskId` — התאמה ל-API.
+ברכיב `TimeTracker` נדרשים `clientId`, `projectId`, `taskId`.
+
+### עמוד מדידת זמן (`/timer`)
+
+`src/pages/TimerPage.tsx` הוא עמוד עצמאי, לא משתמש ב-`TimeTracker`: בחירת לקוח (חובה), פרויקט/משימה (אופציונלי), שעון גדול וכפתור התחל/עצור. נכנסים אליו מהריבוע "מדידת זמן" בדשבורד ומסרגל הצד. פירוט ב-[Timer_Page.md](Timer_Page.md).
 
 ---
 

@@ -396,7 +396,7 @@ export function TimeTracker({ clientId, projectId, taskId, compact = false, onSt
   const isActive = activeSession && idsMatch(activeSession);
 
   const conflictLabel = conflictSession
-    ? `${conflictSession.client_name ?? 'לא ידוע'} › ${conflictSession.project_title ?? 'לא ידוע'} › ${conflictSession.task_title ?? 'לא ידוע'}`
+    ? [conflictSession.client_name ?? 'לא ידוע', conflictSession.project_title, conflictSession.task_title].filter(Boolean).join(' › ')
     : '';
   const conflictElapsed = conflictSession?.elapsed_seconds ?? 0;
 

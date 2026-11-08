@@ -19,6 +19,7 @@ import { ManageUsers } from './pages/ManageUsers';
 import { ClientAssignmentPage } from './pages/ClientAssignmentPage';
 import { Archive } from './pages/Archive';
 import { TimeTrackingReports } from './pages/TimeTrackingReports';
+import { TimerPage } from './pages/TimerPage';
 import { TasksPage } from './pages/TasksPage';
 import { NetworkPasswordsPage } from './pages/NetworkPasswordsPage';
 import { InvoicesPage } from './pages/InvoicesPage';
@@ -65,6 +66,7 @@ function App() {
             <Route path="admin/passwords" element={<NetworkPasswordsPage />} />
             <Route path="archive" element={<Archive />} />
             <Route path="time_tracking" element={<TimeTrackingReports />} />
+            <Route path="timer" element={<TimerPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

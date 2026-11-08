@@ -654,8 +654,8 @@ export function TimeTrackingReports() {
                         <td className="border p-2 text-xs md:text-sm whitespace-nowrap">{formatDate(entry.date)}</td>
                         <td className="border p-2 text-xs md:text-sm">{entry.user_name}</td>
                         <td className="border p-2 text-xs md:text-sm">{entry.client_name}</td>
-                        <td className="border p-2 text-xs md:text-sm">{entry.project_title}</td>
-                        <td className="border p-2 text-xs md:text-sm">{entry.task_title}</td>
+                        <td className="border p-2 text-xs md:text-sm">{entry.project_title || '-'}</td>
+                        <td className="border p-2 text-xs md:text-sm">{entry.task_title || '-'}</td>
                         <td className="border p-2 text-xs md:text-sm whitespace-nowrap">{formatTime(entry.start_time)}</td>
                         <td className="border p-2 text-xs md:text-sm whitespace-nowrap">{formatTime(entry.end_time)}</td>
                         <td className="border p-2 text-xs md:text-sm font-semibold whitespace-nowrap">
@@ -975,7 +975,7 @@ export function TimeTrackingReports() {
               פעולה זו תמחק את רשומת הזמן לצמיתות.
               {entryToDelete && (
                 <span className="block mt-2">
-                  <strong>{entryToDelete.client_name}</strong> - {entryToDelete.task_title}
+                  <strong>{entryToDelete.client_name}</strong>{entryToDelete.task_title ? ` - ${entryToDelete.task_title}` : ''}
                   <br />
                   {entryToDelete.duration_hours} שעות ביום {formatDate(entryToDelete.date)}
                 </span>

@@ -410,6 +410,7 @@ export function Dashboard() {
       <QuickActions
         onAddTask={() => setAddTaskOpen(true)}
         onAddCharge={() => setAddChargeOpen(true)}
+        onTimeTracking={() => navigate('/timer')}
       />
 
       {/* Calendar */}
