@@ -128,6 +128,109 @@ def api_all_clients():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# ==================== DASHBOARD COMBINED API ====================
+
+@api_bp.route('/dashboard')
+@login_required
+def api_dashboard():
+    """
+    Combined API endpoint for dashboard - returns all data needed in a single request.
+    This reduces the number of API calls from 4+ to 1, significantly improving load times.
+    """
+    try:
+        data = load_data()
+        users = load_users()
+        user_role = get_user_role(current_user.id)
+        current_uid = current_user.id
+        
+        from backend.utils.permissions import can_user_access_client, is_manager_or_admin, filter_active_clients
+        
+        # 1. Get clients (filtered by permissions)
+        if is_manager_or_admin(current_uid, user_role):
+            clients = filter_active_clients(data)
+        else:
+            clients = [c for c in filter_active_clients(data) 
+                      if can_user_access_client(current_uid, user_role, c)]
+        
+        # Return only essential client fields for dashboard
+        clients_slim = [
+            {
+                'id': c.get('id'),
+                'name': c.get('name'),
+                'client_number': c.get('client_number'),
+            }
+            for c in clients
+        ]
+        
+        # 2. Get calendar tasks (only for current user)
+        calendar_tasks = []
+        for client in data:
+            client_name = client.get('name', '')
+            for project in client.get('projects', []):
+                project_title = project.get('title', '')
+                for task in project.get('tasks', []):
+                    deadline = task.get('deadline', '')
+                    if not deadline:
+                        continue
+                    
+                    # Filter completed tasks (except daily tasks)
+                    task_status = task.get('status', 'לביצוע')
+                    is_daily_task = task.get('is_daily_task', False)
+                    if task_status == 'הושלם' and not is_daily_task:
+                        continue
+
+                    # Only tasks assigned to current user
+                    assignee_id = task.get('assignee') or task.get('assigned_to') or ''
+                    if not assignee_id:
+                        assigned_user = task.get('assigned_user')
+                        if isinstance(assigned_user, list) and assigned_user:
+                            assignee_id = assigned_user[0]
+                        elif isinstance(assigned_user, str):
+                            assignee_id = assigned_user
+                    
+                    if assignee_id != current_uid:
+                        continue
+                    
+                    try:
+                        deadline_date = deadline.split('T')[0] if 'T' in deadline else deadline
+                        assignee_name = users.get(assignee_id, {}).get('name', assignee_id) if assignee_id else 'ללא אחראי'
+                        
+                        calendar_tasks.append({
+                            'id': task.get('id', ''),
+                            'title': task.get('title', 'ללא כותרת'),
+                            'start': deadline_date,
+                            'client_name': client_name,
+                            'project_title': project_title,
+                            'assignee_name': assignee_name,
+                            'assignee_id': assignee_id,
+                            'status': task_status,
+                            'client_id': client.get('id', ''),
+                            'project_id': project.get('id', ''),
+                            'task_id': task.get('id', '')
+                        })
+                    except Exception:
+                        continue
+        
+        # 3. Get users list for sidebar
+        users_list = [
+            {'id': uid, 'name': info.get('name', uid)}
+            for uid, info in sorted(users.items(), key=lambda item: item[1].get('name', ''))
+        ]
+        
+        return jsonify({
+            'success': True,
+            'clients': clients_slim,
+            'calendar_tasks': calendar_tasks,
+            'users': users_list,
+            'users_dict': {uid: {'name': u.get('name', uid)} for uid, u in users.items()}
+        })
+    except Exception as e:
+        print(f"Error in api_dashboard: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 # ==================== NOTIFICATIONS API ====================
 
 @api_bp.route('/notifications')

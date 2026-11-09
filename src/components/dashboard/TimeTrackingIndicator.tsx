@@ -43,7 +43,8 @@ export function TimeTrackingIndicator() {
 
   useEffect(() => {
     fetchActive();
-    const t = setInterval(fetchActive, 10000);
+    // Poll every 30 seconds instead of 10 - reduces server load significantly
+    const t = setInterval(fetchActive, 30000);
     return () => clearInterval(t);
   }, []);
 

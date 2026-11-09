@@ -177,12 +177,13 @@ export function NotificationBell({ className }: NotificationBellProps) {
     setLastChecked(new Date().toISOString());
   }, [fetchUnreadCount]);
 
-  // Polling for unread count and new notifications (every 15 seconds)
+  // Polling for unread count and new notifications (every 30 seconds instead of 15)
+  // This reduces server load while still providing timely notifications
   useEffect(() => {
     const interval = setInterval(() => {
       fetchUnreadCount();
       fetchNewNotifications();
-    }, 15000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [fetchUnreadCount, fetchNewNotifications]);

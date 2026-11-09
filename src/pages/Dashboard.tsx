@@ -98,14 +98,33 @@ export function Dashboard() {
   const taskClientInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchClients();
-    fetchCalendarTasks();
-    fetchUsers();
+    fetchDashboardData();
   }, []);
 
-  const fetchClients = async () => {
+  /**
+   * Combined dashboard data fetch - single API call instead of 3 separate calls.
+   * This significantly improves load time by reducing network round-trips.
+   */
+  const fetchDashboardData = async () => {
     try {
-      // This should be an API endpoint
+      const response = await apiClient.get('/api/dashboard');
+      if (response.data.success) {
+        setClients(response.data.clients || []);
+        setCalendarTasks(response.data.calendar_tasks || []);
+        setUsers(response.data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Fallback to individual calls if combined endpoint fails
+      fetchClientsOnly();
+      fetchCalendarTasksOnly();
+      fetchUsersOnly();
+    }
+  };
+
+  // Fallback individual fetch functions (used only if combined endpoint fails)
+  const fetchClientsOnly = async () => {
+    try {
       const response = await apiClient.get('/api/clients');
       if (response.data.success) {
         setClients(response.data.clients);
@@ -115,14 +134,13 @@ export function Dashboard() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsersOnly = async () => {
     try {
       const response = await apiClient.get('/api/sidebar_users');
       if (response.data.success) {
         if (response.data.users) {
           setUsers(response.data.users);
         } else if (response.data.users_dict) {
-          // Convert dict to array
           const usersArray = Object.entries(response.data.users_dict).map(([id, info]: [string, any]) => ({
             id,
             name: info.name
@@ -135,7 +153,7 @@ export function Dashboard() {
     }
   };
 
-  const fetchCalendarTasks = async () => {
+  const fetchCalendarTasksOnly = async () => {
     try {
       const response = await apiClient.get('/api/tasks/calendar');
       if (response.data.success) {
@@ -277,7 +295,7 @@ export function Dashboard() {
         setNewProjectName('');
         setTaskClientSearch('');
         setProjects([]);
-        fetchCalendarTasks();
+        fetchCalendarTasksOnly();
       } else {
         toast({
           title: 'שגיאה',
@@ -384,7 +402,7 @@ export function Dashboard() {
           variant: 'success',
         });
         setTaskModalOpen(false);
-        fetchCalendarTasks();
+        fetchCalendarTasksOnly();
       }
     } catch (error: any) {
       toast({

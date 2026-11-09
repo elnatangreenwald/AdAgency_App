@@ -1,12 +1,61 @@
 """
 Data Helpers
 Contains functions for loading and saving data from JSON files
+With in-memory caching to reduce disk I/O
 """
 import os
 import json
+import time
+import threading
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 from flask import current_app
+
+
+# ==================== IN-MEMORY CACHE ====================
+# Cache structure: {'data': <cached_value>, 'timestamp': <epoch_time>, 'file_mtime': <file_mtime>}
+_cache = {
+    'users': None,
+    'data': None,
+}
+_cache_lock = threading.Lock()
+
+# Cache TTL in seconds (5 seconds - short enough to catch changes, long enough to help performance)
+CACHE_TTL = 5
+
+
+def _is_cache_valid(cache_key: str, file_path: str) -> bool:
+    """Check if cache is still valid based on TTL and file modification time"""
+    if _cache[cache_key] is None:
+        return False
+    
+    cache_entry = _cache[cache_key]
+    now = time.time()
+    
+    # Check TTL
+    if now - cache_entry['timestamp'] > CACHE_TTL:
+        return False
+    
+    # Check if file was modified (more accurate than TTL alone)
+    try:
+        current_mtime = os.path.getmtime(file_path)
+        if current_mtime != cache_entry.get('file_mtime'):
+            return False
+    except OSError:
+        return False
+    
+    return True
+
+
+def invalidate_cache(cache_key: str = None):
+    """Invalidate cache - call after save operations"""
+    with _cache_lock:
+        if cache_key:
+            _cache[cache_key] = None
+        else:
+            # Invalidate all caches
+            for key in _cache:
+                _cache[key] = None
 
 
 def get_config():
@@ -20,12 +69,17 @@ def get_config():
 
 
 def load_users():
-    """Load users from JSON file"""
+    """Load users from JSON file with caching"""
     config = get_config()
     users_file = getattr(config, 'USERS_FILE', None)
     if not users_file:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         users_file = os.path.join(base_dir, 'users_db.json')
+    
+    # Check cache first
+    with _cache_lock:
+        if _is_cache_valid('users', users_file):
+            return _cache['users']['data']
     
     if not os.path.exists(users_file):
         # Create default admin user with hashed password
@@ -47,11 +101,22 @@ def load_users():
     if needs_update:
         save_users(users)
     
+    # Update cache
+    with _cache_lock:
+        try:
+            _cache['users'] = {
+                'data': users,
+                'timestamp': time.time(),
+                'file_mtime': os.path.getmtime(users_file)
+            }
+        except OSError:
+            pass
+    
     return users
 
 
 def save_users(users):
-    """Save users to JSON file"""
+    """Save users to JSON file and invalidate cache"""
     config = get_config()
     users_file = getattr(config, 'USERS_FILE', None)
     if not users_file:
@@ -60,15 +125,23 @@ def save_users(users):
     
     with open(users_file, 'w', encoding='utf-8') as f:
         json.dump(users, f, ensure_ascii=False, indent=4)
+    
+    # Invalidate users cache
+    invalidate_cache('users')
 
 
 def load_data():
-    """Load agency data (clients) from JSON file"""
+    """Load agency data (clients) from JSON file with caching"""
     config = get_config()
     data_file = getattr(config, 'DATA_FILE', None)
     if not data_file:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         data_file = os.path.join(base_dir, 'agency_db.json')
+    
+    # Check cache first
+    with _cache_lock:
+        if _is_cache_valid('data', data_file):
+            return _cache['data']['data']
     
     if not os.path.exists(data_file) or os.stat(data_file).st_size == 0:
         return []
@@ -89,11 +162,22 @@ def load_data():
     if needs_update:
         assign_client_numbers(data)
     
+    # Update cache
+    with _cache_lock:
+        try:
+            _cache['data'] = {
+                'data': data,
+                'timestamp': time.time(),
+                'file_mtime': os.path.getmtime(data_file)
+            }
+        except OSError:
+            pass
+    
     return data
 
 
 def save_data(data):
-    """Save agency data (clients) to JSON file"""
+    """Save agency data (clients) to JSON file and invalidate cache"""
     config = get_config()
     data_file = getattr(config, 'DATA_FILE', None)
     if not data_file:
@@ -102,6 +186,9 @@ def save_data(data):
     
     with open(data_file, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+    
+    # Invalidate data cache
+    invalidate_cache('data')
 
 
 def assign_client_numbers(clients):
