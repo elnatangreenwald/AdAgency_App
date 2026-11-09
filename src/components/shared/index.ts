@@ -4,6 +4,7 @@
  */
 
 export { LoadingSpinner } from './LoadingSpinner';
+export { LogoPreloader, LogoPreloaderMini, LogoPreloaderPremium } from './LogoPreloader';
 export { SearchBar } from './SearchBar';
 export { StatusBadge } from './StatusBadge';
 export { ConfirmDialog } from './ConfirmDialog';

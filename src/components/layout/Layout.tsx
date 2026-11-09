@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api';
 import ChatWidget from '@/components/ChatWidget';
 import { TimeTrackingIndicator } from '@/components/dashboard/TimeTrackingIndicator';
 import { NotificationBell } from '@/components/NotificationBell';
+import { LogoPreloaderPremium } from '@/components/shared/LogoPreloader';
 import { Menu, X } from 'lucide-react';
 import {
   LEARNING_MODE_AVAILABLE,
@@ -51,11 +52,7 @@ export function Layout() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">טוען...</div>
-      </div>
-    );
+    return <LogoPreloaderPremium text="טוען את המערכת..." />;
   }
 
   // If not authenticated, redirect to login
