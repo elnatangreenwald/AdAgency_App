@@ -119,6 +119,7 @@ export function Finance() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [showArchive, setShowArchive] = useState(false);
+  const [showOtherClients, setShowOtherClients] = useState(false);
   const [chargeForm, setChargeForm] = useState({
     title: '',
     description: '',
@@ -473,6 +474,12 @@ export function Finance() {
       })
       .sort((a, b) => b.filtered_total - a.filtered_total) || [];
 
+  // פיצול לקוחות: קודם לקוחות עם חיובים פתוחים, אחר כך "לקוחות נוספים" באקורדיון
+  const clientsWithOpenCharges = filteredClients.filter(c => c.filtered_open_charges > 0);
+  const otherClients = filteredClients.filter(c => c.filtered_open_charges <= 0);
+  // כשמחפשים - פותחים אוטומטית את הלקוחות הנוספים כדי שיופיעו בתוצאות
+  const otherClientsVisible = showOtherClients || searchTerm.trim() !== '';
+
   const totalArchivedCharges = filteredClients.reduce(
     (sum, client) => sum + client.archived_charges.length, 0
   );
@@ -614,7 +621,283 @@ export function Finance() {
                 </tr>
               </thead>
               <tbody>
-                {filteredClients.map((client) => (
+                {/* לקוחות עם חיובים פתוחים - מוצגים ראשונים */}
+                {clientsWithOpenCharges.map((client) => (
+                  <Fragment key={client.id}>
+                    <tr
+                      className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="p-3">
+                        <button
+                          onClick={() => toggleClientExpanded(client.id)}
+                          className="flex items-center gap-2 text-[#0073ea] hover:underline font-semibold cursor-pointer text-right"
+                        >
+                          {expandedClients.has(client.id) ? (
+                            <ChevronUp className="w-4 h-4 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                          )}
+                          {client.name}
+                          {client.filtered_charges.length > 0 && (
+                            <span className="text-xs text-gray-500 font-normal">
+                              ({client.filtered_charges.length} חיובים)
+                            </span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          ₪{client.calculated_retainer.toLocaleString()}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setRetainerAmount(client.retainer.toString());
+                              setEditRetainerOpen(true);
+                            }}
+                            className="h-6 px-2 text-xs"
+                          >
+                            ערוך
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        ₪{client.calculated_extra.toLocaleString()}
+                      </td>
+                      <td className="p-3 text-[#d66b74] font-semibold">
+                        ₪{client.filtered_open_charges.toLocaleString()}
+                      </td>
+                      <td className="p-3 text-[#28a745] font-semibold">
+                        ₪{client.calculated_monthly_revenue.toLocaleString()}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setChargeForm({ title: '', description: '', amount: '', our_cost: '' });
+                              setAddChargeOpen(true);
+                            }}
+                          >
+                            <Plus className="w-3 h-3 ml-1" />
+                            חיוב
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateInvoice(client.id)}
+                          >
+                            <Download className="w-3 h-3 ml-1" />
+                            חשבונית
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedClients.has(client.id) && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={6} className="p-0">
+                          <div className="p-4 border-b-2 border-gray-200">
+                            <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              פירוט חיובים - {client.name} -{' '}
+                              {monthFilter === 'all'
+                                ? `כל החודשים (${new Date().getFullYear()}, רטיינרים פתוחים מתחילת השנה)`
+                                : getCurrentMonthName()}
+                            </h4>
+                            {(() => {
+                              const showRetainerDetail =
+                                monthFilter === 'all'
+                                  ? (client.open_retainer_month_keys?.length ?? 0) > 0
+                                  : client.retainer > 0;
+                              const noChargesToShow = client.filtered_charges.length === 0;
+                              if (!showRetainerDetail && noChargesToShow) {
+                                return (
+                                  <p className="text-gray-500 text-sm">אין חיובים להצגה</p>
+                                );
+                              }
+                              return (
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="bg-gray-100">
+                                      <th className="p-2 text-right font-semibold">שם / תיאור</th>
+                                      <th className="p-2 text-right font-semibold">תאריך</th>
+                                      <th className="p-2 text-right font-semibold">סכום</th>
+                                      <th className="p-2 text-right font-semibold">עלות פנימית</th>
+                                      <th className="p-2 text-right font-semibold">שולם</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {monthFilter === 'all' &&
+                                      client.retainer > 0 &&
+                                      (client.open_retainer_month_keys ?? []).map((monthKey) => (
+                                        <tr
+                                          key={`retainer-${client.id}-${monthKey}`}
+                                          className="border-b border-gray-100 bg-blue-50"
+                                        >
+                                          <td className="p-2">
+                                            <div className="font-medium text-blue-700">
+                                              ריטיינר חודשי - {hebrewMonthName(monthKey)}
+                                            </div>
+                                          </td>
+                                          <td className="p-2 text-blue-700">
+                                            {hebrewMonthName(monthKey)}
+                                          </td>
+                                          <td className="p-2 font-semibold text-blue-700">
+                                            ₪{client.retainer.toLocaleString()}
+                                          </td>
+                                          <td className="p-2 text-blue-700">-</td>
+                                          <td className="p-2">
+                                            <div className="flex items-center gap-2">
+                                              <Switch
+                                                checked={
+                                                  client.retainer_payments?.[monthKey] || false
+                                                }
+                                                onCheckedChange={() =>
+                                                  handleToggleRetainerStatus(client.id, monthKey)
+                                                }
+                                              />
+                                              <span
+                                                className={`text-xs ${
+                                                  client.retainer_payments?.[monthKey]
+                                                    ? 'text-green-500'
+                                                    : 'text-red-500'
+                                                }`}
+                                              >
+                                                {client.retainer_payments?.[monthKey]
+                                                  ? 'שולם'
+                                                  : 'לא שולם'}
+                                              </span>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    {monthFilter !== 'all' && client.retainer > 0 && (
+                                      <tr className="border-b border-gray-100 bg-blue-50">
+                                        <td className="p-2">
+                                          <div className="font-medium text-blue-700">
+                                            ריטיינר חודשי - {getCurrentMonthName()}
+                                          </div>
+                                        </td>
+                                        <td className="p-2 text-blue-700">
+                                          {getCurrentMonthName()}
+                                        </td>
+                                        <td className="p-2 font-semibold text-blue-700">
+                                          ₪{client.retainer.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-blue-700">-</td>
+                                        <td className="p-2">
+                                          <div className="flex items-center gap-2">
+                                            <Switch
+                                              checked={
+                                                client.retainer_payments?.[getDisplayMonth()] ||
+                                                false
+                                              }
+                                              onCheckedChange={() =>
+                                                handleToggleRetainerStatus(
+                                                  client.id,
+                                                  getDisplayMonth()
+                                                )
+                                              }
+                                            />
+                                            <span
+                                              className={`text-xs ${
+                                                client.retainer_payments?.[getDisplayMonth()]
+                                                  ? 'text-green-500'
+                                                  : 'text-red-500'
+                                              }`}
+                                            >
+                                              {client.retainer_payments?.[getDisplayMonth()]
+                                                ? 'שולם'
+                                                : 'לא שולם'}
+                                            </span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                    {/* Extra Charges */}
+                                    {client.filtered_charges.map((charge, idx) => (
+                                      <tr
+                                        key={`${client.id}-${charge.id ?? `idx-${idx}`}`}
+                                        className="border-b border-gray-100"
+                                      >
+                                        <td className="p-2">
+                                          <div>
+                                            <div className="font-medium">{charge.title || '-'}</div>
+                                            {charge.description && (
+                                              <div className="text-sm text-gray-600">
+                                                {charge.description}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="p-2">
+                                          {formatDate(charge.date)}
+                                        </td>
+                                        <td className="p-2 font-semibold">
+                                          ₪{(charge.amount || 0).toLocaleString()}
+                                        </td>
+                                        <td className="p-2">
+                                          {charge.our_cost ? `₪${charge.our_cost.toLocaleString()}` : '-'}
+                                        </td>
+                                        <td className="p-2">
+                                          <div className="flex items-center gap-2">
+                                            <Switch
+                                              checked={false}
+                                              onCheckedChange={() => handleToggleChargeStatus(client.id, charge.id)}
+                                            />
+                                            <span className="text-xs text-red-500">
+                                              לא שולם
+                                            </span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+
+                {/* אם אין לקוחות עם חיובים פתוחים */}
+                {clientsWithOpenCharges.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-gray-500">
+                      אין לקוחות עם חיובים פתוחים
+                    </td>
+                  </tr>
+                )}
+
+                {/* אקורדיון לקוחות נוספים */}
+                {otherClients.length > 0 && (
+                  <tr className="bg-gray-100 border-y border-gray-300">
+                    <td colSpan={6} className="p-0">
+                      <button
+                        onClick={() => setShowOtherClients(prev => !prev)}
+                        className="w-full p-3 flex items-center justify-between font-bold text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        <span>לקוחות נוספים ({otherClients.length})</span>
+                        {otherClientsVisible ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                )}
+
+                {/* לקוחות נוספים - מוצגים רק כשהאקורדיון פתוח או כשמחפשים */}
+                {otherClientsVisible && otherClients.map((client) => (
                   <Fragment key={client.id}>
                     <tr
                       className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
